@@ -461,12 +461,24 @@ class MainActivity : Activity() {
     }
 
     private fun withSystem(): JSONArray {
+        val local = (prefs.getString("url", PRESETS[0].second) ?: "").contains("127.0.0.1")
         val about = prefs.getString("about", "") ?: ""
         val now = SimpleDateFormat("EEEE d 'de' MMMM yyyy, HH:mm (zzzz)", Locale.forLanguageTag("es-MX")).format(Date())
-        var sys = SYSTEM + "\n\nFecha y hora actual del usuario: " + now
-        if (about.isNotEmpty()) sys += "\n\nLo que sabes del usuario:\n" + about
+
+        val sys = if (local) {
+            "Eres JARVIS. Responde en español y de forma breve. " +
+            "Usa herramientas solo cuando sean necesarias para cumplir la petición."
+        } else {
+            var full = SYSTEM + "\n\nFecha y hora actual del usuario: " + now
+            if (about.isNotEmpty()) full += "\n\nLo que sabes del usuario:\n" + about
+            full
+        }
+
         val all = JSONArray().put(JSONObject().put("role", "system").put("content", sys))
-        for (i in 0 until history.length()) all.put(history.get(i))
+
+        // En el modelo local enviamos solo los últimos 4 mensajes para reducir el procesamiento.
+        val start = if (local) (history.length() - 4).coerceAtLeast(0) else 0
+        for (i in start until history.length()) all.put(history.get(i))
         return all
     }
 
