@@ -586,7 +586,10 @@ class MainActivity : Activity() {
         val local = (prefs.getString("url", PRESETS[0].second) ?: "").contains("127.0.0.1")
         val about = prefs.getString("about", "") ?: ""
         val memories = savedMemories()
-        val now = SimpleDateFormat("EEEE d 'de' MMMM yyyy, HH:mm (zzzz)", Locale.forLanguageTag("es-MX")).format(Date())
+        val now = SimpleDateFormat(
+            "EEEE d 'de' MMMM yyyy, HH:mm (zzzz)",
+            Locale.forLanguageTag("es-MX")
+        ).format(Date())
 
         val memoryText = if (memories.isNotEmpty()) {
             "\n\nMemoria persistente del usuario (datos guardados explícitamente):\n" +
@@ -594,26 +597,42 @@ class MainActivity : Activity() {
         } else ""
 
         val sys = if (local) {
-            "Eres JARVIS, un asistente útil. Responde en español claro y natural. " +
-            "Prioriza respuestas breves pero completas. Sigue las instrucciones actuales del usuario. " +
-            "Usa herramientas solo cuando sean necesarias y no inventes resultados." +
-            memoryText
+            "Eres JARVIS, un asistente útil que responde en español claro y natural. " +
+                "Responde a la pregunta actual y no copies respuestas anteriores. " +
+                "Usa el contexto previo para comprender la pregunta y personalizar la respuesta. " +
+                "No inventes funciones ni comandos del proyecto. Si no sabes algo, dilo claramente. " +
+                "Sé breve, concreto y conserva los comandos locales existentes. " +
+                memoryText
         } else {
             var full = SYSTEM + "\n\nFecha y hora actual del usuario: " + now
             if (about.isNotEmpty()) full += "\n\nLo que sabes del usuario:\n" + about
             full + memoryText
         }
 
-        val all = JSONArray().put(JSONObject().put("role", "system").put("content", sys))
         if (freshChat) {
-            val context = loadConversationContext()
-            for (i in 0 until context.length()) all.put(context.getJSONObject(i))
+            if (history.length() == 0) {
+                val context = loadConversationContext()
+                for (i in 0 until context.length()) {
+                    val item = context.optJSONObject(i) ?: continue
+                    val role = item.optString("role")
+                    if (role == "user" || role == "assistant") {
+                        history.put(item)
+                    }
+                }
+            }
             freshChat = false
         }
 
-        // En el modelo local enviamos solo los últimos 4 mensajes para reducir el procesamiento.
+        val all = JSONArray().put(
+            JSONObject().put("role", "system").put("content", sys)
+        )
+
+        // El modelo local recibe los últimos cuatro mensajes para ahorrar procesamiento.
         val start = if (local) (history.length() - 4).coerceAtLeast(0) else 0
-        for (i in start until history.length()) all.put(history.get(i))
+        for (i in start until history.length()) {
+            all.put(history.get(i))
+        }
+
         return all
     }
 
