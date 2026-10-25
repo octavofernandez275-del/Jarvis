@@ -73,6 +73,7 @@ class MainActivity : Activity() {
     private lateinit var sendBtn: Button
     private lateinit var status: TextView
     private var history = JSONArray()
+    private var freshChat = true
     private var busy = false
     private var tts: TextToSpeech? = null
     private var ttsReady = false
@@ -334,10 +335,45 @@ class MainActivity : Activity() {
         scroll.post { scroll.fullScroll(ScrollView.FOCUS_DOWN) }
     }
 
+    // ---------- Memoria contextual local ----------
+    private fun loadConversationContext(): JSONArray {
+        val raw = prefs.getString("jarvis_recent_context", "[]") ?: "[]"
+        return try {
+            JSONArray(raw)
+        } catch (e: Exception) {
+            JSONArray()
+        }
+    }
+
+    private fun saveConversationContext() {
+        val recent = JSONArray()
+        val start = (history.length() - 6).coerceAtLeast(0)
+
+        for (i in start until history.length()) {
+            val item = history.optJSONObject(i) ?: continue
+            val role = item.optString("role")
+            if (role != "user" && role != "assistant") continue
+
+            val content = item.optString("content").take(700)
+            if (content.isNotBlank()) {
+                recent.put(
+                    JSONObject()
+                        .put("role", role)
+                        .put("content", content)
+                )
+            }
+        }
+
+        prefs.edit()
+            .putString("jarvis_recent_context", recent.toString())
+            .apply()
+    }
+
     private fun newChat() {
         if (busy) return
         tts?.stop()
         history = JSONArray()
+        freshChat = true
         log.removeAllViews()
         welcome()
     }
@@ -569,6 +605,11 @@ class MainActivity : Activity() {
         }
 
         val all = JSONArray().put(JSONObject().put("role", "system").put("content", sys))
+        if (freshChat) {
+            val context = loadConversationContext()
+            for (i in 0 until context.length()) all.put(context.getJSONObject(i))
+            freshChat = false
+        }
 
         // En el modelo local enviamos solo los últimos 4 mensajes para reducir el procesamiento.
         val start = if (local) (history.length() - 4).coerceAtLeast(0) else 0
@@ -1164,6 +1205,7 @@ class MainActivity : Activity() {
                 }
                 if (answer.isEmpty()) answer = "(Respuesta vacía)"
                 history.put(JSONObject().put("role", "assistant").put("content", answer))
+                saveConversationContext()
                 val shown = answer
                 runOnUiThread { bot.text = shown; scrollDown(); speak(shown) }
             } catch (e: Exception) {
