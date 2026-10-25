@@ -53,7 +53,7 @@ private val PRESETS = listOf(
     Triple("Gemini (con plan gratuito)", "https://generativelanguage.googleapis.com/v1beta/openai", "gemini-2.5-flash"),
     Triple("OpenAI", "https://api.openai.com/v1", "gpt-4o-mini"),
     Triple("Anthropic (Claude)", "https://api.anthropic.com/v1", "claude-sonnet-5-5"),
-    Triple("jarvis serve (Termux)", "http://127.0.0.1:8000/v1", ""),
+    Triple("jarvis serve (Termux)", "http://127.0.0.1:8001/v1", ""),
     Triple("Personalizado", "", "")
 )
 
