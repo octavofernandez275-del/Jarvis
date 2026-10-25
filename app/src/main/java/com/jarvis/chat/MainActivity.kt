@@ -737,15 +737,66 @@ class MainActivity : Activity() {
         return "Evento preparado; el usuario debe confirmarlo en el calendario."
     }
 
-    private fun openApp(name: String): String {
+    private fun normalizeAppName(value: String): String {
+        return java.text.Normalizer.normalize(
+            value.lowercase(Locale.ROOT).trim(),
+            java.text.Normalizer.Form.NFD
+        ).replace(Regex("\\p{Mn}+"), "")
+            .replace(Regex("[^a-z0-9 ]"), " ")
+            .replace(Regex("\\s+"), " ")
+            .trim()
+    }
+
+    private fun listApps(): String {
         val pm = packageManager
-        val list = pm.queryIntentActivities(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER), 0)
-        val hit = list.firstOrNull { it.loadLabel(pm).toString().contains(name, ignoreCase = true) }
-            ?: return "No encontré una app llamada $name."
-        val i = pm.getLaunchIntentForPackage(hit.activityInfo.packageName)
-            ?: return "No se pudo abrir $name."
-        pending.add(i)
-        return "Se abrirá ${hit.loadLabel(pm)}."
+        val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+        val apps = pm.queryIntentActivities(intent, 0)
+            .map { it.loadLabel(pm).toString() }
+            .distinctBy { normalizeAppName(it) }
+            .sortedBy { normalizeAppName(it) }
+
+        if (apps.isEmpty()) return "No pude encontrar aplicaciones disponibles."
+        return "Estas son algunas aplicaciones que puedo abrir:\n" +
+            apps.take(100).joinToString(", ") +
+            if (apps.size > 100) "\nHay más aplicaciones instaladas." else ""
+    }
+
+    private fun openApp(name: String): String {
+        val query = normalizeAppName(name)
+        if (query.isBlank()) return "Decime qué aplicación querés abrir."
+
+        if (query in listOf("ajustes", "configuracion", "configuracion del telefono", "settings")) {
+            pending.add(Intent(Settings.ACTION_SETTINGS))
+            return "Abriendo los ajustes del teléfono."
+        }
+
+        val aliases = mapOf(
+            "wa" to "whatsapp",
+            "yt" to "youtube",
+            "camara" to "camera",
+            "fotos" to "photos",
+            "galeria" to "gallery",
+            "navegador" to "chrome",
+            "reloj" to "clock"
+        )
+        val target = aliases[query] ?: query
+        val pm = packageManager
+        val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+        val apps = pm.queryIntentActivities(intent, 0)
+
+        val exact = apps.firstOrNull {
+            normalizeAppName(it.loadLabel(pm).toString()) == target
+        }
+        val match = exact ?: apps.firstOrNull {
+            val label = normalizeAppName(it.loadLabel(pm).toString())
+            label.contains(target) || target.contains(label) && label.length >= 4
+        } ?: return "No encontré una aplicación llamada \"$name\". Podés decir «listar aplicaciones» para ver las disponibles."
+
+        val launch = pm.getLaunchIntentForPackage(match.activityInfo.packageName)
+            ?: return "Encontré ${match.loadLabel(pm)}, pero Android no permite abrirla directamente."
+
+        pending.add(launch)
+        return "Abriendo ${match.loadLabel(pm)}."
     }
 
     private fun get(url: String, max: Int): String {
@@ -791,35 +842,50 @@ class MainActivity : Activity() {
     }
 
 
-    /** Respuestas y acciones sencillas que funcionan sin API ni internet. */
+    /** Comandos sencillos que funcionan sin API ni internet. */
     private fun tryLocalCommand(raw: String): String? {
-        val text = raw.trim()
-        val normalized = text.lowercase(Locale.ROOT)
-            .replace("á", "a").replace("é", "e").replace("í", "i")
-            .replace("ó", "o").replace("ú", "u").replace("¿", "")
-            .replace("?", "").trim()
+        val normalized = normalizeAppName(raw)
+        val text = normalized.removePrefix("jarvis ").trim()
 
-        if (normalized in listOf("hora", "que hora es", "dime la hora", "decime la hora")) {
+        if (text in listOf("hora", "que hora es", "dime la hora", "decime la hora")) {
             return "Son las " + SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date()) + "."
         }
-        if (normalized in listOf("fecha", "que fecha es", "que dia es hoy", "dime la fecha", "decime la fecha")) {
+
+        if (text in listOf("fecha", "que fecha es", "que dia es hoy", "dime la fecha", "decime la fecha")) {
             return "Hoy es " + SimpleDateFormat("EEEE d 'de' MMMM 'de' yyyy", Locale.forLanguageTag("es-AR")).format(Date()) + "."
         }
-        if (normalized in listOf("hola jarvis", "hola", "buen dia", "buenos dias", "buenas tardes", "buenas noches")) {
-            return "Hola. Estoy activo en modo local. Puedo decirte la hora o fecha y abrir aplicaciones sin consumir créditos de IA."
+
+        if (text in listOf("hola", "hola jarvis", "buen dia", "buenos dias", "buenas tardes", "buenas noches")) {
+            return "Hola. Estoy activo en modo local. Puedo decirte la hora o fecha, listar aplicaciones y abrir aplicaciones sin consumir créditos de IA."
         }
-        val appName = when {
-            normalized.startsWith("abrir ") -> text.substringAfter(' ').trim()
-            normalized.startsWith("abre ") -> text.substringAfter(' ').trim()
-            normalized.startsWith("abrime ") -> text.substringAfter(' ').trim()
-            else -> ""
+
+        if (text in listOf(
+                "listar aplicaciones", "lista de aplicaciones", "que aplicaciones tengo",
+                "que aplicaciones puedo abrir", "mostrar aplicaciones", "ver aplicaciones",
+                "mis aplicaciones", "apps instaladas"
+            )) {
+            return listApps()
         }
-        if (appName.isNotBlank()) {
-            return openApp(appName)
+
+        if (text in listOf("ayuda local", "comandos locales", "que podes hacer sin internet", "que puedes hacer sin internet")) {
+            return "Sin internet puedo decirte la hora y fecha, saludarte, listar aplicaciones y abrir aplicaciones. Probá «abrí WhatsApp» o «abrir YouTube»."
         }
-        if (normalized in listOf("ayuda local", "comandos locales", "que podes hacer sin internet", "que puedes hacer sin internet")) {
-            return "Comandos sin internet: 'hora', 'fecha', 'hola' y 'abrir' seguido del nombre de una aplicación. Las preguntas generales requieren una IA local o conexión a un proveedor."
+
+        val prefixes = listOf(
+            "quiero abrir ", "quiero entrar a ", "entra a ", "entrar a ",
+            "inicia ", "iniciar ", "iniciá ", "ejecuta ", "ejecutar ",
+            "ejecutá ", "lanza ", "lanzar ", "abrir ", "abre ",
+            "abri ", "abrime ", "abrime la ", "abrime el ",
+            "abrí ", "abrí la ", "abrí el ", "pone ", "poné ",
+            "abrir la ", "abrir el "
+        )
+
+        val prefix = prefixes.firstOrNull { text.startsWith(it) }
+        if (prefix != null) {
+            val appName = text.removePrefix(prefix).trim()
+            if (appName.isNotBlank()) return openApp(appName)
         }
+
         return null
     }
 
