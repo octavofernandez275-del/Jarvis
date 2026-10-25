@@ -675,6 +675,59 @@ class MainActivity : Activity() {
         .put(tool("complete_task", "Marca como hecho un pendiente, buscándolo por texto.",
             JSONObject().put("text", str("Parte del texto del pendiente")), listOf("text")))
 
+
+    // Reduce las herramientas enviadas al modelo local según la petición.
+    private fun toolsForRequest(request: String): JSONArray {
+        val q = normalizeAppName(request).lowercase(Locale.ROOT)
+        val selected = mutableSetOf<String>()
+
+        fun has(vararg words: String) = words.any { q.contains(it) }
+
+        if (has("busca ", "buscar ", "investiga", "noticias", "clima actual",
+                "tiempo actual", "en internet", "googlea", "fuentes")) {
+            selected.addAll(listOf("web_search", "fetch_url", "open_url"))
+        }
+        if (has("abrir ", "abre ", "abrí ", "abri ", "abrime ",
+                "lanza ", "ejecuta ", "ejecutá ", "inicia ", "iniciá ",
+                "entrar a ", "entra a ", "quiero abrir ")) {
+            selected.add("open_app")
+            if (has("http", "enlace", "link", "sitio web", "página web", "pagina web")) {
+                selected.add("open_url")
+            }
+        }
+        if (has("alarma", "despertador", "despertame", "despiértame", "despiertame")) {
+            selected.add("set_alarm")
+        }
+        if (has("temporizador", "cuenta regresiva", "cronómetro", "cronometro", "timer")) {
+            selected.add("set_timer")
+        }
+        if (has("calendario", "agenda", "evento", "reunión", "reunion", "cita", "turno")) {
+            selected.addAll(listOf("read_calendar", "add_calendar_event"))
+        }
+        if (has("correo", "email", "e-mail", "mail")) {
+            selected.add("compose_email")
+        }
+        if (has("mapa", "mapas", "ruta", "ubicación", "ubicacion", "cómo llegar", "como llegar")) {
+            selected.add("open_maps")
+        }
+        if (has("pendiente", "pendientes", "tarea", "tareas", "marcar como hecho", "completar tarea")) {
+            selected.addAll(listOf("add_task", "list_tasks", "complete_task"))
+        }
+        if (has("resumen del día", "resumen del dia", "ponme al día",
+                "ponme al dia", "informe diario", "briefing")) {
+            selected.addAll(listOf("briefing", "read_calendar", "list_tasks", "web_search"))
+        }
+
+        val all = tools()
+        val filtered = JSONArray()
+        for (i in 0 until all.length()) {
+            val item = all.getJSONObject(i)
+            val name = item.getJSONObject("function").getString("name")
+            if (name in selected) filtered.put(item)
+        }
+        return filtered
+    }
+
     private val pending = mutableListOf<Intent>()
 
     private fun runTool(name: String, a: JSONObject): String {
@@ -957,7 +1010,9 @@ class MainActivity : Activity() {
                 val model = pickModel()
                 val msgs = withSystem()
                 for (step in 0 until 6) {
-                    val body = JSONObject().put("model", model).put("messages", msgs).put("tools", tools())
+                    val requestTools = if (local) toolsForRequest(text) else tools()
+                    val body = JSONObject().put("model", model).put("messages", msgs)
+                    if (requestTools.length() > 0) body.put("tools", requestTools)
                     val c = open("/chat/completions", true)
                     c.outputStream.use { it.write(body.toString().toByteArray()) }
                     if (c.responseCode !in 200..299) {
