@@ -444,6 +444,11 @@ class MainActivity : Activity() {
     }
 
     private fun pickModel(): String {
+        val url = prefs.getString("url", PRESETS[0].second) ?: ""
+        if (url.contains("127.0.0.1")) {
+            return "/data/data/com.termux/files/home/jarvis-models/qwen3-0.6b-q4_k_m.gguf"
+        }
+
         val saved = prefs.getString("model", PRESETS[0].third) ?: ""
         if (saved.isNotEmpty()) return saved
         return try {
