@@ -790,11 +790,67 @@ class MainActivity : Activity() {
         }.joinToString("\n\n")
     }
 
+
+    /** Respuestas y acciones sencillas que funcionan sin API ni internet. */
+    private fun tryLocalCommand(raw: String): String? {
+        val text = raw.trim()
+        val normalized = text.lowercase(Locale.ROOT)
+            .replace("á", "a").replace("é", "e").replace("í", "i")
+            .replace("ó", "o").replace("ú", "u").replace("¿", "")
+            .replace("?", "").trim()
+
+        if (normalized in listOf("hora", "que hora es", "dime la hora", "decime la hora")) {
+            return "Son las " + SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date()) + "."
+        }
+        if (normalized in listOf("fecha", "que fecha es", "que dia es hoy", "dime la fecha", "decime la fecha")) {
+            return "Hoy es " + SimpleDateFormat("EEEE d 'de' MMMM 'de' yyyy", Locale.forLanguageTag("es-AR")).format(Date()) + "."
+        }
+        if (normalized in listOf("hola jarvis", "hola", "buen dia", "buenos dias", "buenas tardes", "buenas noches")) {
+            return "Hola. Estoy activo en modo local. Puedo decirte la hora o fecha y abrir aplicaciones sin consumir créditos de IA."
+        }
+        val appName = when {
+            normalized.startsWith("abrir ") -> text.substringAfter(' ').trim()
+            normalized.startsWith("abre ") -> text.substringAfter(' ').trim()
+            normalized.startsWith("abrime ") -> text.substringAfter(' ').trim()
+            else -> ""
+        }
+        if (appName.isNotBlank()) {
+            return openApp(appName)
+        }
+        if (normalized in listOf("ayuda local", "comandos locales", "que podes hacer sin internet", "que puedes hacer sin internet")) {
+            return "Comandos sin internet: 'hora', 'fecha', 'hola' y 'abrir' seguido del nombre de una aplicación. Las preguntas generales requieren una IA local o conexión a un proveedor."
+        }
+        return null
+    }
+
     // ---------- Envío (bucle de agente) ----------
 
     private fun send() {
         val text = input.text.toString().trim()
         if (text.isEmpty() || busy) return
+
+        // Resolver primero los comandos que no necesitan IA ni conexión.
+        val localAnswer = tryLocalCommand(text)
+        if (localAnswer != null) {
+            tts?.stop()
+            input.setText("")
+            if (history.length() == 0) log.removeAllViews()
+            history.put(JSONObject().put("role", "user").put("content", text))
+            bubble(text, true)
+            history.put(JSONObject().put("role", "assistant").put("content", localAnswer))
+            bubble(localAnswer, false)
+            scrollDown()
+            speak(localAnswer)
+            val toLaunch = pending.toList()
+            pending.clear()
+            toLaunch.forEach { launch ->
+                try { startActivity(launch) }
+                catch (e: Exception) { bubble("No pude abrir la acción: ${e.message}", false).setTextColor(ERR) }
+            }
+            setStatus("Modo local")
+            return
+        }
+
         val local = (prefs.getString("url", PRESETS[0].second) ?: "").contains("127.0.0.1")
         if (!local && (prefs.getString("key", "") ?: "").isEmpty()) {
             if (history.length() == 0) log.removeAllViews()
