@@ -460,18 +460,112 @@ class MainActivity : Activity() {
         }
     }
 
+
+    // ---------- Memoria persistente de JARVIS ----------
+
+    private fun savedMemories(): MutableList<String> {
+        val raw = prefs.getString("jarvis_memories", "[]") ?: "[]"
+        return try {
+            val arr = JSONArray(raw)
+            MutableList(arr.length()) { i -> arr.getString(i) }
+        } catch (e: Exception) {
+            mutableListOf()
+        }
+    }
+
+    private fun saveMemories(items: List<String>) {
+        val arr = JSONArray()
+        items.takeLast(30).forEach { arr.put(it) }
+        prefs.edit().putString("jarvis_memories", arr.toString()).apply()
+    }
+
+    private fun tryMemoryCommand(raw: String): String? {
+        val text = raw.trim()
+        val lower = text.lowercase(Locale.ROOT)
+
+        val savePrefixes = listOf(
+            "recordá que ", "recorda que ", "recuerda que ",
+            "recordá ", "recorda ", "recuerda ",
+            "guardá en memoria ", "guarda en memoria ",
+            "memoriza ", "memorizá "
+        )
+        val prefix = savePrefixes.firstOrNull { lower.startsWith(it) }
+        if (prefix != null) {
+            val item = text.substring(prefix.length).trim()
+                .trimEnd('.', '!', '?')
+            if (item.isBlank()) return "Decime qué querés que recuerde."
+            val memories = savedMemories()
+            val exists = memories.any { it.equals(item, ignoreCase = true) }
+            if (!exists) memories.add(item)
+            saveMemories(memories)
+            return if (exists) "Eso ya estaba guardado en mi memoria."
+                   else "Listo. Guardé en mi memoria: $item"
+        }
+
+        if (
+            lower in listOf("qué recordás", "que recordas", "qué recuerdas",
+                "que recuerdas", "mostrá mi memoria", "mostra mi memoria",
+                "ver memoria", "mostrar memoria", "qué guardaste",
+                "que guardaste", "mis recuerdos")
+        ) {
+            val memories = savedMemories()
+            return if (memories.isEmpty()) {
+                "Todavía no tengo recuerdos guardados. Podés decir: «Recordá que prefiero respuestas cortas»."
+            } else {
+                "Esto es lo que tengo guardado:\n" +
+                    memories.mapIndexed { i, item -> "${i + 1}. $item" }.joinToString("\n")
+            }
+        }
+
+        val clearAll = listOf("borrá toda mi memoria", "borra toda mi memoria",
+            "olvidá todo", "olvida todo", "olvidá todo lo que recordás",
+            "olvida todo lo que recordas")
+        if (lower in clearAll) {
+            saveMemories(emptyList())
+            return "Listo. Borré todos los recuerdos guardados."
+        }
+
+        val forgetPrefixes = listOf("olvidá que ", "olvida que ",
+            "olvidá ", "olvida ", "borrá de memoria ", "borra de memoria ")
+        val forgetPrefix = forgetPrefixes.firstOrNull { lower.startsWith(it) }
+        if (forgetPrefix != null) {
+            val target = text.substring(forgetPrefix.length).trim()
+                .trimEnd('.', '!', '?')
+            if (target.isBlank()) return "Decime qué recuerdo querés borrar."
+            val memories = savedMemories()
+            val remaining = memories.filterNot {
+                it.equals(target, ignoreCase = true) ||
+                it.contains(target, ignoreCase = true)
+            }
+            saveMemories(remaining)
+            return if (remaining.size == memories.size)
+                "No encontré un recuerdo que coincida con: $target"
+            else "Listo. Eliminé el recuerdo indicado."
+        }
+
+        return null
+    }
+
     private fun withSystem(): JSONArray {
         val local = (prefs.getString("url", PRESETS[0].second) ?: "").contains("127.0.0.1")
         val about = prefs.getString("about", "") ?: ""
+        val memories = savedMemories()
         val now = SimpleDateFormat("EEEE d 'de' MMMM yyyy, HH:mm (zzzz)", Locale.forLanguageTag("es-MX")).format(Date())
 
+        val memoryText = if (memories.isNotEmpty()) {
+            "\n\nMemoria persistente del usuario (datos guardados explícitamente):\n" +
+                memories.joinToString("\n") { "- " + it }
+        } else ""
+
         val sys = if (local) {
-            "Eres JARVIS. Responde en español y de forma breve. " +
-            "Usa herramientas solo cuando sean necesarias para cumplir la petición."
+            "Eres JARVIS, un asistente útil. Responde en español claro y natural. " +
+            "Prioriza respuestas breves pero completas. Sigue las instrucciones actuales del usuario. " +
+            "Usa herramientas solo cuando sean necesarias y no inventes resultados." +
+            memoryText
         } else {
             var full = SYSTEM + "\n\nFecha y hora actual del usuario: " + now
             if (about.isNotEmpty()) full += "\n\nLo que sabes del usuario:\n" + about
-            full
+            full + memoryText
         }
 
         val all = JSONArray().put(JSONObject().put("role", "system").put("content", sys))
@@ -964,6 +1058,22 @@ class MainActivity : Activity() {
     private fun send() {
         val text = input.text.toString().trim()
         if (text.isEmpty() || busy) return
+
+        // La memoria explícita se procesa sin IA ni conexión.
+        val memoryAnswer = tryMemoryCommand(text)
+        if (memoryAnswer != null) {
+            tts?.stop()
+            input.setText("")
+            if (history.length() == 0) log.removeAllViews()
+            history.put(JSONObject().put("role", "user").put("content", text))
+            bubble(text, true)
+            history.put(JSONObject().put("role", "assistant").put("content", memoryAnswer))
+            bubble(memoryAnswer, false)
+            scrollDown()
+            speak(memoryAnswer)
+            setStatus("Memoria local")
+            return
+        }
 
         // Resolver primero los comandos que no necesitan IA ni conexión.
         val localAnswer = tryLocalCommand(text)
