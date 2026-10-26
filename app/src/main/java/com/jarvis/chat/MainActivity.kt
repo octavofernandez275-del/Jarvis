@@ -601,8 +601,11 @@ class MainActivity : Activity() {
                 "Habla en español natural, con tono sereno, profesional, preciso y seguro, sin exagerar. " +
                 "Dirígete al usuario de forma respetuosa y responde directamente a lo que te pregunta. " +
                 "Evita saludos repetitivos, frases genéricas y preguntas innecesarias al final. " +
-                "Mantén el hilo de la conversación usando los mensajes anteriores y la memoria disponible. " +
-                "Si el usuario da una instrucción breve, interpreta el contexto antes de responder. " +
+                "Usa el historial reciente para entender a qué se refiere el usuario. " +
+                "Da prioridad a la petición del último mensaje. " +
+                "Si pide cambiar, adaptar, corregir o continuar una respuesta anterior, aplica ese cambio concreto; no repitas la respuesta anterior sin modificarla. " +
+                "Si menciona un límite de tiempo, adapta la propuesta a ese tiempo y recomienda una primera acción concreta. " +
+                "Si pide una sola cosa o un formato específico, respeta exactamente esa limitación. " +
                 "Explica con claridad y usa respuestas breves por defecto; amplía cuando sea necesario. " +
                 "No inventes datos, capacidades, resultados ni acciones que no hayas ejecutado. " +
                 "Si no sabes algo, dilo claramente. No afirmes tener acceso a funciones que no están disponibles. " +
@@ -1188,6 +1191,10 @@ class MainActivity : Activity() {
                 for (step in 0 until 6) {
                     val requestTools = if (local) toolsForRequest(text) else tools()
                     val body = JSONObject().put("model", model).put("messages", msgs)
+                    if (local) {
+                        body.put("temperature", 0.4)
+                        body.put("max_tokens", 220)
+                    }
                     if (requestTools.length() > 0) body.put("tools", requestTools)
                     val c = open("/chat/completions", true)
                     c.outputStream.use { it.write(body.toString().toByteArray()) }
