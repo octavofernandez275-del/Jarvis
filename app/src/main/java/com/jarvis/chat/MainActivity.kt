@@ -373,7 +373,7 @@ class MainActivity : Activity() {
         if (busy) return
         tts?.stop()
         history = JSONArray()
-        freshChat = true
+        freshChat = false
         log.removeAllViews()
         welcome()
     }
@@ -634,7 +634,7 @@ class MainActivity : Activity() {
         )
 
         // El modelo local recibe los últimos cuatro mensajes para ahorrar procesamiento.
-        val start = if (local) (history.length() - 4).coerceAtLeast(0) else 0
+        val start = if (local) (history.length() - 8).coerceAtLeast(0) else 0
         for (i in start until history.length()) {
             all.put(history.get(i))
         }
