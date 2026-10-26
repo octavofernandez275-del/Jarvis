@@ -1194,6 +1194,10 @@ class MainActivity : Activity() {
                     if (local) {
                         body.put("temperature", 0.4)
                         body.put("max_tokens", 220)
+                        body.put(
+                            "chat_template_kwargs",
+                            JSONObject().put("enable_thinking", false)
+                        )
                     }
                     if (requestTools.length() > 0) body.put("tools", requestTools)
                     val c = open("/chat/completions", true)
