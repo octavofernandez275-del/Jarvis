@@ -1241,7 +1241,6 @@ class MainActivity : Activity() {
                     setStatus("Listo")
                     if (fromVoice) {
                         fromVoice = false
-                        if (toLaunch.isEmpty()) moveTaskToBack(true)
                     }
                     for (i in toLaunch) {
                         try {
