@@ -597,20 +597,16 @@ class MainActivity : Activity() {
         } else ""
 
         val sys = if (local) {
-            "Eres J.A.R.V.I.S., un asistente personal inspirado en una IA tecnológica avanzada. " +
-                "Habla en español natural, con tono sereno, profesional, preciso y seguro, sin exagerar. " +
-                "Dirígete al usuario de forma respetuosa y responde directamente a lo que te pregunta. " +
-                "Evita saludos repetitivos, frases genéricas y preguntas innecesarias al final. " +
-                "Usa el historial reciente para entender a qué se refiere el usuario. " +
-                "Da prioridad a la petición del último mensaje. " +
-                "Si pide cambiar, adaptar, corregir o continuar una respuesta anterior, aplica ese cambio concreto; no repitas la respuesta anterior sin modificarla. " +
-                "Si menciona un límite de tiempo, adapta la propuesta a ese tiempo y recomienda una primera acción concreta. " +
-                "Si pide una sola cosa o un formato específico, respeta exactamente esa limitación. " +
-                "Explica con claridad y usa respuestas breves por defecto; amplía cuando sea necesario. " +
-                "No inventes datos, capacidades, resultados ni acciones que no hayas ejecutado. " +
-                "Si no sabes algo, dilo claramente. No afirmes tener acceso a funciones que no están disponibles. " +
-                "Respeta y conserva los comandos locales y las herramientas existentes de la aplicación. " +
-                "Tu prioridad es ser útil, discreto, lógico y eficiente. " +
+            "Eres J.A.R.V.I.S., un asistente personal en español. " +
+                "Responde de forma natural, clara, directa y respetuosa. " +
+                "Obedece principalmente la última petición del usuario. " +
+                "Usa los mensajes anteriores solo para entender referencias y seguimientos; " +
+                "si el usuario cambia de tema, responde al tema nuevo. " +
+                "Cumple exactamente la cantidad, el formato y las restricciones solicitadas. " +
+                "Evita saludos repetitivos, frases genéricas y preguntas innecesarias. " +
+                "Sé breve por defecto y amplía solo cuando haga falta. " +
+                "No inventes hechos ni afirmes haber realizado acciones que no ejecutaste. " +
+                "Si no sabes algo, dilo claramente. " +
                 memoryText
         } else {
             var full = SYSTEM + "\n\nFecha y hora actual del usuario: " + now
@@ -636,8 +632,9 @@ class MainActivity : Activity() {
             JSONObject().put("role", "system").put("content", sys)
         )
 
-        // El modelo local recibe los últimos cuatro mensajes para ahorrar procesamiento.
-        val start = if (local) (history.length() - 8).coerceAtLeast(0) else 0
+        // Qwen pequeño funciona mejor con contexto reciente y acotado.
+        // Solo limita los mensajes enviados; no borra el historial guardado.
+        val start = if (local) (history.length() - 4).coerceAtLeast(0) else 0
         for (i in start until history.length()) {
             all.put(history.get(i))
         }
@@ -1239,7 +1236,13 @@ class MainActivity : Activity() {
                     }
                     if (step == 5) answer = "Hice demasiados pasos seguidos. Intenta pedirlo de otra forma."
                 }
-                if (answer.isEmpty()) answer = "(Respuesta vacía)"
+                if (answer.isBlank()) {
+                    answer = if (local) {
+                        "No pude formular una respuesta clara. Probá preguntarlo de otra manera."
+                    } else {
+                        "La IA no devolvió una respuesta. Intentá nuevamente."
+                    }
+                }
                 history.put(JSONObject().put("role", "assistant").put("content", answer))
                 saveConversationContext()
                 val shown = answer
