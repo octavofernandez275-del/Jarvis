@@ -515,6 +515,17 @@ class MainActivity : Activity() {
         prefs.edit().putString("jarvis_memories", arr.toString()).apply()
     }
 
+    private fun normKey(t: String): String =
+        java.text.Normalizer.normalize(t.lowercase(Locale.ROOT), java.text.Normalizer.Form.NFD)
+            .replace(Regex("\\p{M}+"), "").trim()
+
+    private fun rememberFact(key: String, entry: String) {
+        val mem = savedMemories()
+        mem.removeAll { normKey(it).startsWith(key) }
+        mem.add(entry)
+        saveMemories(mem)
+    }
+
     private fun tryMemoryCommand(raw: String): String? {
         val text = raw.trim()
         val lower = text.lowercase(Locale.ROOT)
@@ -1116,11 +1127,16 @@ class MainActivity : Activity() {
             val st = raw.trim().trimEnd('.', '!', ' ')
             val fav = Regex("mi\\s+(.+?)\\s+favorit([oa])\\s+es\\s+(.+)", RegexOption.IGNORE_CASE).matchEntire(st)
             if (fav != null && fav.groupValues[3].length <= 60) {
-                return "Entendido, tu " + fav.groupValues[1].trim() + " favorit" + fav.groupValues[2] + " es " + fav.groupValues[3].trim() + "."
+                val topic = fav.groupValues[1].trim()
+                val value = fav.groupValues[3].trim()
+                rememberFact("su " + normKey(topic) + " favorit", "Su " + topic + " favorit" + fav.groupValues[2] + " es " + value)
+                return "Entendido, tu " + topic + " favorit" + fav.groupValues[2] + " es " + value + "."
             }
             val nom = Regex("(?:me llamo|mi nombre es)\\s+(.+)", RegexOption.IGNORE_CASE).matchEntire(st)
             if (nom != null && nom.groupValues[1].length <= 40) {
-                return "Entendido, te llamas " + nom.groupValues[1].trim() + "."
+                val nm = nom.groupValues[1].trim()
+                rememberFact("el usuario se llama", "El usuario se llama " + nm)
+                return "Entendido, te llamas " + nm + "."
             }
         }
 
@@ -1151,12 +1167,20 @@ class MainActivity : Activity() {
                         }
                     }
                 }
-                val mem = savedMemories().map {
-                    java.text.Normalizer.normalize(it.lowercase(Locale.ROOT), java.text.Normalizer.Form.NFD)
-                        .replace(Regex("\\p{M}+"), "")
+                for (item in savedMemories()) {
+                    if (wantsName) {
+                        val n = Regex("El usuario se llama (.+)").matchEntire(item.trim())
+                        if (n != null) return "Te llamas " + n.groupValues[1].trim() + "."
+                    } else {
+                        val f = Regex("Su (.+) favorit([oa]) es (.+)").matchEntire(item.trim())
+                        if (f != null && normKey(f.groupValues[1]) == favAsked) {
+                            return "Tu " + f.groupValues[1].trim() + " favorit" + f.groupValues[2] + " es " + f.groupValues[3].trim() + "."
+                        }
+                    }
                 }
-                val known = if (wantsName) mem.any { it.contains("llam") || it.contains("nombre") }
-                            else mem.any { it.contains(favAsked ?: "") }
+                val other = savedMemories().map { normKey(it) }
+                val known = if (wantsName) other.any { it.contains("llam") || it.contains("nombre") }
+                            else other.any { it.contains(favAsked ?: "") }
                 if (!known) return "No me lo has dicho todavía."
             }
         }
