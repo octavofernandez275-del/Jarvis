@@ -638,7 +638,11 @@ class MainActivity : Activity() {
 
         // Qwen pequeño funciona mejor con contexto reciente y acotado.
         // Solo limita los mensajes enviados; no borra el historial guardado.
-        val start = if (local) (history.length() - 4).coerceAtLeast(0) else 0
+        var start = if (local) (history.length() - 8).coerceAtLeast(0) else 0
+        if (local) {
+            while (start < history.length() - 1 &&
+                history.optJSONObject(start)?.optString("role") != "user") start++
+        }
         for (i in start until history.length()) {
             all.put(history.get(i))
         }
