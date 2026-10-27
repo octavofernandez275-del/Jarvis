@@ -597,16 +597,14 @@ class MainActivity : Activity() {
         } else ""
 
         val sys = if (local) {
-            "Eres J.A.R.V.I.S., un asistente personal en español. " +
-                "Responde de forma natural, clara, directa y respetuosa. " +
-                "Obedece principalmente la última petición del usuario. " +
-                "Usa los mensajes anteriores solo para entender referencias y seguimientos; " +
-                "si el usuario cambia de tema, responde al tema nuevo. " +
-                "Cumple exactamente la cantidad, el formato y las restricciones solicitadas. " +
-                "Evita saludos repetitivos, frases genéricas y preguntas innecesarias. " +
-                "Sé breve por defecto y amplía solo cuando haga falta. " +
-                "No inventes hechos ni afirmes haber realizado acciones que no ejecutaste. " +
-                "Si no sabes algo, dilo claramente. " +
+            "Eres J.A.R.V.I.S., un asistente personal que habla español. " +
+                "Responde corto y directo. " +
+                "La conversación anterior está en los mensajes previos: úsala para responder preguntas sobre lo que el usuario ya dijo. " +
+                "Si el usuario cuenta un dato sobre sí mismo, confírmalo en una frase corta. " +
+                "Si pregunta por ese dato, respóndelo con el dato exacto. " +
+                "Cumple el formato que pida el usuario. " +
+                "No repitas su mensaje ni saludes de nuevo. " +
+                "Si no sabes algo, dilo. " +
                 memoryText
         } else {
             var full = SYSTEM + "\n\nFecha y hora actual del usuario: " + now
