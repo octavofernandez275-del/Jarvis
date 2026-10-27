@@ -632,6 +632,8 @@ class MainActivity : Activity() {
                 "user" to "¿Cómo se llama mi mascota?",
                 "assistant" to "Toby.",
                 "user" to "¿Cuál es mi deporte favorito?",
+                "assistant" to "No me lo has dicho todavía.",
+                "user" to "¿Cuál es mi comida favorita?",
                 "assistant" to "No me lo has dicho todavía."
             ).forEach { (r, c) -> all.put(JSONObject().put("role", r).put("content", c)) }
         }
