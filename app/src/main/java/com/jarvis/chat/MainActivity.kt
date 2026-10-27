@@ -598,12 +598,8 @@ class MainActivity : Activity() {
 
         val sys = if (local) {
             "Eres J.A.R.V.I.S., un asistente personal que habla español. " +
-                "Responde corto y directo. " +
-                "La conversación anterior está en los mensajes previos: úsala para responder preguntas sobre lo que el usuario ya dijo. " +
-                "Si el usuario cuenta un dato sobre sí mismo, responde Entendido y repite el dato hablándole de tú, por ejemplo: Entendido, tu color favorito es el rojo. " +
-                "Si pregunta por ese dato, respóndelo con el dato exacto. " +
-                "Cumple el formato que pida el usuario. " +
-                "No repitas su mensaje ni saludes de nuevo. " +
+                "Responde corto. " +
+                "Usa la conversación anterior para responder sobre lo que el usuario ya dijo. " +
                 "Si no sabes algo, dilo. " +
                 memoryText
         } else {
@@ -629,6 +625,16 @@ class MainActivity : Activity() {
         val all = JSONArray().put(
             JSONObject().put("role", "system").put("content", sys)
         )
+        if (local) {
+            listOf(
+                "user" to "Mi mascota se llama Toby.",
+                "assistant" to "Entendido, tu mascota se llama Toby.",
+                "user" to "¿Cómo se llama mi mascota?",
+                "assistant" to "Toby.",
+                "user" to "¿Cuál es mi deporte favorito?",
+                "assistant" to "No me lo has dicho todavía."
+            ).forEach { (r, c) -> all.put(JSONObject().put("role", r).put("content", c)) }
+        }
 
         // Qwen pequeño funciona mejor con contexto reciente y acotado.
         // Solo limita los mensajes enviados; no borra el historial guardado.
@@ -1097,6 +1103,19 @@ class MainActivity : Activity() {
 
         if (text in listOf("ayuda local", "comandos locales", "que podes hacer sin internet", "que puedes hacer sin internet")) {
             return "Sin internet puedo decirte la hora y fecha, saludarte, listar aplicaciones y abrir aplicaciones. Probá «abrí WhatsApp» o «abrir YouTube»."
+        }
+
+        // Datos personales simples: se confirman sin IA y quedan en el historial.
+        if (!raw.contains("?") && !raw.contains("¿")) {
+            val st = raw.trim().trimEnd('.', '!', ' ')
+            val fav = Regex("mi\\s+(.+?)\\s+favorit([oa])\\s+es\\s+(.+)", RegexOption.IGNORE_CASE).matchEntire(st)
+            if (fav != null && fav.groupValues[3].length <= 60) {
+                return "Entendido, tu " + fav.groupValues[1].trim() + " favorit" + fav.groupValues[2] + " es " + fav.groupValues[3].trim() + "."
+            }
+            val nom = Regex("(?:me llamo|mi nombre es)\\s+(.+)", RegexOption.IGNORE_CASE).matchEntire(st)
+            if (nom != null && nom.groupValues[1].length <= 40) {
+                return "Entendido, te llamas " + nom.groupValues[1].trim() + "."
+            }
         }
 
         val prefixes = listOf(
