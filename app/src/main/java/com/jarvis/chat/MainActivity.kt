@@ -1151,6 +1151,13 @@ class MainActivity : Activity() {
                         }
                     }
                 }
+                val mem = savedMemories().map {
+                    java.text.Normalizer.normalize(it.lowercase(Locale.ROOT), java.text.Normalizer.Form.NFD)
+                        .replace(Regex("\\p{M}+"), "")
+                }
+                val known = if (wantsName) mem.any { it.contains("llam") || it.contains("nombre") }
+                            else mem.any { it.contains(favAsked ?: "") }
+                if (!known) return "No me lo has dicho todavía."
             }
         }
 
