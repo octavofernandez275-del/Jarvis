@@ -274,7 +274,15 @@ class MainActivity : Activity() {
                 tts?.language = Locale.forLanguageTag("es-MX")
                 tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
                     override fun onStart(id: String?) { runOnUiThread { setStatus("Hablando…") } }
-                    override fun onDone(id: String?) { runOnUiThread { setStatus("Listo") } }
+                    override fun onDone(id: String?) {
+                        runOnUiThread {
+                            setStatus("Listo")
+                            if (voiceTurn && prefs.getBoolean("convo", false) && hasWindowFocus()) {
+                                voiceTurn = false
+                                input.postDelayed({ if (!busy) listen() }, 500)
+                            }
+                        }
+                    }
                     override fun onError(id: String?) { runOnUiThread { setStatus("Listo") } }
                 })
                 ttsReady = true
@@ -527,12 +535,24 @@ class MainActivity : Activity() {
     }
 
     private var torchOn = false
+    private var voiceTurn = false
 
     private fun tryDeviceCommand(raw: String): String? {
         val q = normKey(raw).replace(Regex("[¿?!¡.,]"), "").replace(Regex("\\s+"), " ").trim()
         val q2 = q.removePrefix("jarvis ").trim()
         if (q2.isBlank()) return null
         val am by lazy { getSystemService(android.content.Context.AUDIO_SERVICE) as android.media.AudioManager }
+
+        // Modo conversación continua
+        if (Regex("(activa|activar|prende|prender|inicia|iniciar|pone|poner)( el)? modo conversacion").matchEntire(q2) != null) {
+            prefs.edit().putBoolean("convo", true).apply()
+            return "Modo conversación activado. Después de cada respuesta te escucho de nuevo. Decí «gracias» para terminar."
+        }
+        if (Regex("(desactiva|desactivar|apaga|apagar|termina|terminar|saca|sacar)( el)? modo conversacion").matchEntire(q2) != null) {
+            prefs.edit().putBoolean("convo", false).apply()
+            voiceTurn = false
+            return "Modo conversación desactivado."
+        }
 
         // Batería
         if (q2 in listOf("bateria", "cuanta bateria tengo", "cuanta bateria me queda", "nivel de bateria", "como esta la bateria", "que bateria tengo")) {
@@ -905,6 +925,13 @@ class MainActivity : Activity() {
         if (requestCode == 77) setStatus("Listo")
         if (requestCode == 77 && resultCode == RESULT_OK) {
             val t = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull() ?: return
+            val stopWords = listOf("gracias", "chau", "nada mas", "eso es todo", "termina", "terminar", "para", "listo", "ya esta", "adios")
+            if (normKey(t).replace(Regex("[¿?!¡.,]"), "").trim() in stopWords) {
+                voiceTurn = false
+                bubble("Cuando quieras.", false)
+                return
+            }
+            voiceTurn = true
             input.setText(t)
             send()
         }
