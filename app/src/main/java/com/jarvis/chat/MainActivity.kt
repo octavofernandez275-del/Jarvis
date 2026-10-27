@@ -526,6 +526,114 @@ class MainActivity : Activity() {
         saveMemories(mem)
     }
 
+    private var torchOn = false
+
+    private fun tryDeviceCommand(raw: String): String? {
+        val q = normKey(raw).replace(Regex("[¿?!¡.,]"), "").replace(Regex("\\s+"), " ").trim()
+        val q2 = q.removePrefix("jarvis ").trim()
+        if (q2.isBlank()) return null
+        val am by lazy { getSystemService(android.content.Context.AUDIO_SERVICE) as android.media.AudioManager }
+
+        // Batería
+        if (q2 in listOf("bateria", "cuanta bateria tengo", "cuanta bateria me queda", "nivel de bateria", "como esta la bateria", "que bateria tengo")) {
+            val i = registerReceiver(null, android.content.IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+            val level = i?.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1) ?: -1
+            val scale = i?.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, 100) ?: 100
+            val status = i?.getIntExtra(android.os.BatteryManager.EXTRA_STATUS, -1) ?: -1
+            if (level < 0 || scale <= 0) return "No pude leer la batería."
+            val charging = status == android.os.BatteryManager.BATTERY_STATUS_CHARGING ||
+                status == android.os.BatteryManager.BATTERY_STATUS_FULL
+            return "Tenés " + (level * 100 / scale) + "% de batería" + (if (charging) " y está cargando." else ".")
+        }
+
+        // Linterna
+        val torchM = Regex("(prende|prender|enciende|encender|activa|activar|apaga|apagar|desactiva|desactivar)( la)? (linterna|flash)").matchEntire(q2)
+        if (torchM != null || q2 == "linterna") {
+            val on = if (torchM != null) {
+                val v = torchM.groupValues[1]
+                v.startsWith("pren") || v.startsWith("enc") || v.startsWith("activ")
+            } else !torchOn
+            return try {
+                val cm = getSystemService(android.content.Context.CAMERA_SERVICE) as android.hardware.camera2.CameraManager
+                val id = cm.cameraIdList.firstOrNull {
+                    cm.getCameraCharacteristics(it).get(android.hardware.camera2.CameraCharacteristics.FLASH_INFO_AVAILABLE) == true
+                } ?: return "Este teléfono no tiene linterna disponible."
+                cm.setTorchMode(id, on)
+                torchOn = on
+                if (on) "Linterna encendida." else "Linterna apagada."
+            } catch (e: Exception) {
+                "No pude controlar la linterna: " + e.message
+            }
+        }
+
+        // Volumen
+        if (Regex("(sube|subi|subir|aumenta|aumentar) (el )?volumen").matchEntire(q2) != null || q2 == "mas volumen") {
+            am.adjustStreamVolume(android.media.AudioManager.STREAM_MUSIC, android.media.AudioManager.ADJUST_RAISE, android.media.AudioManager.FLAG_SHOW_UI)
+            return "Subí el volumen."
+        }
+        if (Regex("(baja|bajar|disminuye|disminuir|reduce|reducir) (el )?volumen").matchEntire(q2) != null || q2 == "menos volumen") {
+            am.adjustStreamVolume(android.media.AudioManager.STREAM_MUSIC, android.media.AudioManager.ADJUST_LOWER, android.media.AudioManager.FLAG_SHOW_UI)
+            return "Bajé el volumen."
+        }
+        val volM = Regex("(?:pone |poner |ajusta |ajustar )?(?:el )?volumen (?:al |a )?(\\d{1,3}) ?(?:%|por ciento)?").matchEntire(q2)
+        if (volM != null) {
+            val pct = volM.groupValues[1].toInt().coerceIn(0, 100)
+            val max = am.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC)
+            am.setStreamVolume(android.media.AudioManager.STREAM_MUSIC, Math.round(max * pct / 100.0).toInt(), android.media.AudioManager.FLAG_SHOW_UI)
+            return "Volumen al " + pct + "%."
+        }
+
+        // Temporizador
+        val timerM = Regex("(?:(?:pone|poner|inicia|iniciar|activa|activar|crea|crear|configura|configurar|programa|programar) )?(?:un |el )?(?:temporizador|timer|cuenta regresiva)(?: de| por| para)? (\\d+) ?(horas?|hs|h|minutos?|mins?|m|segundos?|segs?|s)").matchEntire(q2)
+        if (timerM != null) {
+            val n = timerM.groupValues[1].toLongOrNull() ?: return "No entendí el tiempo del temporizador."
+            val u = timerM.groupValues[2]
+            val secs = if (u.startsWith("h")) n * 3600 else if (u.startsWith("m")) n * 60 else n
+            if (secs < 1 || secs > 86400) return "El temporizador tiene que estar entre 1 segundo y 24 horas."
+            pending.add(Intent(android.provider.AlarmClock.ACTION_SET_TIMER)
+                .putExtra(android.provider.AlarmClock.EXTRA_LENGTH, secs.toInt())
+                .putExtra(android.provider.AlarmClock.EXTRA_MESSAGE, "Jarvis")
+                .putExtra(android.provider.AlarmClock.EXTRA_SKIP_UI, true))
+            return "Temporizador de " + n + " " + u + " iniciado."
+        }
+
+        // Alarma
+        val alarmM = Regex("(?:(?:pone|poner|crea|crear|configura|configurar|activa|activar|programa|programar) (?:una )?)?(?:alarma|despertador|despertame)(?: para| a| de)?(?: las| la)? (\\d{1,2})(?::(\\d{2}))?(?: ?(am|pm|de la manana|de la tarde|de la noche))?").matchEntire(q2)
+        if (alarmM != null) {
+            var h = alarmM.groupValues[1].toInt()
+            val m = alarmM.groupValues[2].ifEmpty { "0" }.toInt()
+            val suf = alarmM.groupValues[3]
+            if ((suf == "pm" || suf == "de la tarde" || suf == "de la noche") && h < 12) h += 12
+            if ((suf == "am" || suf == "de la manana") && h == 12) h = 0
+            if (h !in 0..23 || m !in 0..59) return "Esa hora no es válida."
+            pending.add(Intent(android.provider.AlarmClock.ACTION_SET_ALARM)
+                .putExtra(android.provider.AlarmClock.EXTRA_HOUR, h)
+                .putExtra(android.provider.AlarmClock.EXTRA_MINUTES, m)
+                .putExtra(android.provider.AlarmClock.EXTRA_MESSAGE, "Jarvis")
+                .putExtra(android.provider.AlarmClock.EXTRA_SKIP_UI, true))
+            return "Alarma programada a las " + "%02d:%02d".format(h, m) + "."
+        }
+
+        // Buscar en Google
+        val searchQ = Regex("(?:busca|buscar) en google (.+)").matchEntire(q2)?.groupValues?.get(1)
+            ?: Regex("googlea (.+)").matchEntire(q2)?.groupValues?.get(1)
+            ?: Regex("(?:busca|buscar) (.+) en google").matchEntire(q2)?.groupValues?.get(1)
+        if (searchQ != null) {
+            pending.add(Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://www.google.com/search?q=" + android.net.Uri.encode(searchQ.trim()))))
+            return "Buscando en Google: " + searchQ.trim() + "."
+        }
+
+        // Llamar a un número
+        val callM = Regex("(?:llama|llamar|llamame|marca|marcar) (?:al |a )?([0-9][0-9 +-]{4,})").matchEntire(q2)
+        if (callM != null) {
+            val num = callM.groupValues[1].replace(" ", "").replace("-", "")
+            pending.add(Intent(Intent.ACTION_DIAL, android.net.Uri.parse("tel:" + num)))
+            return "Abriendo el marcador con " + num + ". Tocá llamar para confirmar."
+        }
+
+        return null
+    }
+
     private fun tryMemoryCommand(raw: String): String? {
         val text = raw.trim()
         val lower = text.lowercase(Locale.ROOT)
@@ -1184,6 +1292,8 @@ class MainActivity : Activity() {
                 if (!known) return "No me lo has dicho todavía."
             }
         }
+
+        tryDeviceCommand(raw)?.let { return it }
 
         val prefixes = listOf(
             "quiero abrir ", "quiero entrar a ", "entra a ", "entrar a ",
