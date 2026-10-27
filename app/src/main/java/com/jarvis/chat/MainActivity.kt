@@ -1124,6 +1124,36 @@ class MainActivity : Activity() {
             }
         }
 
+        // Preguntas simples sobre datos dichos antes en este chat: se responden desde el historial.
+        if (raw.contains("?") || raw.contains("¿")) {
+            val q = java.text.Normalizer.normalize(raw.lowercase(Locale.ROOT), java.text.Normalizer.Form.NFD)
+                .replace(Regex("\\p{M}+"), "")
+                .replace(Regex("[¿?!¡.,]"), "")
+                .trim()
+            val wantsName = q in listOf("como me llamo", "cual es mi nombre", "como es mi nombre")
+            val favAsked = Regex("cual es mi (.+) favorit[oa]").matchEntire(q)?.groupValues?.get(1)?.trim()
+            if (wantsName || favAsked != null) {
+                for (i in history.length() - 1 downTo 0) {
+                    val m = history.optJSONObject(i) ?: continue
+                    if (m.optString("role") != "assistant") continue
+                    val c = m.optString("content")
+                    if (wantsName) {
+                        val n = Regex("Entendido, te llamas (.+)\\.").matchEntire(c)
+                        if (n != null) return "Te llamas " + n.groupValues[1].trim() + "."
+                    } else {
+                        val f = Regex("Entendido, tu (.+) favorit([oa]) es (.+)\\.").matchEntire(c)
+                        if (f != null) {
+                            val t = java.text.Normalizer.normalize(f.groupValues[1].lowercase(Locale.ROOT), java.text.Normalizer.Form.NFD)
+                                .replace(Regex("\\p{M}+"), "").trim()
+                            if (t == favAsked) {
+                                return "Tu " + f.groupValues[1].trim() + " favorit" + f.groupValues[2] + " es " + f.groupValues[3].trim() + "."
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         val prefixes = listOf(
             "quiero abrir ", "quiero entrar a ", "entra a ", "entrar a ",
             "inicia ", "iniciar ", "iniciá ", "ejecuta ", "ejecutar ",
