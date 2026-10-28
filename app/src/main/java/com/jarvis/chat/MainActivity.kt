@@ -537,6 +537,156 @@ class MainActivity : Activity() {
         saveMemories(mem)
     }
 
+    private fun runDiagnostic() {
+        Thread {
+            val sb = StringBuilder("DIAGNÓSTICO J.A.R.V.I.S.\n")
+            var fails = 0
+            fun okL(t: String) { sb.append("✔ ").append(t).append("\n") }
+            fun badL(t: String) { fails++; sb.append("✘ ").append(t).append("\n") }
+            fun msgsOf(vararg p: Pair<String, String>): JSONArray {
+                val a = JSONArray()
+                for ((r, c) in p) a.put(JSONObject().put("role", r).put("content", c))
+                return a
+            }
+            val base = (prefs.getString("url", PRESETS[0].second) ?: PRESETS[0].second).trimEnd('/')
+            fun chat(msgs: JSONArray): String {
+                val body = JSONObject()
+                    .put("model", pickModel())
+                    .put("messages", msgs)
+                    .put("temperature", 0.2)
+                    .put("max_tokens", 60)
+                    .put("chat_template_kwargs", JSONObject().put("enable_thinking", false))
+                val c = java.net.URL(base + "/chat/completions").openConnection() as java.net.HttpURLConnection
+                c.requestMethod = "POST"
+                c.setRequestProperty("Content-Type", "application/json")
+                val key = prefs.getString("key", "") ?: ""
+                if (key.isNotEmpty()) c.setRequestProperty("Authorization", "Bearer " + key)
+                c.doOutput = true
+                c.connectTimeout = 5000
+                c.readTimeout = 120000
+                c.outputStream.use { it.write(body.toString().toByteArray()) }
+                val txt = c.inputStream.bufferedReader().readText()
+                c.disconnect()
+                return JSONObject(txt).getJSONArray("choices").getJSONObject(0)
+                    .getJSONObject("message").getString("content").trim()
+            }
+
+            // 1. Servidor
+            try {
+                val t0 = System.currentTimeMillis()
+                val c = java.net.URL(base + "/models").openConnection() as java.net.HttpURLConnection
+                c.connectTimeout = 4000
+                c.readTimeout = 6000
+                val code = c.responseCode
+                c.disconnect()
+                if (code == 200) okL("Servidor " + base + " responde (" + (System.currentTimeMillis() - t0) + " ms)")
+                else badL("Servidor " + base + " devolvió el código " + code)
+            } catch (e: Exception) {
+                badL("Servidor " + base + " no responde: " + e.message)
+            }
+            okL("Modelo que pide la app: " + pickModel().substringAfterLast('/'))
+
+            // 2. Pruebas de chat reales
+            try {
+                val t0 = System.currentTimeMillis()
+                val a = chat(msgsOf("system" to "Eres J.A.R.V.I.S. Responde corto.", "user" to "Respondé únicamente con la palabra AZUL."))
+                if (a.lowercase().contains("azul")) okL("Chat, formato: \"" + a.take(40) + "\" (" + (System.currentTimeMillis() - t0) + " ms)")
+                else badL("Chat, formato: respondió \"" + a.take(60) + "\"")
+            } catch (e: Exception) {
+                badL("Chat con el modelo falló: " + e.message)
+            }
+            try {
+                val a = chat(msgsOf(
+                    "system" to "Eres J.A.R.V.I.S. Responde corto.",
+                    "user" to "Mi color favorito es el verde.",
+                    "assistant" to "Entendido, tu color favorito es el verde.",
+                    "user" to "¿Cuál es mi color favorito? Respondé solamente el color."))
+                if (a.lowercase().contains("verde")) okL("Chat, recuerdo del contexto: \"" + a.take(40) + "\"")
+                else badL("Chat, recuerdo del contexto: respondió \"" + a.take(60) + "\"")
+            } catch (e: Exception) {
+                badL("Chat de recuerdo falló: " + e.message)
+            }
+
+            // 3. Memoria permanente
+            try {
+                rememberFact("__diag__", "__diag__ ok")
+                val found = savedMemories().any { it == "__diag__ ok" }
+                val mem = savedMemories()
+                mem.removeAll { it.startsWith("__diag__") }
+                saveMemories(mem)
+                if (found) okL("Memoria permanente: escribe y lee (" + mem.size + " recuerdos guardados)")
+                else badL("Memoria permanente: no se pudo leer lo escrito")
+            } catch (e: Exception) {
+                badL("Memoria permanente falló: " + e.message)
+            }
+
+            // 4. Comandos resueltos por código
+            try {
+                val h = tryLocalCommand("hora")
+                if (h != null && h.startsWith("Son las")) okL("Comando local, hora: " + h)
+                else badL("Comando local, hora: no respondió (" + h + ")")
+                val r = tryLocalCommand("¿Cuál es mi animal favorito?")
+                if (r != null) okL("Datos personales resueltos por código: " + r)
+                else badL("Una pregunta de datos personales llegó al modelo sin pasar por el código")
+                val bt = tryDeviceCommand("batería")
+                if (bt != null) okL("Batería: " + bt) else badL("Comando de batería no respondió")
+            } catch (e: Exception) {
+                badL("Comandos locales fallaron: " + e.message)
+            }
+
+            // 5. Voz
+            if (ttsReady) okL("Voz (TTS) lista" + (if (speakOn()) "" else ", pero apagada en ajustes"))
+            else badL("Voz (TTS) no está lista")
+            if (android.speech.SpeechRecognizer.isRecognitionAvailable(this@MainActivity)) okL("Reconocimiento de voz disponible")
+            else badL("No hay reconocimiento de voz")
+            if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) okL("Permiso de micrófono concedido")
+            else badL("Falta el permiso de micrófono")
+            okL("Escucha de «Jarvis» en segundo plano: " + (if (prefs.getBoolean("bg", false)) "activada" else "desactivada"))
+            okL("Modo conversación: " + (if (prefs.getBoolean("convo", false)) "activado" else "desactivado"))
+
+            // 6. Dispositivo
+            try {
+                val am = getSystemService(android.content.Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+                val mi = android.app.ActivityManager.MemoryInfo()
+                am.getMemoryInfo(mi)
+                okL("RAM libre del sistema: " + (mi.availMem / 1048576) + " MB de " + (mi.totalMem / 1048576) + " MB")
+            } catch (e: Exception) {
+                badL("No pude leer la RAM: " + e.message)
+            }
+            try {
+                val cm = getSystemService(android.content.Context.CAMERA_SERVICE) as android.hardware.camera2.CameraManager
+                val has = cm.cameraIdList.any {
+                    cm.getCameraCharacteristics(it).get(android.hardware.camera2.CameraCharacteristics.FLASH_INFO_AVAILABLE) == true
+                }
+                if (has) okL("Linterna disponible") else badL("Este teléfono no tiene linterna")
+            } catch (e: Exception) {
+                badL("No pude comprobar la linterna: " + e.message)
+            }
+            try {
+                val n = packageManager.queryIntentActivities(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER), 0).size
+                if (n > 0) okL("Aplicaciones que puedo abrir: " + n) else badL("No detecto aplicaciones para abrir")
+            } catch (e: Exception) {
+                badL("No pude listar aplicaciones: " + e.message)
+            }
+
+            // 7. Contexto
+            val saved = prefs.getString("jarvis_recent_context", "") ?: ""
+            okL("Chat actual: " + history.length() + " mensajes; contexto guardado: " + (if (saved.isEmpty()) "vacío" else "sí"))
+
+            sb.append("\n").append(if (fails == 0) "Todo en orden." else "Problemas detectados: " + fails + ".")
+            val report = sb.toString()
+            runOnUiThread {
+                try {
+                    val cb = getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                    cb.setPrimaryClip(android.content.ClipData.newPlainText("diagnostico", report))
+                } catch (e: Exception) {
+                }
+                bubble(report + "\n(Copiado al portapapeles.)", false)
+                scrollDown()
+            }
+        }.start()
+    }
+
     private var torchOn = false
     private var voiceTurn = false
 
@@ -555,6 +705,12 @@ class MainActivity : Activity() {
             prefs.edit().putBoolean("convo", false).apply()
             voiceTurn = false
             return "Modo conversación desactivado."
+        }
+
+        // Diagnóstico completo
+        if (q2 in listOf("diagnostico", "diagnostico completo", "autodiagnostico", "ejecuta diagnostico", "ejecuta el diagnostico", "haz un diagnostico", "hace un diagnostico")) {
+            runDiagnostic()
+            return "Ejecutando el diagnóstico completo. Tarda unos segundos…"
         }
 
         // Batería
