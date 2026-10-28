@@ -277,13 +277,15 @@ class MainActivity : Activity() {
                     override fun onDone(id: String?) {
                         runOnUiThread {
                             setStatus("Listo")
-                            if (voiceTurn && prefs.getBoolean("convo", false) && hasWindowFocus()) {
-                                voiceTurn = false
-                                input.postDelayed({ if (!busy) listen() }, 500)
-                            }
+                            continueVoiceIfNeeded()
                         }
                     }
-                    override fun onError(id: String?) { runOnUiThread { setStatus("Listo") } }
+                    override fun onError(id: String?) {
+                        runOnUiThread {
+                            setStatus("Listo")
+                            continueVoiceIfNeeded()
+                        }
+                    }
                 })
                 ttsReady = true
             }
@@ -382,6 +384,7 @@ class MainActivity : Activity() {
         tts?.stop()
         history = JSONArray()
         freshChat = false
+        prefs.edit().remove("jarvis_recent_context").apply()
         log.removeAllViews()
         welcome()
     }
@@ -708,10 +711,7 @@ class MainActivity : Activity() {
                 .trimEnd('.', '!', '?')
             if (target.isBlank()) return "Decime qué recuerdo querés borrar."
             val memories = savedMemories()
-            val remaining = memories.filterNot {
-                it.equals(target, ignoreCase = true) ||
-                it.contains(target, ignoreCase = true)
-            }
+            val remaining = memories.filterNot { normKey(it) == normKey(target) }
             saveMemories(remaining)
             return if (remaining.size == memories.size)
                 "No encontré un recuerdo que coincida con: $target"
@@ -736,10 +736,55 @@ class MainActivity : Activity() {
         } else ""
 
         val sys = if (local) {
-            "Eres J.A.R.V.I.S., un asistente personal que habla español. " +
-                "Responde corto. " +
-                "Usa la conversación anterior para responder sobre lo que el usuario ya dijo. " +
-                "Si no sabes algo, dilo. " +
+            val localProfile = if (about.isNotBlank()) {
+                "\n\nInformación del usuario proporcionada en la configuración. " +
+                    "Úsala solo cuando sea pertinente y no la contradigas sin evidencia:\n" +
+                    about.take(1800)
+            } else {
+                ""
+            }
+
+            "Eres J.A.R.V.I.S., un asistente personal local integrado en Android. " +
+                "Tu idioma predeterminado es el español latinoamericano. " +
+                "Habla con calma, claridad y personalidad profesional; no exageres " +
+                "tu capacidad ni finjas tener acceso a funciones que no se ejecutaron. " +
+
+                "\n\nREGLAS DE PRECISIÓN:" +
+                "\n- Distingue entre hechos conocidos, inferencias y datos desconocidos." +
+                "\n- No inventes nombres, gustos, recuerdos, fechas ni datos personales." +
+                "\n- Si falta información importante, dilo claramente o pregunta." +
+                "\n- No presentes una suposición como si fuera un recuerdo." +
+                "\n- Si no estás seguro, responde con honestidad y sin rellenar con datos falsos." +
+
+                "\n\nMEMORIA Y CONTEXTO:" +
+                "\n- Usa los mensajes recientes para mantener la continuidad." +
+                "\n- La memoria persistente contiene únicamente datos guardados explícitamente." +
+                "\n- No deduzcas que un dato es verdadero solo porque aparece en una pregunta." +
+                "\n- Si dos datos se contradicen, señala la contradicción en vez de elegir al azar." +
+                "\n- No afirmes recordar conversaciones que no aparecen en el contexto disponible." +
+
+                "\n\nCOMANDOS Y ACCIONES:" +
+                "\n- La aplicación puede ejecutar algunos comandos directamente sin IA." +
+                "\n- No digas que abriste una aplicación, creaste una alarma o modificaste algo " +
+                "si la aplicación no confirmó esa acción." +
+                "\n- Si una acción necesita permisos, confirmación o conexión, indícalo." +
+                "\n- Si una petición es ambigua y puede ejecutar una acción importante, pregunta." +
+                "\n- No confundas explicar cómo hacer algo con haberlo hecho." +
+
+                "\n\nESTILO DE RESPUESTA:" +
+                "\n- Empieza por la respuesta principal." +
+                "\n- Para preguntas sencillas, responde en pocas frases." +
+                "\n- Para tareas complejas, organiza la respuesta en pasos claros." +
+                "\n- Evita repetir la pregunta o añadir explicaciones innecesarias." +
+                "\n- Si el usuario pide código, conserva el contexto técnico y explica los riesgos." +
+
+                "\n\nLIMITACIONES:" +
+                "\n- No afirmes tener internet, acceso a archivos o información en tiempo real " +
+                "si no dispones de una herramienta que lo proporcione." +
+                "\n- No inventes resultados de herramientas ni fuentes." +
+                "\n- Si una solicitud supera tus capacidades, explica qué parte sí puedes resolver." +
+
+                localProfile +
                 memoryText
         } else {
             var full = SYSTEM + "\n\nFecha y hora actual del usuario: " + now
@@ -764,19 +809,7 @@ class MainActivity : Activity() {
         val all = JSONArray().put(
             JSONObject().put("role", "system").put("content", sys)
         )
-        if (local) {
-            listOf(
-                "user" to "Mi mascota se llama Toby.",
-                "assistant" to "Entendido, tu mascota se llama Toby.",
-                "user" to "¿Cómo se llama mi mascota?",
-                "assistant" to "Toby.",
-                "user" to "¿Cuál es mi deporte favorito?",
-                "assistant" to "No me lo has dicho todavía.",
-                "user" to "¿Cuál es mi comida favorita?",
-                "assistant" to "No me lo has dicho todavía."
-            ).forEach { (r, c) -> all.put(JSONObject().put("role", r).put("content", c)) }
-        }
-
+        // No agregar ejemplos ficticios al contexto del modelo local.
         // Qwen pequeño funciona mejor con contexto reciente y acotado.
         // Solo limita los mensajes enviados; no borra el historial guardado.
         var start = if (local) (history.length() - 8).coerceAtLeast(0) else 0
@@ -900,9 +933,41 @@ class MainActivity : Activity() {
 
     private fun speakOn() = prefs.getBoolean("speak", true)
 
+    private fun continueVoiceIfNeeded() {
+        if (!voiceTurn) return
+        if (!prefs.getBoolean("convo", false) || !hasWindowFocus() || isFinishing) {
+            voiceTurn = false
+            return
+        }
+
+        voiceTurn = false
+        input.postDelayed({
+            if (!busy &&
+                !isFinishing &&
+                hasWindowFocus() &&
+                prefs.getBoolean("convo", false)
+            ) {
+                listen()
+            }
+        }, 500)
+    }
+
     private fun speak(t: String) {
-        if (!speakOn() || !ttsReady) return
-        tts?.speak(t.replace(Regex("[*#_`>]"), ""), TextToSpeech.QUEUE_FLUSH, null, "jv")
+        if (!speakOn() || !ttsReady) {
+            continueVoiceIfNeeded()
+            return
+        }
+
+        val result = tts?.speak(
+            t.replace(Regex("[*#_`>]"), ""),
+            TextToSpeech.QUEUE_FLUSH,
+            null,
+            "jv"
+        )
+
+        if (result == TextToSpeech.ERROR) {
+            continueVoiceIfNeeded()
+        }
     }
 
     private fun listen() {
@@ -1355,6 +1420,7 @@ class MainActivity : Activity() {
             history.put(JSONObject().put("role", "user").put("content", text))
             bubble(text, true)
             history.put(JSONObject().put("role", "assistant").put("content", memoryAnswer))
+            saveConversationContext()
             bubble(memoryAnswer, false)
             scrollDown()
             speak(memoryAnswer)
@@ -1371,6 +1437,7 @@ class MainActivity : Activity() {
             history.put(JSONObject().put("role", "user").put("content", text))
             bubble(text, true)
             history.put(JSONObject().put("role", "assistant").put("content", localAnswer))
+            saveConversationContext()
             bubble(localAnswer, false)
             scrollDown()
             speak(localAnswer)
@@ -1389,6 +1456,9 @@ class MainActivity : Activity() {
             if (history.length() == 0) log.removeAllViews()
             bubble("Falta la API key. Toca Ajustes, elige un proveedor y pega tu clave.", false)
                 .setTextColor(ERR)
+            if (voiceTurn) {
+                speak("Falta la clave de la API. Configúrala en Ajustes para usar la inteligencia artificial.")
+            }
             return
         }
         tts?.stop()
@@ -1473,6 +1543,9 @@ class MainActivity : Activity() {
                 runOnUiThread {
                     bot.text = "No se pudo obtener respuesta: ${e.message}"
                     bot.setTextColor(ERR)
+                    if (voiceTurn) {
+                        speak("No pude obtener una respuesta. Revisa la conexión o la configuración de la API.")
+                    }
                 }
             } finally {
                 val toLaunch = pending.toList()
