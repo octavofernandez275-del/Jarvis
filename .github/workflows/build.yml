@@ -22,7 +22,7 @@ jobs:
           java-version: "17"
 
       - name: Preparar Android SDK y NDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
 
       - name: Instalar herramientas Android
         run: |
@@ -75,12 +75,16 @@ jobs:
           chmod 755 \
             app/src/main/jniLibs/arm64-v8a/libllama_server.so
 
-      - name: Compilar APK
-        run: |
-          gradle --version
-          gradle assembleDebug --no-daemon
 
-      - name: Comprobar y publicar APK como artefacto
+      - name: Instalar Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      - name: Compilar APK
+        run: gradle assembleDebug --no-daemon --stacktrace
+
+      - name: Publicar APK
         uses: actions/upload-artifact@v4
         with:
           name: jarvis-apk
