@@ -95,31 +95,51 @@ object Engine {
     /** Chat en streaming: llama onToken por cada fragmento de texto. */
     fun chat(messages: List<Pair<String, String>>, onToken: (String) -> Unit) {
         val arr = JSONArray()
-        messages.forEach { arr.put(JSONObject().put("role", it.first).put("content", it.second)) }
+        messages.forEach {
+            arr.put(JSONObject().put("role", it.first).put("content", it.second))
+        }
+
         val body = JSONObject()
-            .put("stream", true).put("temperature", 0.6).put("max_tokens", 400)
-            .put("messages", arr).toString()
-        val c = URL("http://127.0.0.1:$PORT/v1/chat/completions").openConnection() as HttpURLConnection
+            .put("stream", false)
+            .put("temperature", 0.6)
+            .put("max_tokens", 300)
+            .put("messages", arr)
+            .toString()
+
+        val c = URL("http://127.0.0.1:$PORT/v1/chat/completions")
+            .openConnection() as HttpURLConnection
+
         c.requestMethod = "POST"
         c.doOutput = true
-        c.connectTimeout = 5000
-        c.readTimeout = 120_000
+        c.connectTimeout = 10000
+        c.readTimeout = 180000
         c.setRequestProperty("Content-Type", "application/json")
-        c.outputStream.use { it.write(body.toByteArray()) }
-        c.inputStream.bufferedReader().use { r ->
-            while (true) {
-                val line = r.readLine() ?: break
-                if (!line.startsWith("data: ")) continue
-                val d = line.substring(6).trim()
-                if (d == "[DONE]") break
-                val choices = JSONObject(d).optJSONArray("choices") ?: continue
-                if (choices.length() == 0) continue
-                val delta = choices.getJSONObject(0).optJSONObject("delta") ?: continue
-                if (delta.has("content") && !delta.isNull("content")) {
-                    val t = delta.getString("content")
-                    if (t.isNotEmpty()) onToken(t)
-                }
+        c.setRequestProperty("Accept", "application/json")
+
+        try {
+            c.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
+            val code = c.responseCode
+            val stream = if (code in 200..299) c.inputStream else c.errorStream
+            val raw = stream?.bufferedReader()?.use { it.readText() }.orEmpty()
+
+            if (code !in 200..299) {
+                throw java.io.IOException("Servidor HTTP $code: ${raw.take(700)}")
             }
+
+            val root = JSONObject(raw)
+            val content = root.optJSONArray("choices")
+                ?.optJSONObject(0)
+                ?.optJSONObject("message")
+                ?.optString("content")
+                .orEmpty()
+
+            if (content.isBlank()) {
+                throw java.io.IOException("El servidor respondió sin texto: ${raw.take(500)}")
+            }
+
+            onToken(content)
+        } finally {
+            c.disconnect()
         }
     }
 }
