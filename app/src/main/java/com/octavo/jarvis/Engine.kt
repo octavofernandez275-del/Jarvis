@@ -64,7 +64,7 @@ object Engine {
         val pb = ProcessBuilder(
             bin.path, "-m", modelFile(ctx).path,
             "--host", "127.0.0.1", "--port", PORT.toString(),
-            "-c", "2048", "-t", "4", "-np", "1"
+            "-c", "2048", "-t", "4", "-np", "1", "--chat-template-kwargs", "{\"enable_thinking\":false}"
         )
         pb.redirectErrorStream(true)
         val p = pb.start()
