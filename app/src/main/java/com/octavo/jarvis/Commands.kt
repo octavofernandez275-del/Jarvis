@@ -47,6 +47,11 @@ object Commands {
 
     private val rxNueva = Regex("""^(?:nueva conversacion|empecemos de nuevo|empezar de nuevo|reinicia la conversacion|olvida la conversacion|borra la conversacion|olvidemos la conversacion)$""")
 
+    // Rendimiento del motor (para probar qué configuración es más rápida)
+    private val rxHilos = Regex("""^(?:usa |pon |ajusta )?(?:los )?hilos(?: de cpu)?(?: a| en)? (\d{1,2})$|^(?:usa |pon )?(\d{1,2}) hilos(?: de cpu)?$""")
+    private val rxHilosLectura = Regex("""^(?:usa |pon |ajusta )?hilos de lectura(?: a| en)? (\d{1,2}|igual)$""")
+    private val rxHilosPregunta = Regex("""^(?:cuantos hilos usas|que hilos usas|hilos actuales|cuantos hilos)$""")
+
     // Memoria
     private val rxRecuerda = Regex("""^(?:recuerda|recorda|acuerdate|anota|memoriza|guarda)(?: en tu memoria)?(?: que)?\s+(.+)$""")
     private val rxListar = Regex("""^(?:que (?:recuerdas|sabes|tienes anotado|tienes en tu memoria)(?: de mi| sobre mi)?|que sabes de mi|dime lo que (?:recuerdas|sabes)(?: de mi)?|muestra(?:me)? tu memoria|lee tu memoria)$""")
@@ -131,6 +136,7 @@ object Commands {
 
         return ayuda(f)
             ?: conversacion(f)
+            ?: rendimiento(ctx, f)
             ?: memoria(ctx, orig, f)
             ?: horaFecha(f)
             ?: bateria(ctx, f)
@@ -155,6 +161,37 @@ object Commands {
                 "controlar el volumen, la música y la linterna, decirte la hora, la fecha y la batería, " +
                 "buscar en internet, llevarte a un lugar y recordar cosas que me pidas."
         )
+    }
+
+    // ---------- Rendimiento ----------
+
+    private const val AVISO_REINICIO = "El motor se reinicia con tu próxima pregunta; la primera tarda más."
+
+    private fun rendimiento(ctx: Context, f: String): Reply? {
+        if (rxHilosPregunta.matches(f)) {
+            val tb = Ajustes.hilosLectura(ctx)
+            return Reply(
+                "Uso ${Ajustes.hilos(ctx)} hilos para generar y " +
+                    (if (tb > 0) "$tb" else "los mismos") + " para leer el texto."
+            )
+        }
+        rxHilosLectura.find(f)?.let { m ->
+            val v = m.groupValues[1]
+            val n = if (v == "igual") 0 else v.toInt()
+            if (v != "igual" && n !in 1..8) return Reply("Elige entre 1 y 8 hilos.")
+            Ajustes.fijarHilosLectura(ctx, n)
+            EngineManager.apagarYa()
+            return Reply(
+                (if (n == 0) "Listo: leeré el texto con los mismos hilos." else "Listo: $n hilos para leer el texto.") +
+                    " $AVISO_REINICIO"
+            )
+        }
+        val m = rxHilos.find(f) ?: return null
+        val n = m.groupValues[1].ifEmpty { m.groupValues[2] }.toInt()
+        if (n !in 1..8) return Reply("Elige entre 1 y 8 hilos.")
+        Ajustes.fijarHilos(ctx, n)
+        EngineManager.apagarYa()
+        return Reply("Listo: ahora uso $n hilos. $AVISO_REINICIO")
     }
 
     // ---------- Conversación ----------

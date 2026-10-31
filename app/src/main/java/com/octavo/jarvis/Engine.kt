@@ -92,11 +92,16 @@ object Engine {
         if (proc?.isAlive == true) return
         if (!modelFile(ctx).exists()) throw java.io.FileNotFoundException("Falta el modelo: ${modelFile(ctx).path}")
         val bin = File(ctx.applicationInfo.nativeLibraryDir, "libllama_server.so")
-        val pb = ProcessBuilder(
+        // Hilos de CPU: se pueden cambiar con el comando "hilos N" (ver Ajustes) para probar el más rápido
+        val args = mutableListOf(
             bin.path, "-m", modelFile(ctx).path,
             "--host", "127.0.0.1", "--port", PORT.toString(),
-            "-c", "2048", "-t", "4", "-np", "1", "--chat-template-kwargs", "{\"enable_thinking\":false}"
+            "-c", "2048", "-t", Ajustes.hilos(ctx).toString(), "-np", "1",
+            "--chat-template-kwargs", "{\"enable_thinking\":false}"
         )
+        val tb = Ajustes.hilosLectura(ctx)
+        if (tb > 0) { args.add("-tb"); args.add(tb.toString()) }
+        val pb = ProcessBuilder(args)
         pb.redirectErrorStream(true)
         val p = pb.start()
         proc = p

@@ -344,7 +344,9 @@ object Assistant {
     private fun mostrarMedicion(motorMs: Long, esperaMs: Long, generacionMs: Long, tokens: Int) {
         val tps = if (generacionMs > 300) tokens * 1000f / generacionMs else 0f
         val motor = if (motorMs > 1000) " · motor %.0f s".format(motorMs / 1000f) else ""
-        estado("Jarvis listo · primera palabra %.1f s · %.1f tok/s%s".format(esperaMs / 1000f, tps, motor))
+        val tb = Ajustes.hilosLectura(app)
+        val hilos = Ajustes.hilos(app).toString() + if (tb > 0) "/$tb" else ""
+        estado("Jarvis listo · primera palabra %.1f s · %.1f tok/s · hilos %s%s".format(esperaMs / 1000f, tps, hilos, motor))
     }
 
     /** Muestra y dice la respuesta de un comando local (no pasa por el modelo ni por el historial). */
