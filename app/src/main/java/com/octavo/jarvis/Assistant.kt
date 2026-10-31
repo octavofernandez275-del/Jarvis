@@ -256,7 +256,7 @@ object Assistant {
                 // Si el motor se apagó por inactividad, aquí se vuelve a encender
                 if (!EngineManager.asegurar(app) { estado(it) }) throw Exception("el motor no arrancó")
                 tListo = SystemClock.elapsedRealtime()
-                Engine.chat(msgs) { t ->
+                Chat.stream(msgs) { t ->
                     if (miGen != genId) throw Cancelado()   // el usuario interrumpió
                     if (tokens == 0) tPrimero = SystemClock.elapsedRealtime()
                     tokens++
