@@ -8,6 +8,7 @@ import android.content.Intent
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
+import android.os.SystemClock
 import android.widget.Toast
 
 /** Se lanza dentro del callback de tokens para abortar una respuesta en curso. */
@@ -35,6 +36,14 @@ object Assistant {
     private const val SISTEMA = "Eres J.A.R.V.I.S., el asistente personal del usuario. " +
         "Hablas en español natural, con respuestas breves y directas. " +
         "Si no sabes algo, lo dices con honestidad."
+    // El historial crece hasta HIST_MAX mensajes y entonces se recorta de golpe a ~HIST_KEEP. Así el inicio
+    // del prompt no cambia en cada turno y llama-server reutiliza su caché en lugar de reprocesar todo.
+    // Nunca queda con menos contexto que antes (7-8 mensajes). Los topes por caracteres (~3,5 por token)
+    // evitan pasarse del contexto del modelo (2048 tokens) cuando las respuestas son largas.
+    private const val HIST_MAX = 10
+    private const val HIST_KEEP = 8
+    private const val HIST_MAX_CHARS = 5000
+    private const val HIST_KEEP_CHARS = 3600
 
     private val main = Handler(Looper.getMainLooper())
     private lateinit var app: Context
@@ -228,9 +237,10 @@ object Assistant {
         ocupado = true
         val miGen = ++genId
         val ticket = voiceOut.startReply()          // empieza una respuesta hablada nueva
+        voiceOut.preparar()                         // la voz se prepara mientras el modelo piensa
         emitir("\nTú: $text\nJarvis: ")
         history.add("user" to text)
-        while (history.size > 8) history.removeAt(0)
+        recortarHistorial()
         val msgs = listOf("system" to systemPrompt()) + history
         generando = true
         renovarSueno()                              // CPU despierta mientras piensa
@@ -238,11 +248,18 @@ object Assistant {
         Thread {
             val reply = StringBuilder()
             var cancelado = false
+            val t0 = SystemClock.elapsedRealtime()
+            var tListo = t0          // motor listo
+            var tPrimero = 0L        // llegó la primera palabra
+            var tokens = 0
             try {
                 // Si el motor se apagó por inactividad, aquí se vuelve a encender
                 if (!EngineManager.asegurar(app) { estado(it) }) throw Exception("el motor no arrancó")
+                tListo = SystemClock.elapsedRealtime()
                 Engine.chat(msgs) { t ->
                     if (miGen != genId) throw Cancelado()   // el usuario interrumpió
+                    if (tokens == 0) tPrimero = SystemClock.elapsedRealtime()
+                    tokens++
                     reply.append(t)
                     emitir(t)
                     voiceOut.feed(ticket, t)                // se habla frase por frase
@@ -256,6 +273,7 @@ object Assistant {
             else if (cancelado && history.isNotEmpty()) history.removeAt(history.lastIndex)  // no dejar un "user" suelto
             voiceOut.endReply(ticket)                       // habla lo que quede (si no se cortó)
             emitir("\n")
+            if (tokens > 0 && !cancelado) mostrarMedicion(tListo - t0, tPrimero - tListo, SystemClock.elapsedRealtime() - tPrimero, tokens)
             generando = false
             EngineManager.soltar()
             val siguiente = synchronized(lock) { ocupado = false; pending.also { pending = null } }
@@ -264,6 +282,21 @@ object Assistant {
                 if (siguiente != null) ask(siguiente)
             }
         }.start()
+    }
+
+    /** Recorta el historial por tandas (ver HIST_MAX) y lo deja siempre empezando por un mensaje del usuario. */
+    private fun recortarHistorial() {
+        fun chars() = history.sumOf { it.second.length }
+        if (history.size <= HIST_MAX && chars() <= HIST_MAX_CHARS) return
+        while (history.size > 1 && (history.size > HIST_KEEP || chars() > HIST_KEEP_CHARS)) history.removeAt(0)
+        while (history.size > 1 && history[0].first != "user") history.removeAt(0)
+    }
+
+    /** Línea de estado con los tiempos de la última respuesta, para comparar mejoras con números reales. */
+    private fun mostrarMedicion(motorMs: Long, esperaMs: Long, generacionMs: Long, tokens: Int) {
+        val tps = if (generacionMs > 300) tokens * 1000f / generacionMs else 0f
+        val motor = if (motorMs > 1000) " · motor %.0f s".format(motorMs / 1000f) else ""
+        estado("Jarvis listo · primera palabra %.1f s · %.1f tok/s%s".format(esperaMs / 1000f, tps, motor))
     }
 
     /** Muestra y dice la respuesta de un comando local (no pasa por el modelo ni por el historial). */

@@ -60,6 +60,16 @@ class VoiceOutput(context: Context) {
     /** Solo hilo principal. */
     val isSpeaking: Boolean get() = pending > 0 || waiting.isNotEmpty()
 
+    /** Prepara el motor de voz mientras el modelo piensa, para que la primera frase salga sin esperar. */
+    fun preparar() {
+        main.post {
+            if (broken || ready || initializing) return@post
+            main.removeCallbacks(releaseTask)
+            initTts()
+            scheduleRelease()   // si al final no se habla, se libera solo
+        }
+    }
+
     /** Empieza una respuesta nueva (corta cualquier voz anterior). Devuelve el "ticket" para feed/endReply. */
     fun startReply(): Int {
         val t = epoch.incrementAndGet()

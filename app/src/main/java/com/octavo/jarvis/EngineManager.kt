@@ -1,6 +1,7 @@
 package com.octavo.jarvis
 
 import android.content.Context
+import android.os.BatteryManager
 import android.os.Handler
 import android.os.Looper
 import java.net.HttpURLConnection
@@ -8,14 +9,17 @@ import java.net.URL
 
 /**
  * Ciclo de vida del motor (llama-server) para cuidar la RAM y la batería.
- * El modelo ocupa ~2 GB: si nadie lo usa durante IDLE_APAGADO_MS, se apaga solo
+ * El modelo ocupa ~2 GB: si nadie lo usa durante un rato, se apaga solo
  * (y con él el servicio en primer plano). Se vuelve a encender cuando hace falta.
+ * Espera 5 min con batería y 20 min si está cargando.
  *
  * "Usar" el motor = retener() ... soltar(). Lo retienen: la pantalla visible,
  * una respuesta en curso y el modo manos libres.
  */
 object EngineManager {
-    private const val IDLE_APAGADO_MS = 3 * 60_000L
+    // El arranque en frío tarda mucho más que cualquier respuesta: con el cargador se espera más
+    private const val IDLE_BATERIA_MS = 5 * 60_000L
+    private const val IDLE_CARGANDO_MS = 20 * 60_000L
 
     private val main = Handler(Looper.getMainLooper())
     private val lockUso = Any()        // contador de usos (nunca se bloquea mucho)
@@ -40,13 +44,18 @@ object EngineManager {
         main.removeCallbacks(apagar)
     }
 
-    /** Ya no lo necesita: si nadie más lo usa, se apagará tras IDLE_APAGADO_MS. */
+    /** Ya no lo necesita: si nadie más lo usa, se apagará tras unos minutos. */
     fun soltar() {
         val libre = synchronized(lockUso) {
             if (usos > 0) usos--
             usos == 0
         }
-        if (libre) main.postDelayed(apagar, IDLE_APAGADO_MS)
+        if (libre) main.postDelayed(apagar, if (cargando()) IDLE_CARGANDO_MS else IDLE_BATERIA_MS)
+    }
+
+    private fun cargando(): Boolean {
+        val c = appCtx ?: return false
+        return (c.getSystemService(Context.BATTERY_SERVICE) as BatteryManager).isCharging
     }
 
     /** Apaga el motor ya (botón Detener de la notificación). */
