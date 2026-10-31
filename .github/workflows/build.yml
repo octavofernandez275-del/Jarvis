@@ -53,7 +53,7 @@ jobs:
             -DANDROID_PLATFORM=android-26 \
             -DANDROID_STL=c++_static \
             -DGGML_NATIVE=OFF \
-            -DGGML_OPENMP=OFF \
+            -DGGML_OPENMP=OFF -DGGML_CPU_ARM_ARCH=armv8.2-a+dotprod+fp16 -DCMAKE_C_FLAGS=-march=armv8.2-a+dotprod+fp16 -DCMAKE_CXX_FLAGS=-march=armv8.2-a+dotprod+fp16 \
             -DGGML_LLAMAFILE=OFF \
             -DLLAMA_OPENSSL=OFF \
             -DBUILD_SHARED_LIBS=OFF \
