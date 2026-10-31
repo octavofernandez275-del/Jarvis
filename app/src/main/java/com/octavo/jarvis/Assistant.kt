@@ -399,12 +399,36 @@ object Assistant {
         voiceOut.endReply(t)
     }
 
-    /** Agrega texto a la conversación y lo muestra si la pantalla está a la vista. */
+    // Agrupa fragmentos del modelo antes de enviarlos al hilo principal.
+    // Así evitamos una tarea de UI por cada pequeño fragmento del streaming.
+    private val textoPendienteLock = Any()
+    private val textoPendiente = StringBuilder()
+    private var textoFlushProgramado = false
+    private val flushTextoPendiente = Runnable {
+        val lote = synchronized(textoPendienteLock) {
+            val s = textoPendiente.toString()
+            textoPendiente.setLength(0)
+            textoFlushProgramado = false
+            s
+        }
+        if (lote.isNotEmpty()) {
+            transcript.append(lote)
+            if (transcript.length > 20_000) {
+                transcript.delete(0, transcript.length - 15_000)
+            }
+            ui?.texto(lote)
+        }
+    }
+
+    /** Agrega texto sin saturar el hilo principal con un post por fragmento. */
     private fun emitir(t: String) {
-        main.post {
-            transcript.append(t)
-            if (transcript.length > 20_000) transcript.delete(0, transcript.length - 15_000)
-            ui?.texto(t)
+        if (t.isEmpty()) return
+        synchronized(textoPendienteLock) {
+            textoPendiente.append(t)
+            if (!textoFlushProgramado) {
+                textoFlushProgramado = true
+                main.postDelayed(flushTextoPendiente, 32L)
+            }
         }
     }
 
