@@ -9,6 +9,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
 import android.os.SystemClock
+import android.util.Log
 import android.widget.Toast
 import org.json.JSONArray
 import org.json.JSONObject
@@ -89,6 +90,7 @@ object Assistant {
         if (iniciado) return
         iniciado = true
         app = ctx.applicationContext
+        registrarCierres()                     // "caja negra": guarda el motivo de un cierre inesperado
         cargarContexto()                       // retoma la conversación reciente si la app se había cerrado
         EngineManager.iniciar(app)
         JarvisService.crearCanales(app)
@@ -109,6 +111,30 @@ object Assistant {
         voiceIn.onError = { msg ->
             toast(msg)
             if (HandsFree.activo) HandsFree.alSilencio()
+        }
+    }
+
+    // ---------- Caja negra: motivo de un cierre inesperado ----------
+
+    private fun archivoError() = File(app.filesDir, "ultimo_error.txt")
+
+    /** Si la app se cierra por un error, guarda cuál fue; al abrirla de nuevo se muestra en la conversación. */
+    private fun registrarCierres() {
+        val anterior = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { hilo, e ->
+            try {
+                archivoError().writeText("${java.util.Date()} · hilo ${hilo.name}\n" + Log.getStackTraceString(e))
+            } catch (_: Exception) {
+            }
+            anterior?.uncaughtException(hilo, e)
+        }
+        try {
+            val f = archivoError()
+            if (f.exists()) {
+                emitir("\n[Cierre inesperado anterior]\n" + f.readText().take(900) + "\n")
+                f.delete()
+            }
+        } catch (_: Exception) {
         }
     }
 

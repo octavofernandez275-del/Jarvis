@@ -106,8 +106,13 @@ object Engine {
         val p = pb.start()
         proc = p
         Thread {
-            p.inputStream.bufferedReader().forEachLine { line ->
-                synchronized(tail) { tail.addLast(line); while (tail.size > 12) tail.removeFirst() }
+            // Al detener el servidor se cierra su salida y esta lectura lanza una excepción;
+            // sin este try/catch esa excepción cerraba toda la app.
+            try {
+                p.inputStream.bufferedReader().forEachLine { line ->
+                    synchronized(tail) { tail.addLast(line); while (tail.size > 12) tail.removeFirst() }
+                }
+            } catch (_: Exception) {
             }
         }.start()
     }
@@ -126,7 +131,7 @@ object Engine {
         return false
     }
 
-    fun stop() { proc?.destroy(); proc = null }
+    fun stop() { proc?.destroyForcibly(); proc = null }   // cierre inmediato: libera el puerto y la RAM al instante
 
     /**
      * Cierra servidores que quedaron vivos de una ejecución anterior (si Android mató la app de golpe,
