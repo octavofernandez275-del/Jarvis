@@ -14,6 +14,7 @@ object Engine {
     const val MODEL_URL =
         "https://huggingface.co/Repasar-Labs/qwen3.5-2b-gguf/resolve/main/Qwen3.5-2B-Q4_K_M.gguf"
     private const val MODEL_NAME = "modelo.gguf"
+    private const val MIN_MODEL_BYTES = 100_000_000L
 
     private var proc: Process? = null
     private val tail = ArrayDeque<String>()
@@ -22,10 +23,34 @@ object Engine {
 
     fun lastLog(): String = synchronized(tail) { tail.joinToString("\n") }
 
+    // ---------- Validación del modelo ----------
+
+    /** Archivo con el tamaño exacto del modelo completo, escrito al terminar la descarga. */
+    private fun sello(f: File) = File(f.path + ".ok")
+
+    /** Los modelos GGUF empiezan con las letras "GGUF". */
+    private fun esGguf(f: File): Boolean = try {
+        f.inputStream().use { val b = ByteArray(4); it.read(b) == 4 && String(b, Charsets.US_ASCII) == "GGUF" }
+    } catch (e: Exception) {
+        false
+    }
+
+    /** El modelo existe, es un GGUF y tiene el tamaño con el que se descargó (no quedó a medias). */
+    private fun modeloValido(f: File): Boolean {
+        if (!f.exists() || f.length() < MIN_MODEL_BYTES || !esGguf(f)) return false
+        val s = sello(f)
+        if (!s.exists()) {                       // instalación anterior: se acepta y se registra su tamaño
+            s.writeText(f.length().toString())
+            return true
+        }
+        return s.readText().trim().toLongOrNull() == f.length()
+    }
+
     /** Descarga con reanudación. Devuelve true si el modelo queda listo. */
     fun download(ctx: Context, onProgress: (Int) -> Unit): Boolean {
         val f = modelFile(ctx)
-        if (f.exists() && f.length() > 100_000_000) return true
+        if (modeloValido(f)) return true
+        if (f.exists()) { f.delete(); sello(f).delete() }   // dañado o incompleto: se descarga de nuevo
         f.parentFile?.mkdirs()
         val part = File(f.path + ".part")
         val have = if (part.exists()) part.length() else 0L
@@ -55,11 +80,17 @@ object Engine {
                 }
             }
         }
-        return part.renameTo(f)
+        // Si la conexión se cortó sin error, el .part queda guardado para reanudar la próxima vez
+        if (total > 0 && done < total) return false
+        if (!esGguf(part)) { part.delete(); return false }
+        if (!part.renameTo(f)) return false
+        sello(f).writeText(f.length().toString())
+        return true
     }
 
     fun start(ctx: Context) {
         if (proc?.isAlive == true) return
+        if (!modelFile(ctx).exists()) throw java.io.FileNotFoundException("Falta el modelo: ${modelFile(ctx).path}")
         val bin = File(ctx.applicationInfo.nativeLibraryDir, "libllama_server.so")
         val pb = ProcessBuilder(
             bin.path, "-m", modelFile(ctx).path,
@@ -91,6 +122,28 @@ object Engine {
     }
 
     fun stop() { proc?.destroy(); proc = null }
+
+    /**
+     * Cierra servidores que quedaron vivos de una ejecución anterior (si Android mató la app de golpe,
+     * llama-server seguía con ~2 GB de RAM y el puerto ocupado). Solo ve y cierra procesos de la propia app.
+     * Llamar al iniciar el proceso, antes de arrancar el motor.
+     */
+    fun matarHuerfanos() {
+        if (proc?.isAlive == true) return
+        try {
+            File("/proc").listFiles()?.forEach { d ->
+                val pid = d.name.toIntOrNull() ?: return@forEach
+                if (pid == android.os.Process.myPid()) return@forEach
+                val cmd = try {
+                    File(d, "cmdline").inputStream().use { String(it.readBytes(), Charsets.ISO_8859_1) }
+                } catch (e: Exception) {
+                    return@forEach
+                }
+                if (cmd.contains("libllama_server")) android.os.Process.killProcess(pid)
+            }
+        } catch (_: Exception) {
+        }
+    }
 
     /** Chat en streaming: llama onToken por cada fragmento de texto. */
     fun chat(messages: List<Pair<String, String>>, onToken: (String) -> Unit) {

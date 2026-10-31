@@ -36,7 +36,15 @@ object EngineManager {
         }
     }
 
-    fun iniciar(ctx: Context) { appCtx = ctx.applicationContext }
+    private var limpio = false
+
+    fun iniciar(ctx: Context) {
+        appCtx = ctx.applicationContext
+        if (!limpio) {
+            limpio = true
+            Thread { Engine.matarHuerfanos() }.start()   // restos de una ejecución anterior (RAM y puerto ocupados)
+        }
+    }
 
     /** Alguien necesita el motor: cancela el apagado programado. */
     fun retener() {

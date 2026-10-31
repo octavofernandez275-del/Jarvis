@@ -45,6 +45,8 @@ object Commands {
 
     private val rxAyuda = Regex("""^(?:que puedes hacer|que sabes hacer|ayuda|comandos|que comandos (?:tienes|hay))$""")
 
+    private val rxNueva = Regex("""^(?:nueva conversacion|empecemos de nuevo|empezar de nuevo|reinicia la conversacion|olvida la conversacion|borra la conversacion|olvidemos la conversacion)$""")
+
     // Memoria
     private val rxRecuerda = Regex("""^(?:recuerda|recorda|acuerdate|anota|memoriza|guarda)(?: en tu memoria)?(?: que)?\s+(.+)$""")
     private val rxListar = Regex("""^(?:que (?:recuerdas|sabes|tienes anotado|tienes en tu memoria)(?: de mi| sobre mi)?|que sabes de mi|dime lo que (?:recuerdas|sabes)(?: de mi)?|muestra(?:me)? tu memoria|lee tu memoria)$""")
@@ -128,6 +130,7 @@ object Commands {
         }
 
         return ayuda(f)
+            ?: conversacion(f)
             ?: memoria(ctx, orig, f)
             ?: horaFecha(f)
             ?: bateria(ctx, f)
@@ -152,6 +155,14 @@ object Commands {
                 "controlar el volumen, la música y la linterna, decirte la hora, la fecha y la batería, " +
                 "buscar en internet, llevarte a un lugar y recordar cosas que me pidas."
         )
+    }
+
+    // ---------- Conversación ----------
+
+    private fun conversacion(f: String): Reply? {
+        if (!rxNueva.matches(f)) return null
+        Assistant.nuevaConversacion()
+        return Reply("Listo, empecemos de cero.")
     }
 
     // ---------- Memoria ----------

@@ -10,6 +10,9 @@ import android.os.Looper
 import android.os.PowerManager
 import android.os.SystemClock
 import android.widget.Toast
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.File
 
 /** Se lanza dentro del callback de tokens para abortar una respuesta en curso. */
 private class Cancelado : RuntimeException()
@@ -86,6 +89,7 @@ object Assistant {
         if (iniciado) return
         iniciado = true
         app = ctx.applicationContext
+        cargarContexto()                       // retoma la conversación reciente si la app se había cerrado
         EngineManager.iniciar(app)
         JarvisService.crearCanales(app)
 
@@ -269,8 +273,12 @@ object Assistant {
             } catch (e: Exception) {
                 emitir("\n[error: ${e.message}]")
             }
-            if (reply.isNotEmpty()) history.add("assistant" to reply.toString())
-            else if (cancelado && history.isNotEmpty()) history.removeAt(history.lastIndex)  // no dejar un "user" suelto
+            if (reply.isNotEmpty()) {
+                history.add("assistant" to reply.toString())
+                guardarContexto()
+            } else if (cancelado && history.isNotEmpty()) {
+                history.removeAt(history.lastIndex)  // no dejar un "user" suelto
+            }
             voiceOut.endReply(ticket)                       // habla lo que quede (si no se cortó)
             emitir("\n")
             if (tokens > 0 && !cancelado) mostrarMedicion(tListo - t0, tPrimero - tListo, SystemClock.elapsedRealtime() - tPrimero, tokens)
@@ -282,6 +290,46 @@ object Assistant {
                 if (siguiente != null) ask(siguiente)
             }
         }.start()
+    }
+
+    // ---------- Contexto reciente (sobrevive al cierre de la app) ----------
+
+    private fun archivoContexto() = File(app.filesDir, "contexto.json")
+
+    /** Guarda los últimos mensajes de la conversación. */
+    private fun guardarContexto() {
+        try {
+            val arr = JSONArray()
+            history.takeLast(HIST_KEEP).forEach { arr.put(JSONObject().put("r", it.first).put("c", it.second)) }
+            val f = archivoContexto()
+            val tmp = File(app.filesDir, "contexto.json.tmp")
+            tmp.writeText(arr.toString())
+            if (!tmp.renameTo(f)) { f.writeText(tmp.readText()); tmp.delete() }
+        } catch (_: Exception) {
+        }
+    }
+
+    /** Recupera la conversación reciente al abrir la app (empieza por el usuario y termina en una respuesta). */
+    private fun cargarContexto() {
+        try {
+            val f = archivoContexto()
+            if (!f.exists()) return
+            val arr = JSONArray(f.readText())
+            for (i in 0 until arr.length()) {
+                val o = arr.getJSONObject(i)
+                history.add(o.getString("r") to o.getString("c"))
+            }
+            while (history.isNotEmpty() && history[0].first != "user") history.removeAt(0)
+            if (history.isNotEmpty() && history.last().first == "user") history.removeAt(history.lastIndex)
+        } catch (e: Exception) {
+            history.clear()
+        }
+    }
+
+    /** "Nueva conversación": olvida el contexto reciente (no toca lo que pediste recordar). */
+    fun nuevaConversacion() {
+        history.clear()
+        archivoContexto().delete()
     }
 
     /** Recorta el historial por tandas (ver HIST_MAX) y lo deja siempre empezando por un mensaje del usuario. */
