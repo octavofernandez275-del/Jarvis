@@ -1,7 +1,6 @@
 package com.octavo.jarvis
 
 import android.content.Context
-import android.os.BatteryManager
 import android.os.Handler
 import android.os.Looper
 import java.net.HttpURLConnection
@@ -9,17 +8,15 @@ import java.net.URL
 
 /**
  * Ciclo de vida del motor (llama-server) para cuidar la RAM y la batería.
- * El modelo ocupa ~2 GB: si nadie lo usa durante un rato, se apaga solo
- * (y con él el servicio en primer plano). Se vuelve a encender cuando hace falta.
- * Espera 5 min con batería y 20 min si está cargando.
+ * El motor se puede apagar (y con él el servicio en primer plano) y se vuelve a encender cuando hace falta.
+ * Por defecto NO se apaga nunca (el arranque en frío tarda ~30 s): el modelo ocupa memoria de archivo que
+ * Android recupera sola cuando hace falta. Se puede cambiar con el comando "apaga el motor tras N minutos".
+ * Si Android avisa que falta memoria de verdad, JarvisService llama a liberarPorMemoria().
  *
  * "Usar" el motor = retener() ... soltar(). Lo retienen: la pantalla visible,
  * una respuesta en curso y el modo manos libres.
  */
 object EngineManager {
-    // El arranque en frío tarda mucho más que cualquier respuesta: con el cargador se espera más
-    private const val IDLE_BATERIA_MS = 5 * 60_000L
-    private const val IDLE_CARGANDO_MS = 20 * 60_000L
 
     private val main = Handler(Looper.getMainLooper())
     private val lockUso = Any()        // contador de usos (nunca se bloquea mucho)
@@ -58,12 +55,13 @@ object EngineManager {
             if (usos > 0) usos--
             usos == 0
         }
-        if (libre) main.postDelayed(apagar, if (cargando()) IDLE_CARGANDO_MS else IDLE_BATERIA_MS)
+        val min = appCtx?.let { Ajustes.minutosInactivo(it) } ?: 0
+        if (libre && min > 0) main.postDelayed(apagar, min * 60_000L)
     }
 
-    private fun cargando(): Boolean {
-        val c = appCtx ?: return false
-        return (c.getSystemService(Context.BATTERY_SERVICE) as BatteryManager).isCharging
+    /** Android avisa que falta memoria de verdad: si nadie usa el motor, se libera para que no cierren la app entera. */
+    fun liberarPorMemoria() {
+        main.post { apagar.run() }
     }
 
     /** Apaga el motor ya (botón Detener de la notificación). */

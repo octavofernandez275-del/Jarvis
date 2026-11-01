@@ -96,11 +96,16 @@ object Engine {
         val args = mutableListOf(
             bin.path, "-m", modelFile(ctx).path,
             "--host", "127.0.0.1", "--port", PORT.toString(),
-            "-c", "2048", "-t", Ajustes.hilos(ctx).toString(), "-np", "1",
+            "-c", "2048", "-t", Ajustes.hilosEfectivos(ctx).toString(), "-np", "1",
             "--chat-template-kwargs", "{\"enable_thinking\":false}"
         )
-        val tb = Ajustes.hilosLectura(ctx)
+        val tb = Ajustes.hilosLecturaEfectivos(ctx)
         if (tb > 0) { args.add("-tb"); args.add(tb.toString()) }
+        // Hilos fijados a los núcleos más rápidos, dejando 2 libres para Android, la voz y la pantalla (ver Cpu)
+        if (Ajustes.nucleosFijos(ctx)) {
+            val mascara = Cpu.mascara(maxOf(Ajustes.hilosEfectivos(ctx), tb))
+            if (mascara != null) { args.add("-C"); args.add(mascara); args.add("--cpu-strict"); args.add("1") }
+        }
         val pb = ProcessBuilder(args)
         pb.redirectErrorStream(true)
         val p = pb.start()

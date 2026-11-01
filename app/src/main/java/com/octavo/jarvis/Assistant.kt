@@ -69,6 +69,8 @@ object Assistant {
 
     @Volatile var listo = false           // el motor arrancó al menos una vez
         private set
+    @Volatile var modeloListo = false     // el modelo ya está descargado y verificado: se puede escribir mientras el motor carga
+        private set
     @Volatile private var arrancando = false
     @Volatile var ocupado = false         // hay una respuesta del modelo en curso
         private set
@@ -153,10 +155,11 @@ object Assistant {
                     estado("No se pudo descargar el modelo. Revisa tu internet y reabre la app.")
                     return@Thread
                 }
-                if (EngineManager.asegurar(app) { estado(it) }) {
+                modeloListo = true
+                main.post { ui?.habilitar() }     // ya se puede escribir mientras el motor carga
+                if (EngineManager.asegurar(app) { estado("Cargando el motor… ya puedes escribir, respondo apenas termine") }) {
                     listo = true
                     estado("Jarvis listo")
-                    main.post { ui?.habilitar() }
                 } else {
                     estado("El motor no arrancó:\n" + Engine.lastLog())
                 }
@@ -267,7 +270,9 @@ object Assistant {
         ocupado = true
         val miGen = ++genId
         val ticket = voiceOut.startReply()          // empieza una respuesta hablada nueva
-        voiceOut.preparar()                         // la voz se prepara mientras el modelo piensa
+        val vozEnVivo = Ajustes.vozEnVivo(app)
+        // Por defecto la voz NO se prepara ni habla mientras el modelo escribe: así no le quita CPU
+        if (vozEnVivo) voiceOut.preparar()
         emitir("\nTú: $text\nJarvis: ")
         history.add("user" to text)
         recortarHistorial()
@@ -292,7 +297,7 @@ object Assistant {
                     tokens++
                     reply.append(t)
                     emitir(t)
-                    voiceOut.feed(ticket, t)                // se habla frase por frase
+                    if (vozEnVivo) voiceOut.feed(ticket, t) // solo en modo "voz en vivo": se habla frase por frase
                 }
             } catch (e: Cancelado) {
                 cancelado = true
@@ -305,6 +310,8 @@ object Assistant {
             } else if (cancelado && history.isNotEmpty()) {
                 history.removeAt(history.lastIndex)  // no dejar un "user" suelto
             }
+            // Modo por defecto: con la respuesta completa, recién ahora empieza el audio (de corrido, sin pausas)
+            if (!vozEnVivo && !cancelado && reply.isNotEmpty()) voiceOut.feed(ticket, reply.toString())
             voiceOut.endReply(ticket)                       // habla lo que quede (si no se cortó)
             emitir("\n")
             if (tokens > 0 && !cancelado) mostrarMedicion(tListo - t0, tPrimero - tListo, SystemClock.elapsedRealtime() - tPrimero, tokens)
@@ -370,8 +377,9 @@ object Assistant {
     private fun mostrarMedicion(motorMs: Long, esperaMs: Long, generacionMs: Long, tokens: Int) {
         val tps = if (generacionMs > 300) tokens * 1000f / generacionMs else 0f
         val motor = if (motorMs > 1000) " · motor %.0f s".format(motorMs / 1000f) else ""
-        val tb = Ajustes.hilosLectura(app)
-        val hilos = Ajustes.hilos(app).toString() + if (tb > 0) "/$tb" else ""
+        val tb = Ajustes.hilosLecturaEfectivos(app)
+        val hilos = Ajustes.hilosEfectivos(app).toString() + (if (tb > 0) "/$tb" else "") +
+            (if (Ajustes.nucleosFijos(app)) " fijos" else "")
         estado("Jarvis listo · primera palabra %.1f s · %.1f tok/s · hilos %s%s".format(esperaMs / 1000f, tps, hilos, motor))
     }
 
@@ -399,36 +407,12 @@ object Assistant {
         voiceOut.endReply(t)
     }
 
-    // Agrupa fragmentos del modelo antes de enviarlos al hilo principal.
-    // Así evitamos una tarea de UI por cada pequeño fragmento del streaming.
-    private val textoPendienteLock = Any()
-    private val textoPendiente = StringBuilder()
-    private var textoFlushProgramado = false
-    private val flushTextoPendiente = Runnable {
-        val lote = synchronized(textoPendienteLock) {
-            val s = textoPendiente.toString()
-            textoPendiente.setLength(0)
-            textoFlushProgramado = false
-            s
-        }
-        if (lote.isNotEmpty()) {
-            transcript.append(lote)
-            if (transcript.length > 20_000) {
-                transcript.delete(0, transcript.length - 15_000)
-            }
-            ui?.texto(lote)
-        }
-    }
-
-    /** Agrega texto sin saturar el hilo principal con un post por fragmento. */
+    /** Agrega texto a la conversación y lo muestra si la pantalla está a la vista. */
     private fun emitir(t: String) {
-        if (t.isEmpty()) return
-        synchronized(textoPendienteLock) {
-            textoPendiente.append(t)
-            if (!textoFlushProgramado) {
-                textoFlushProgramado = true
-                main.postDelayed(flushTextoPendiente, 32L)
-            }
+        main.post {
+            transcript.append(t)
+            if (transcript.length > 20_000) transcript.delete(0, transcript.length - 15_000)
+            ui?.texto(t)
         }
     }
 

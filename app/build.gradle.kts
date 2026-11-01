@@ -4,6 +4,7 @@ plugins {
 }
 
 android {
+    signingConfigs { getByName("debug") { storeFile = rootProject.file("debug.keystore"); storePassword = "android"; keyAlias = "androiddebugkey"; keyPassword = "android" } }
     namespace = "com.octavo.jarvis"
     compileSdk = 34
     defaultConfig {

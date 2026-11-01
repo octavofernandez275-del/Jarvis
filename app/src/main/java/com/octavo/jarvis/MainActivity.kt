@@ -5,8 +5,6 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
-import android.os.Handler
-import android.os.Looper
 import android.os.Bundle
 import android.provider.Settings
 import android.view.Gravity
@@ -89,7 +87,8 @@ class MainActivity : Activity(), Assistant.Ui {
         manosLibres(HandsFree.activo)
         EngineManager.retener()                       // mientras la pantalla está visible, el motor no se apaga
         JarvisService.iniciar(this, HandsFree.activo) // servicio en primer plano (solo se puede arrancar con la app visible)
-        if (Assistant.listo) { habilitar(); Assistant.despertar() } else Assistant.arrancar()
+        if (Assistant.modeloListo) habilitar()
+        if (Assistant.listo) Assistant.despertar() else Assistant.arrancar()
     }
 
     override fun onStop() {
@@ -163,18 +162,8 @@ class MainActivity : Activity(), Assistant.Ui {
     // ---------- Assistant.Ui (siempre en el hilo principal) ----------
 
     override fun texto(t: String) {
-        // No fuerces el scroll si el usuario está leyendo mensajes anteriores.
-        val child = scroll.getChildAt(0)
-        val margen = (24 * resources.displayMetrics.density).toInt()
-        val estabaAlFinal = child == null ||
-            child.bottom - (scroll.scrollY + scroll.height) <= margen
-
         chatText.append(t)
-
-        // Assistant ya agrupa fragmentos; aquí solo desplazamos cuando corresponde.
-        if (estabaAlFinal) {
-            scroll.post { scroll.fullScroll(ScrollView.FOCUS_DOWN) }
-        }
+        scroll.post { scroll.fullScroll(ScrollView.FOCUS_DOWN) }
     }
 
     override fun estado(s: String) { status.text = s }
@@ -185,12 +174,8 @@ class MainActivity : Activity(), Assistant.Ui {
     }
 
     override fun parcial(t: String) {
-        // No sobrescribir lo que el usuario está escribiendo manualmente.
-        if (input.hasFocus()) return
-        if (input.text.toString() != t) {
-            input.setText(t)
-            input.setSelection(input.text.length)
-        }
+        input.setText(t)
+        input.setSelection(t.length)
     }
 
     override fun manosLibres(on: Boolean) {

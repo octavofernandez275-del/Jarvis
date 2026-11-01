@@ -106,6 +106,13 @@ class JarvisService : Service() {
         stopSelf()
     }
 
+    /** Android avisa que se está quedando sin memoria. Solo cuenta lo realmente crítico (no "pantalla oculta"). */
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        // 15 = RUNNING_CRITICAL; 60 y más = el sistema está por cerrar procesos en segundo plano
+        if (level == 15 || level >= 60) EngineManager.liberarPorMemoria()
+    }
+
     override fun onDestroy() {
         instancia = null
         stopForeground(STOP_FOREGROUND_REMOVE)
