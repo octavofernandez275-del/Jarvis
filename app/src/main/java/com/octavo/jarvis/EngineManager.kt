@@ -59,6 +59,33 @@ object EngineManager {
         if (libre && min > 0) main.postDelayed(apagar, min * 60_000L)
     }
 
+    @Volatile private var vigilando = false
+
+    /**
+     * Lo llama el servicio cada minuto: si el motor murió (por ejemplo, Android lo cerró) y debe estar siempre listo,
+     * lo levanta en segundo plano para que la próxima pregunta no espere.
+     */
+    fun vigilar(ctx: Context) {
+        if (Ajustes.minutosInactivo(ctx) != 0) return   // el usuario eligió apagarlo por inactividad
+        if (!Assistant.listo || Assistant.ocupado || vigilando) return
+        vigilando = true
+        Thread {
+            try {
+                asegurar(ctx)
+            } finally {
+                vigilando = false
+            }
+        }.start()
+    }
+
+    /** Aplica un ajuste que necesita reiniciar el servidor: lo reinicia YA en segundo plano, así la próxima pregunta no espera. */
+    fun reiniciarYa(ctx: Context) {
+        apagarYa()
+        Thread {
+            if (asegurar(ctx) { Assistant.estado("Reiniciando el motor con tu ajuste…") }) Assistant.estado("Jarvis listo")
+        }.start()
+    }
+
     /** Android avisa que falta memoria de verdad: si nadie usa el motor, se libera para que no cierren la app entera. */
     fun liberarPorMemoria() {
         main.post { apagar.run() }

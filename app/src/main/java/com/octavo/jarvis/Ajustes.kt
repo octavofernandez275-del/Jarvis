@@ -23,8 +23,8 @@ object Ajustes {
     fun hilosLectura(ctx: Context): Int = p(ctx).getInt("hilos_lectura", 0)
 
     /**
-     * false (por defecto): Jarvis escribe TODA la respuesta lo más rápido posible y recién entonces la lee en voz alta.
-     * true: lee frase por frase mientras escribe (la voz compite por CPU con el modelo y puede cortarse).
+     * false (por defecto): Jarvis genera TODA la respuesta, la muestra completa y recién entonces la lee en voz alta.
+     * true: el texto aparece y se lee frase por frase mientras se genera (la voz compite por CPU con el modelo).
      */
     fun vozEnVivo(ctx: Context): Boolean = p(ctx).getBoolean("voz_en_vivo", false)
 
@@ -56,6 +56,26 @@ object Ajustes {
     fun fijarPrioridadBaja(ctx: Context, v: Boolean) { p(ctx).edit().putBoolean("prioridad_baja", v).apply() }
 
     fun fijarNucleosFijos(ctx: Context, v: Boolean) { p(ctx).edit().putBoolean("nucleos_fijos", v).apply() }
+
+    /** true (por defecto): al encender el teléfono o actualizar la app, Jarvis carga el motor solo para estar listo siempre. */
+    fun arrancarAlEncender(ctx: Context): Boolean = p(ctx).getBoolean("arrancar_al_encender", true)
+
+    fun fijarArrancarAlEncender(ctx: Context, v: Boolean) { p(ctx).edit().putBoolean("arrancar_al_encender", v).apply() }
+
+    /** Nombre interno de la voz elegida (vacío = la predeterminada del teléfono). */
+    fun vozNombre(ctx: Context): String = p(ctx).getString("voz_nombre", "") ?: ""
+
+    fun fijarVozNombre(ctx: Context, n: String) { p(ctx).edit().putString("voz_nombre", n).apply() }
+
+    /** Velocidad de la voz (1.0 = normal). */
+    fun velocidadVoz(ctx: Context): Float = p(ctx).getFloat("voz_velocidad", 1.0f)
+
+    fun fijarVelocidadVoz(ctx: Context, v: Float) { p(ctx).edit().putFloat("voz_velocidad", v).apply() }
+
+    /** Tono de la voz (1.0 = normal; menos = más grave). */
+    fun tonoVoz(ctx: Context): Float = p(ctx).getFloat("voz_tono", 1.0f)
+
+    fun fijarTonoVoz(ctx: Context, v: Float) { p(ctx).edit().putFloat("voz_tono", v).apply() }
 
     fun fijarHilos(ctx: Context, n: Int) { p(ctx).edit().putInt("hilos", n).apply() }
     fun fijarHilosLectura(ctx: Context, n: Int) { p(ctx).edit().putInt("hilos_lectura", n).apply() }

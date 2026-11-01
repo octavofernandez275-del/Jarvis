@@ -100,6 +100,7 @@ object Assistant {
         voiceOut = VoiceOutput(app)
         voiceOut.onProblem = { msg -> toast(msg) }
         voiceOut.onIdle = { alTerminarDeHablar() }
+        voiceOut.preparar()                    // carga la lista de voces disponibles para poder elegir
 
         voiceIn = VoiceInput(app)
         voiceIn.onStart = { ui?.escuchando(true) }
@@ -171,6 +172,11 @@ object Assistant {
                 EngineManager.soltar()
             }
         }.start()
+    }
+
+    /** Carga el motor en segundo plano si el modelo ya está descargado (arranque del teléfono, reinicio del servicio). */
+    fun arrancarSiHayModelo() {
+        if (Engine.modelFile(app).exists()) arrancar()
     }
 
     /** Al volver a la app: si el motor se apagó por inactividad, lo enciende en segundo plano. */
@@ -274,7 +280,8 @@ object Assistant {
         val vozEnVivo = Ajustes.vozEnVivo(app)
         // Por defecto la voz NO se prepara ni habla mientras el modelo escribe: así no le quita CPU
         if (vozEnVivo) voiceOut.preparar()
-        emitir("\nTú: $text\nJarvis: ")
+        // Modo por defecto: solo se muestra tu mensaje; la respuesta aparece COMPLETA cuando termina de generarse
+        emitir(if (vozEnVivo) "\nTú: $text\nJarvis: " else "\nTú: $text\n")
         history.add("user" to text)
         recortarHistorial()
         val msgs = listOf("system" to systemPrompt()) + history
@@ -298,8 +305,10 @@ object Assistant {
                     if (tokens == 0) tPrimero = SystemClock.elapsedRealtime()
                     tokens++
                     reply.append(t)
-                    emitir(t)
-                    if (vozEnVivo) voiceOut.feed(ticket, t) // solo en modo "voz en vivo": se habla frase por frase
+                    if (vozEnVivo) {                        // modo "en vivo": el texto aparece y se habla a medida que llega
+                        emitir(t)
+                        voiceOut.feed(ticket, t)
+                    }
                 }
             } catch (e: Cancelado) {
                 cancelado = true
@@ -312,10 +321,13 @@ object Assistant {
             } else if (cancelado && history.isNotEmpty()) {
                 history.removeAt(history.lastIndex)  // no dejar un "user" suelto
             }
-            // Modo por defecto: con la respuesta completa, recién ahora empieza el audio (de corrido, sin pausas)
-            if (!vozEnVivo && !cancelado && reply.isNotEmpty()) voiceOut.feed(ticket, reply.toString())
+            if (!vozEnVivo && reply.isNotEmpty()) {
+                // Modo por defecto: primero se muestra la respuesta completa y recién entonces empieza la voz (de corrido)
+                emitirYa("Jarvis: " + reply.toString().trim() + (if (cancelado) " […]" else "") + "\n")
+                if (!cancelado) voiceOut.feed(ticket, reply.toString())
+            }
             voiceOut.endReply(ticket)                       // habla lo que quede (si no se cortó)
-            emitir("\n")
+            if (vozEnVivo) emitir("\n")
             if (tokens > 0 && !cancelado) mostrarMedicion(tListo - t0, tPrimero - tListo, SystemClock.elapsedRealtime() - tPrimero, tokens)
             generando = false
             EngineManager.soltar()
@@ -434,6 +446,16 @@ object Assistant {
             if (flushProgramado) false else { flushProgramado = true; true }
         }
         if (programar) main.postDelayed(flushUi, 120)
+    }
+
+    /** Muestra el texto YA (sin esperar la tanda): se usa para la respuesta completa, que debe verse antes de que empiece la voz. */
+    private fun emitirYa(t: String) {
+        synchronized(bufferUi) {
+            bufferUi.append(t)
+            flushProgramado = true
+        }
+        main.removeCallbacks(flushUi)
+        main.post(flushUi)
     }
 
     // ---------- Después de hablar ----------
