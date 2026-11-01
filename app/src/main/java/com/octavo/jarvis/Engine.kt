@@ -110,6 +110,16 @@ object Engine {
         pb.redirectErrorStream(true)
         val p = pb.start()
         proc = p
+        // Prioridad baja (nice 9): la pantalla y el teclado siempre pasan primero. Se repite unos segundos
+        // porque el servidor va creando hilos; los que crea después heredan la prioridad del hilo principal.
+        if (Ajustes.prioridadBaja(ctx)) {
+            Thread {
+                try {
+                    for (i in 1..30) { Thread.sleep(100); bajarPrioridad() }
+                } catch (_: Exception) {
+                }
+            }.start()
+        }
         Thread {
             // Al detener el servidor se cierra su salida y esta lectura lanza una excepción;
             // sin este try/catch esa excepción cerraba toda la app.
@@ -134,6 +144,27 @@ object Engine {
             Thread.sleep(1000)
         }
         return false
+    }
+
+    /** Baja a nice 9 todos los hilos del servidor del modelo (solo ve y toca procesos de la propia app). */
+    fun bajarPrioridad() {
+        try {
+            File("/proc").listFiles()?.forEach { d ->
+                val pid = d.name.toIntOrNull() ?: return@forEach
+                if (pid == android.os.Process.myPid()) return@forEach
+                val cmd = try {
+                    File(d, "cmdline").inputStream().use { String(it.readBytes(), Charsets.ISO_8859_1) }
+                } catch (e: Exception) {
+                    return@forEach
+                }
+                if (!cmd.contains("libllama_server")) return@forEach
+                File(d, "task").listFiles()?.forEach { t ->
+                    val tid = t.name.toIntOrNull() ?: return@forEach
+                    try { android.os.Process.setThreadPriority(tid, 9) } catch (_: Exception) {}
+                }
+            }
+        } catch (_: Exception) {
+        }
     }
 
     fun stop() { proc?.destroyForcibly(); proc = null }   // cierre inmediato: libera el puerto y la RAM al instante

@@ -157,6 +157,7 @@ object Assistant {
                 }
                 modeloListo = true
                 main.post { ui?.habilitar() }     // ya se puede escribir mientras el motor carga
+                Thread.sleep(600)                 // deja que la pantalla termine de dibujarse antes de la carga pesada
                 if (EngineManager.asegurar(app) { estado("Cargando el motor… ya puedes escribir, respondo apenas termine") }) {
                     listo = true
                     estado("Jarvis listo")
@@ -291,6 +292,7 @@ object Assistant {
                 // Si el motor se apagó por inactividad, aquí se vuelve a encender
                 if (!EngineManager.asegurar(app) { estado(it) }) throw Exception("el motor no arrancó")
                 tListo = SystemClock.elapsedRealtime()
+                estado("Respondiendo…")
                 Chat.stream(msgs) { t ->
                     if (miGen != genId) throw Cancelado()   // el usuario interrumpió
                     if (tokens == 0) tPrimero = SystemClock.elapsedRealtime()
@@ -408,12 +410,30 @@ object Assistant {
     }
 
     /** Agrega texto a la conversación y lo muestra si la pantalla está a la vista. */
-    private fun emitir(t: String) {
-        main.post {
+    // El texto que llega token a token se junta y se pasa a la pantalla cada ~120 ms:
+    // menos trabajo para el hilo principal, y el teclado no se siente lento mientras Jarvis escribe.
+    private val bufferUi = StringBuilder()
+    private var flushProgramado = false
+    private val flushUi = Runnable {
+        val t = synchronized(bufferUi) {
+            val s = bufferUi.toString()
+            bufferUi.setLength(0)
+            flushProgramado = false
+            s
+        }
+        if (t.isNotEmpty()) {
             transcript.append(t)
             if (transcript.length > 20_000) transcript.delete(0, transcript.length - 15_000)
             ui?.texto(t)
         }
+    }
+
+    private fun emitir(t: String) {
+        val programar = synchronized(bufferUi) {
+            bufferUi.append(t)
+            if (flushProgramado) false else { flushProgramado = true; true }
+        }
+        if (programar) main.postDelayed(flushUi, 120)
     }
 
     // ---------- Después de hablar ----------

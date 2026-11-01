@@ -58,6 +58,8 @@ object Commands {
     private val rxMotorSiempre = Regex("""^(?:manten(?: el motor)? (?:encendido|prendido|activo)|manten el motor|no apagues(?: el motor)?|motor siempre encendido)$""")
     private val rxMotorTiempo = Regex("""^(?:apaga|apagar) el motor (?:tras|despues de|a los|en) (\d{1,3}) (?:minutos?|min)$""")
 
+    private val rxPrioridadBaja = Regex("""^(?:usa |pon )?prioridad baja$""")
+    private val rxPrioridadNormal = Regex("""^(?:usa |pon )?prioridad normal$""")
     private val rxNucleosRapidos = Regex("""^(?:usa |pon |fija )?(?:los )?nucleos rapidos$""")
     private val rxNucleosTodos = Regex("""^(?:usa |pon )?(?:todos los nucleos|nucleos libres|sin fijar nucleos)$""")
 
@@ -210,6 +212,16 @@ object Commands {
     // ---------- Núcleos del procesador ----------
 
     private fun nucleos(ctx: Context, f: String): Reply? {
+        if (rxPrioridadBaja.matches(f)) {
+            Ajustes.fijarPrioridadBaja(ctx, true)
+            EngineManager.apagarYa()
+            return Reply("Listo: el modelo trabaja con prioridad baja, así la pantalla y el teclado van fluidos. $AVISO_REINICIO")
+        }
+        if (rxPrioridadNormal.matches(f)) {
+            Ajustes.fijarPrioridadBaja(ctx, false)
+            EngineManager.apagarYa()
+            return Reply("Listo: el modelo trabaja con prioridad normal. Puede ser más rápido, pero el teclado se puede sentir lento. $AVISO_REINICIO")
+        }
         if (rxNucleosRapidos.matches(f)) {
             val c = Cpu.rapidos() ?: return Reply("No pude distinguir los núcleos rápidos de este teléfono.")
             Ajustes.fijarHilos(ctx, minOf(c.cantidad, Ajustes.maxHilos()))

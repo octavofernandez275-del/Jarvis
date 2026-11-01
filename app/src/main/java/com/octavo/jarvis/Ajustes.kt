@@ -4,7 +4,7 @@ import android.content.Context
 
 /**
  * Ajustes de rendimiento del motor que se cambian con comandos ("hilos 4"), sin recompilar.
- * Por defecto: 6 hilos fijados a los núcleos más rápidos, dejando 2 núcleos libres para Android, la voz y la pantalla.
+ * Por defecto: 6 hilos con PRIORIDAD BAJA (la pantalla y el teclado siempre tienen preferencia) y sin fijar núcleos.
  * Los lee Engine.start() al arrancar el servidor.
  */
 object Ajustes {
@@ -47,8 +47,13 @@ object Ajustes {
         return if (t > 0) minOf(t, maxHilos()) else 0
     }
 
-    /** true (por defecto): los hilos se fijan a los núcleos más rápidos. false: Android los reparte como quiera. */
-    fun nucleosFijos(ctx: Context): Boolean = p(ctx).getBoolean("nucleos_fijos", true)
+    /** false (por defecto): Android reparte los hilos. true: se fijan a los núcleos más rápidos (puede dejar lenta la pantalla). */
+    fun nucleosFijos(ctx: Context): Boolean = p(ctx).getBoolean("nucleos_fijos", false)
+
+    /** true (por defecto): el servidor del modelo trabaja con prioridad baja, así el teclado y la pantalla van fluidos. */
+    fun prioridadBaja(ctx: Context): Boolean = p(ctx).getBoolean("prioridad_baja", true)
+
+    fun fijarPrioridadBaja(ctx: Context, v: Boolean) { p(ctx).edit().putBoolean("prioridad_baja", v).apply() }
 
     fun fijarNucleosFijos(ctx: Context, v: Boolean) { p(ctx).edit().putBoolean("nucleos_fijos", v).apply() }
 

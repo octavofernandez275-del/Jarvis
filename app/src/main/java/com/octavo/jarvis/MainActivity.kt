@@ -81,7 +81,7 @@ class MainActivity : Activity(), Assistant.Ui {
         Assistant.ui = this
         Assistant.visible = true
         // Repintar lo ocurrido mientras la pantalla no estaba a la vista
-        chatText.text = Assistant.transcript.toString()
+        chatText.text = Assistant.transcript.toString().takeLast(8_000)
         scroll.post { scroll.fullScroll(ScrollView.FOCUS_DOWN) }
         status.text = Assistant.estadoTexto
         manosLibres(HandsFree.activo)
@@ -163,6 +163,8 @@ class MainActivity : Activity(), Assistant.Ui {
 
     override fun texto(t: String) {
         chatText.append(t)
+        // Un texto enorme vuelve lenta la pantalla y el teclado: en pantalla solo queda lo último
+        if (chatText.length() > 12_000) chatText.text = chatText.text.toString().takeLast(8_000)
         scroll.post { scroll.fullScroll(ScrollView.FOCUS_DOWN) }
     }
 
