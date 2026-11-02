@@ -77,6 +77,11 @@ object Ajustes {
 
     fun fijarTonoVoz(ctx: Context, v: Float) { p(ctx).edit().putFloat("voz_tono", v).apply() }
 
+    /** true (por defecto): el reactor de la pantalla está animado. false: queda quieto (ahorra batería). */
+    fun animacion(ctx: Context): Boolean = p(ctx).getBoolean("animacion", true)
+
+    fun fijarAnimacion(ctx: Context, v: Boolean) { p(ctx).edit().putBoolean("animacion", v).apply() }
+
     fun fijarHilos(ctx: Context, n: Int) { p(ctx).edit().putInt("hilos", n).apply() }
     fun fijarHilosLectura(ctx: Context, n: Int) { p(ctx).edit().putInt("hilos_lectura", n).apply() }
 }

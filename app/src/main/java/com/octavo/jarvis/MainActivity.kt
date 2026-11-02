@@ -4,18 +4,30 @@ import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.ColorStateList
+import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.StateListDrawable
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.text.SpannableStringBuilder
+import android.text.Spanned
+import android.text.style.ForegroundColorSpan
+import android.text.style.StyleSpan
 import android.view.Gravity
+import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.*
 
 /**
- * Pantalla de Jarvis. Solo muestra y recoge toques: el cerebro está en Assistant,
- * así la conversación y el manos libres siguen aunque esta pantalla se cierre.
+ * Pantalla de Jarvis: fondo oscuro, reactor azul con acentos rojos y botones con borde de neón.
+ * Solo muestra y recoge toques: el cerebro está en Assistant, así la conversación y el manos libres
+ * siguen aunque esta pantalla se cierre.
  */
 class MainActivity : Activity(), Assistant.Ui {
+    private lateinit var reactor: ReactorView
     private lateinit var status: TextView
     private lateinit var chatText: TextView
     private lateinit var scroll: ScrollView
@@ -26,52 +38,134 @@ class MainActivity : Activity(), Assistant.Ui {
     private lateinit var batBtn: Button
     private var pidioNotificaciones = false
 
+    private fun dp(n: Int) = (n * resources.displayMetrics.density).toInt()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Assistant.iniciar(this)
-        val pad = (12 * resources.displayMetrics.density).toInt()
+        window.statusBarColor = ReactorView.FONDO
+        window.navigationBarColor = ReactorView.FONDO
 
-        status = TextView(this).apply { textSize = 13f; setPadding(pad, pad, pad, pad) }
-        chatText = TextView(this).apply { textSize = 16f; setPadding(pad, pad, pad, pad) }
-        scroll = ScrollView(this).apply { addView(chatText) }
+        reactor = ReactorView(this)
+        status = TextView(this).apply {
+            textSize = 12f
+            typeface = Typeface.MONOSPACE
+            setTextColor(ReactorView.AZUL_CLARO)
+            gravity = Gravity.CENTER
+            setPadding(dp(12), dp(2), dp(12), dp(6))
+        }
+        chatText = TextView(this).apply {
+            textSize = 16f
+            setTextColor(ReactorView.TEXTO)
+            setLineSpacing(dp(3).toFloat(), 1f)
+            setPadding(dp(14), dp(8), dp(14), dp(8))
+        }
+        scroll = ScrollView(this).apply {
+            isVerticalScrollBarEnabled = false
+            addView(chatText)
+        }
         input = EditText(this).apply {
             hint = HINT
             isEnabled = false
             imeOptions = EditorInfo.IME_ACTION_SEND
             maxLines = 4
+            setTextColor(Color.WHITE)
+            setHintTextColor(Color.argb(140, 159, 232, 255))
+            setPadding(dp(14), dp(10), dp(14), dp(10))
+            background = GradientDrawable().apply {
+                cornerRadius = dp(14).toFloat()
+                setColor(Color.argb(60, 24, 182, 255))
+                setStroke(dp(2), Color.argb(170, 24, 182, 255))
+            }
         }
         micBtn = Button(this).apply { text = MIC; isEnabled = false }
         sendBtn = Button(this).apply { text = "Enviar"; isEnabled = false }
-        val row = LinearLayout(this).apply {
+        val fila1 = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(pad, 0, pad, 0)
+            setPadding(dp(10), dp(4), dp(10), dp(4))
             addView(input, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-            addView(micBtn)
-            addView(sendBtn)
+            addView(micBtn, botonParams())
+            addView(sendBtn, botonParams())
         }
         handsBtn = Button(this).apply { text = MANOS_OFF; isEnabled = false }
         batBtn = Button(this).apply { text = "🔋 Batería" }
-        val row2 = LinearLayout(this).apply {
+        val fila2 = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            setPadding(pad, 0, pad, pad)
-            addView(handsBtn, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+            setPadding(dp(10), 0, dp(10), dp(10))
+            addView(handsBtn, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { rightMargin = dp(6) })
             addView(batBtn, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
         }
+        estilo(micBtn, ReactorView.AZUL)
+        estilo(sendBtn, ReactorView.AZUL)
+        estilo(handsBtn, ReactorView.AZUL)
+        estilo(batBtn, ReactorView.AZUL)
+
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
+            setBackgroundColor(ReactorView.FONDO)
+            addView(reactor, LinearLayout.LayoutParams(-1, dp(130)))
             addView(status)
             addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
-            addView(row)
-            addView(row2)
+            addView(fila1)
+            addView(fila2)
         }
         setContentView(root)
+
+        // Con el teclado abierto no queda lugar para el reactor: se oculta hasta que se cierre
+        root.viewTreeObserver.addOnGlobalLayoutListener {
+            val bajo = root.height < resources.displayMetrics.heightPixels * 0.62
+            reactor.visibility = if (bajo) View.GONE else View.VISIBLE
+        }
 
         sendBtn.setOnClickListener { send() }
         micBtn.setOnClickListener { onMicClick() }
         handsBtn.setOnClickListener { onManosLibres() }
         batBtn.setOnClickListener { ahorroBateria() }
         input.setOnEditorActionListener { _, id, _ -> if (id == EditorInfo.IME_ACTION_SEND) { send(); true } else false }
+    }
+
+    private fun botonParams() = LinearLayout.LayoutParams(
+        LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT
+    ).apply { leftMargin = dp(6) }
+
+    /** Botón con borde de neón del color de acento (azul o rojo). */
+    private fun estilo(b: Button, acento: Int) {
+        val rojo = Color.red(acento)
+        val verde = Color.green(acento)
+        val azul = Color.blue(acento)
+        fun caja(relleno: Int, borde: Int) = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = dp(14).toFloat()
+            setColor(relleno)
+            setStroke(dp(2), borde)
+        }
+        b.background = StateListDrawable().apply {
+            addState(intArrayOf(-android.R.attr.state_enabled), caja(Color.argb(10, rojo, verde, azul), Color.argb(70, rojo, verde, azul)))
+            addState(intArrayOf(android.R.attr.state_pressed), caja(Color.argb(120, rojo, verde, azul), ReactorView.AZUL_CLARO))
+            addState(intArrayOf(), caja(Color.argb(35, rojo, verde, azul), acento))
+        }
+        b.setTextColor(
+            ColorStateList(
+                arrayOf(intArrayOf(-android.R.attr.state_enabled), intArrayOf()),
+                intArrayOf(Color.argb(110, 255, 255, 255), Color.WHITE)
+            )
+        )
+        b.isAllCaps = false
+        b.stateListAnimator = null
+        b.setPadding(dp(12), dp(8), dp(12), dp(8))
+    }
+
+    /** Colorea las etiquetas de la conversación: "Tú:" en rojo y "Jarvis:" en azul. */
+    private fun coloreado(s: String): CharSequence {
+        val sb = SpannableStringBuilder(s)
+        for (m in ETIQUETA.findAll(s)) {
+            val color = if (m.groupValues[1] == "Tú") ReactorView.ROJO else ReactorView.AZUL
+            val fin = m.range.last + 1
+            sb.setSpan(ForegroundColorSpan(color), m.range.first, fin, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            sb.setSpan(StyleSpan(Typeface.BOLD), m.range.first, fin, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
+        return sb
     }
 
     // ---------- Ciclo de vida ----------
@@ -81,7 +175,7 @@ class MainActivity : Activity(), Assistant.Ui {
         Assistant.ui = this
         Assistant.visible = true
         // Repintar lo ocurrido mientras la pantalla no estaba a la vista
-        chatText.text = Assistant.transcript.toString().takeLast(8_000)
+        chatText.text = coloreado(Assistant.transcript.toString().takeLast(8_000))
         scroll.post { scroll.fullScroll(ScrollView.FOCUS_DOWN) }
         status.text = Assistant.estadoTexto
         manosLibres(HandsFree.activo)
@@ -162,9 +256,9 @@ class MainActivity : Activity(), Assistant.Ui {
     // ---------- Assistant.Ui (siempre en el hilo principal) ----------
 
     override fun texto(t: String) {
-        chatText.append(t)
+        chatText.append(coloreado(t))
         // Un texto enorme vuelve lenta la pantalla y el teclado: en pantalla solo queda lo último
-        if (chatText.length() > 12_000) chatText.text = chatText.text.toString().takeLast(8_000)
+        if (chatText.length() > 12_000) chatText.text = coloreado(chatText.text.toString().takeLast(8_000))
         scroll.post { scroll.fullScroll(ScrollView.FOCUS_DOWN) }
     }
 
@@ -172,6 +266,7 @@ class MainActivity : Activity(), Assistant.Ui {
 
     override fun escuchando(on: Boolean) {
         micBtn.text = if (on) STOP else MIC
+        estilo(micBtn, if (on) ReactorView.ROJO else ReactorView.AZUL)   // rojo mientras escucha
         input.hint = if (on) "Escuchando…" else HINT
     }
 
@@ -182,6 +277,7 @@ class MainActivity : Activity(), Assistant.Ui {
 
     override fun manosLibres(on: Boolean) {
         handsBtn.text = if (on) MANOS_ON else MANOS_OFF
+        estilo(handsBtn, if (on) ReactorView.ROJO else ReactorView.AZUL)
     }
 
     override fun habilitar() {
@@ -205,5 +301,6 @@ class MainActivity : Activity(), Assistant.Ui {
         const val HINT = "Escribe a Jarvis…"
         const val MANOS_OFF = "🎧 Manos libres: OFF"
         const val MANOS_ON = "🎧 Manos libres: ON"
+        val ETIQUETA = Regex("""(?m)^(Tú|Jarvis):""")
     }
 }

@@ -61,6 +61,8 @@ object Commands {
     private val rxVozAguda = Regex("""^voz mas aguda$""")
     private val rxVozNormal = Regex("""^voz normal$""")
     private val rxVozAjustes = Regex("""^(?:abre |abrir )?ajustes de (?:la )?voz$""")
+    private val rxAnimacionNo = Regex("""^(?:apaga|desactiva|quita) (?:la )?animacion(?: del reactor)?$""")
+    private val rxAnimacionSi = Regex("""^(?:enciende|prende|activa|pon) (?:la )?animacion(?: del reactor)?$""")
     private val rxVozFinal = Regex("""^(?:voz al final|(?:habla|lee|di|dictalo) (?:todo )?(?:al terminar|al final|despues de escribir|despues de responder))$""")
     private val rxVozVivo = Regex("""^(?:voz en vivo|(?:habla|lee|di|dictalo) (?:mientras (?:escribes|respondes|generas)|en vivo))$""")
 
@@ -161,6 +163,7 @@ object Commands {
             ?: rendimiento(ctx, f)
             ?: vozModo(ctx, f)
             ?: voz(ctx, f)
+            ?: animacion(ctx, f)
             ?: motorModo(ctx, f)
             ?: nucleos(ctx, f)
             ?: memoria(ctx, orig, f)
@@ -333,6 +336,20 @@ object Commands {
                 "Abriendo los ajustes de voz del teléfono, donde puedes instalar otras voces.",
                 despues = { lanzar(ctx, Intent("com.android.settings.TTS_SETTINGS")) }
             )
+        }
+        return null
+    }
+
+    // ---------- Animación del reactor ----------
+
+    private fun animacion(ctx: Context, f: String): Reply? {
+        if (rxAnimacionNo.matches(f)) {
+            Ajustes.fijarAnimacion(ctx, false)
+            return Reply("Listo: el reactor queda quieto para ahorrar batería.")
+        }
+        if (rxAnimacionSi.matches(f)) {
+            Ajustes.fijarAnimacion(ctx, true)
+            return Reply("Listo: el reactor vuelve a moverse.")
         }
         return null
     }
