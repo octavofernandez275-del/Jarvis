@@ -33,6 +33,9 @@ class JarvisService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         // Obligatorio llamar a startForeground enseguida
         foreground(intent?.getBooleanExtra(EXTRA_MIC, HandsFree.activo) ?: HandsFree.activo)
+        if (intent?.getBooleanExtra(EXTRA_ARRANCAR, false) == true) {
+            Assistant.arrancar()
+        }
         when (intent?.action) {
             ACCION_DETENER -> apagarTodo()
             ACCION_INTERRUMPIR -> Assistant.interrupt()
@@ -116,6 +119,7 @@ class JarvisService : Service() {
         const val ACCION_DETENER = "com.octavo.jarvis.DETENER"
         const val ACCION_INTERRUMPIR = "com.octavo.jarvis.INTERRUMPIR"
         const val EXTRA_MIC = "mic"
+        const val EXTRA_ARRANCAR = "arrancar"
         const val CANAL_SERVICIO = "jarvis_servicio"
         const val CANAL_ACCIONES = "jarvis_acciones"
         private const val ID = 1
@@ -123,10 +127,12 @@ class JarvisService : Service() {
         @Volatile var instancia: JarvisService? = null
 
         /** Arranca el servicio (llamar con la app visible). */
-        fun iniciar(ctx: Context, microfono: Boolean) {
+        fun iniciar(ctx: Context, microfono: Boolean, arrancar: Boolean = false) {
             try {
                 ctx.startForegroundService(
-                    Intent(ctx, JarvisService::class.java).putExtra(EXTRA_MIC, microfono)
+                    Intent(ctx, JarvisService::class.java)
+                        .putExtra(EXTRA_MIC, microfono)
+                        .putExtra(EXTRA_ARRANCAR, arrancar)
                 )
             } catch (e: Exception) {
                 // Si Android no deja arrancarlo (app en segundo plano), la app sigue sin servicio

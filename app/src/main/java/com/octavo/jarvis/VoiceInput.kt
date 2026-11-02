@@ -34,6 +34,7 @@ class VoiceInput(context: Context) {
     var onPartial: ((String) -> Unit)? = null  // texto parcial mientras habla
     var onResult: ((String) -> Unit)? = null   // texto final
     var onError: ((String) -> Unit)? = null    // mensaje para mostrar al usuario
+    var onNoSpeech: (() -> Unit)? = null       // silencio o ausencia de voz reconocible
     var onEnd: (() -> Unit)? = null            // terminó de escuchar, pase lo que pase
 
     fun isAvailable() = SpeechRecognizer.isRecognitionAvailable(app)
@@ -124,7 +125,12 @@ class VoiceInput(context: Context) {
         override fun onError(error: Int) {
             if (mine != session) return
             end()
-            mensaje(error)?.let { onError?.invoke(it) }
+            if (error == SpeechRecognizer.ERROR_NO_MATCH ||
+                error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT) {
+                onNoSpeech?.invoke()
+            } else {
+                mensaje(error)?.let { onError?.invoke(it) }
+            }
         }
     }
 }
