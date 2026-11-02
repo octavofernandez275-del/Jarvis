@@ -33,7 +33,6 @@ class VoiceInput(context: Context) {
     var onSpeechStart: (() -> Unit)? = null    // el usuario empezó a hablar (para cortar la voz de Jarvis)
     var onPartial: ((String) -> Unit)? = null  // texto parcial mientras habla
     var onResult: ((String) -> Unit)? = null   // texto final
-    var onNoSpeech: (() -> Unit)? = null       // no se oyó voz (si es null, se avisa por onError)
     var onError: ((String) -> Unit)? = null    // mensaje para mostrar al usuario
     var onEnd: (() -> Unit)? = null            // terminó de escuchar, pase lo que pase
 
@@ -125,11 +124,6 @@ class VoiceInput(context: Context) {
         override fun onError(error: Int) {
             if (mine != session) return
             end()
-            val sinVoz = onNoSpeech
-            if ((error == SpeechRecognizer.ERROR_NO_MATCH || error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT) && sinVoz != null) {
-                sinVoz()
-                return
-            }
             mensaje(error)?.let { onError?.invoke(it) }
         }
     }

@@ -8,7 +8,6 @@ import android.os.Handler
 import android.os.Looper
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
-import android.speech.tts.Voice
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -60,16 +59,6 @@ class VoiceOutput(context: Context) {
 
     /** Solo hilo principal. */
     val isSpeaking: Boolean get() = pending > 0 || waiting.isNotEmpty()
-
-    /** Prepara el motor de voz mientras el modelo piensa, para que la primera frase salga sin esperar. */
-    fun preparar() {
-        main.post {
-            if (broken || ready || initializing) return@post
-            main.removeCallbacks(releaseTask)
-            initTts()
-            scheduleRelease()   // si al final no se habla, se libera solo
-        }
-    }
 
     /** Empieza una respuesta nueva (corta cualquier voz anterior). Devuelve el "ticket" para feed/endReply. */
     fun startReply(): Int {
@@ -172,74 +161,11 @@ class VoiceOutput(context: Context) {
             return
         }
         t.setLanguage(idioma)
-        cargarVoces(t)                                   // lista de voces en español para poder elegir
-        aplicarVoz(t)                                    // la voz elegida (si hay una)
-        t.setSpeechRate(Ajustes.velocidadVoz(app))
-        t.setPitch(Ajustes.tonoVoz(app))
         t.setAudioAttributes(attrs)
         t.setOnUtteranceProgressListener(listener)
         ready = true
         while (waiting.isNotEmpty()) speakNow(waiting.removeFirst())
         checkIdle()
-    }
-
-    // ---------- Elegir la voz ----------
-
-    @Volatile private var vocesEs: List<String> = emptyList()      // nombres internos de las voces en español
-    @Volatile private var etiquetas: List<String> = emptyList()    // cómo se muestran: "México", "Estados Unidos (con internet)"
-    @Volatile private var vozActual: String? = null
-
-    /** Voces en español instaladas, listas para mostrar. Se llena al iniciar el motor de voz. */
-    fun listaVoces(): List<String> = etiquetas
-
-    /** Posición (0 = la primera) de la voz que se usa ahora, o -1 si no se sabe. */
-    fun indiceVozActual(): Int = vocesEs.indexOf(vozActual ?: Ajustes.vozNombre(app))
-
-    /** Elige la voz número i (desde 0) y la guarda. Se aplica enseguida o, si el motor de voz está apagado, al iniciarlo. */
-    fun elegirVoz(i: Int): Boolean {
-        val nombre = vocesEs.getOrNull(i) ?: return false
-        Ajustes.fijarVozNombre(app, nombre)
-        runMain {
-            val t = tts
-            if (ready && t != null) aplicarVoz(t)
-        }
-        return true
-    }
-
-    /** Aplica la velocidad y el tono guardados (después de cambiarlos con un comando). */
-    fun ajustarVoz() {
-        runMain {
-            val t = tts
-            if (ready && t != null) {
-                t.setSpeechRate(Ajustes.velocidadVoz(app))
-                t.setPitch(Ajustes.tonoVoz(app))
-            }
-        }
-    }
-
-    private fun cargarVoces(t: TextToSpeech) {
-        try {
-            val lista = (t.voices ?: emptySet<Voice>())
-                .filter { it.locale.language == "es" }
-                .sortedWith(compareBy<Voice>({ it.isNetworkConnectionRequired }, { it.locale.country }, { it.name }))
-            vocesEs = lista.map { it.name }
-            etiquetas = lista.map { v ->
-                val pais = v.locale.getDisplayCountry(Locale("es")).ifEmpty { v.locale.country.ifEmpty { "español" } }
-                if (v.isNetworkConnectionRequired) "$pais (con internet)" else pais
-            }
-        } catch (e: Exception) {
-        }
-    }
-
-    private fun aplicarVoz(t: TextToSpeech) {
-        try {
-            val nombre = Ajustes.vozNombre(app)
-            if (nombre.isNotEmpty()) {
-                t.voices?.firstOrNull { it.name == nombre }?.let { t.setVoice(it) }
-            }
-            vozActual = t.voice?.name
-        } catch (e: Exception) {
-        }
     }
 
     /** Error de voz: avisa una sola vez por respuesta y descarta el resto. */

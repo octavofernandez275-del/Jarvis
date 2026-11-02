@@ -45,37 +45,6 @@ object Commands {
 
     private val rxAyuda = Regex("""^(?:que puedes hacer|que sabes hacer|ayuda|comandos|que comandos (?:tienes|hay))$""")
 
-    private val rxNueva = Regex("""^(?:nueva conversacion|empecemos de nuevo|empezar de nuevo|reinicia la conversacion|olvida la conversacion|borra la conversacion|olvidemos la conversacion)$""")
-
-    // Rendimiento del motor (para probar qué configuración es más rápida)
-    private val rxHilos = Regex("""^(?:usa |pon |ajusta )?(?:los )?hilos(?: de cpu)?(?: a| en)? (\d{1,2})$|^(?:usa |pon )?(\d{1,2}) hilos(?: de cpu)?$""")
-    private val rxHilosLectura = Regex("""^(?:usa |pon |ajusta )?hilos de lectura(?: a| en)? (\d{1,2}|igual)$""")
-    private val rxHilosPregunta = Regex("""^(?:cuantos hilos usas|que hilos usas|hilos actuales|cuantos hilos)$""")
-
-    private val rxVozCambiar = Regex("""^(?:cambia|cambiar|cambiame)(?: de)?(?: la)? voz$""")
-    private val rxVozNumero = Regex("""^(?:usa |pon )?(?:la )?voz (?:numero )?(\d{1,2})$""")
-    private val rxVozLista = Regex("""^(?:lista|dime|muestra)(?: las| mis)? voces$|^que voces (?:tienes|hay)$""")
-    private val rxVozRapida = Regex("""^(?:habla|hablas|lee) mas rapido$""")
-    private val rxVozLenta = Regex("""^(?:habla|hablas|lee) mas lento$""")
-    private val rxVozGrave = Regex("""^voz mas grave$""")
-    private val rxVozAguda = Regex("""^voz mas aguda$""")
-    private val rxVozNormal = Regex("""^voz normal$""")
-    private val rxVozAjustes = Regex("""^(?:abre |abrir )?ajustes de (?:la )?voz$""")
-    private val rxAnimacionNo = Regex("""^(?:apaga|desactiva|quita) (?:la )?animacion(?: del reactor)?$""")
-    private val rxAnimacionSi = Regex("""^(?:enciende|prende|activa|pon) (?:la )?animacion(?: del reactor)?$""")
-    private val rxVozFinal = Regex("""^(?:voz al final|(?:habla|lee|di|dictalo) (?:todo )?(?:al terminar|al final|despues de escribir|despues de responder))$""")
-    private val rxVozVivo = Regex("""^(?:voz en vivo|(?:habla|lee|di|dictalo) (?:mientras (?:escribes|respondes|generas)|en vivo))$""")
-
-    private val rxArranqueSi = Regex("""^(?:arranca|carga|prende)(?: el motor)? al (?:encender|prender)(?: el (?:celular|telefono))?$""")
-    private val rxArranqueNo = Regex("""^no (?:arranques|cargues|prendas)(?: el motor)? al (?:encender|prender)(?: el (?:celular|telefono))?$""")
-    private val rxMotorSiempre = Regex("""^(?:manten(?: el motor)? (?:encendido|prendido|activo)|manten el motor|no apagues(?: el motor)?|motor siempre encendido)$""")
-    private val rxMotorTiempo = Regex("""^(?:apaga|apagar) el motor (?:tras|despues de|a los|en) (\d{1,3}) (?:minutos?|min)$""")
-
-    private val rxPrioridadBaja = Regex("""^(?:usa |pon )?prioridad baja$""")
-    private val rxPrioridadNormal = Regex("""^(?:usa |pon )?prioridad normal$""")
-    private val rxNucleosRapidos = Regex("""^(?:usa |pon |fija )?(?:los )?nucleos rapidos$""")
-    private val rxNucleosTodos = Regex("""^(?:usa |pon )?(?:todos los nucleos|nucleos libres|sin fijar nucleos)$""")
-
     // Memoria
     private val rxRecuerda = Regex("""^(?:recuerda|recorda|acuerdate|anota|memoriza|guarda)(?: en tu memoria)?(?: que)?\s+(.+)$""")
     private val rxListar = Regex("""^(?:que (?:recuerdas|sabes|tienes anotado|tienes en tu memoria)(?: de mi| sobre mi)?|que sabes de mi|dime lo que (?:recuerdas|sabes)(?: de mi)?|muestra(?:me)? tu memoria|lee tu memoria)$""")
@@ -159,13 +128,6 @@ object Commands {
         }
 
         return ayuda(f)
-            ?: conversacion(f)
-            ?: rendimiento(ctx, f)
-            ?: vozModo(ctx, f)
-            ?: voz(ctx, f)
-            ?: animacion(ctx, f)
-            ?: motorModo(ctx, f)
-            ?: nucleos(ctx, f)
             ?: memoria(ctx, orig, f)
             ?: horaFecha(f)
             ?: bateria(ctx, f)
@@ -190,190 +152,6 @@ object Commands {
                 "controlar el volumen, la música y la linterna, decirte la hora, la fecha y la batería, " +
                 "buscar en internet, llevarte a un lugar y recordar cosas que me pidas."
         )
-    }
-
-    // ---------- Rendimiento ----------
-
-    private const val AVISO_MAX_HILOS = "Elige entre 1 y %d hilos: dejo 2 núcleos libres para que el teléfono no se sature."
-    private const val AVISO_REINICIO = "Reinicio el motor ahora; en unos 30 segundos estará listo."
-
-    private fun rendimiento(ctx: Context, f: String): Reply? {
-        if (rxHilosPregunta.matches(f)) {
-            val tb = Ajustes.hilosLecturaEfectivos(ctx)
-            return Reply(
-                "Uso ${Ajustes.hilosEfectivos(ctx)} hilos para generar y " +
-                    (if (tb > 0) "$tb" else "los mismos") + " para leer el texto."
-            )
-        }
-        rxHilosLectura.find(f)?.let { m ->
-            val v = m.groupValues[1]
-            val n = if (v == "igual") 0 else v.toInt()
-            if (v != "igual" && n !in 1..Ajustes.maxHilos()) return Reply(AVISO_MAX_HILOS.format(Ajustes.maxHilos()))
-            Ajustes.fijarHilosLectura(ctx, n)
-            EngineManager.reiniciarYa(ctx)
-            return Reply(
-                (if (n == 0) "Listo: leeré el texto con los mismos hilos." else "Listo: $n hilos para leer el texto.") +
-                    " $AVISO_REINICIO"
-            )
-        }
-        val m = rxHilos.find(f) ?: return null
-        val n = m.groupValues[1].ifEmpty { m.groupValues[2] }.toInt()
-        if (n !in 1..Ajustes.maxHilos()) return Reply(AVISO_MAX_HILOS.format(Ajustes.maxHilos()))
-        Ajustes.fijarHilos(ctx, n)
-        EngineManager.reiniciarYa(ctx)
-        return Reply("Listo: ahora uso $n hilos. $AVISO_REINICIO")
-    }
-
-    // ---------- Núcleos del procesador ----------
-
-    private fun nucleos(ctx: Context, f: String): Reply? {
-        if (rxPrioridadBaja.matches(f)) {
-            Ajustes.fijarPrioridadBaja(ctx, true)
-            EngineManager.reiniciarYa(ctx)
-            return Reply("Listo: el modelo trabaja con prioridad baja, así la pantalla y el teclado van fluidos. $AVISO_REINICIO")
-        }
-        if (rxPrioridadNormal.matches(f)) {
-            Ajustes.fijarPrioridadBaja(ctx, false)
-            EngineManager.reiniciarYa(ctx)
-            return Reply("Listo: el modelo trabaja con prioridad normal. Puede ser más rápido, pero el teclado se puede sentir lento. $AVISO_REINICIO")
-        }
-        if (rxNucleosRapidos.matches(f)) {
-            val c = Cpu.rapidos() ?: return Reply("No pude distinguir los núcleos rápidos de este teléfono.")
-            Ajustes.fijarHilos(ctx, minOf(c.cantidad, Ajustes.maxHilos()))
-            Ajustes.fijarNucleosFijos(ctx, true)
-            EngineManager.reiniciarYa(ctx)
-            return Reply("Detecté ${c.cantidad} núcleos rápidos de ${c.total}. Uso solo esos. $AVISO_REINICIO")
-        }
-        if (rxNucleosTodos.matches(f)) {
-            Ajustes.fijarNucleosFijos(ctx, false)
-            EngineManager.reiniciarYa(ctx)
-            return Reply("Listo: Android reparte los hilos entre todos los núcleos como quiera. $AVISO_REINICIO")
-        }
-        return null
-    }
-
-    // ---------- Cuándo se apaga el motor ----------
-
-    private fun motorModo(ctx: Context, f: String): Reply? {
-        if (rxArranqueSi.matches(f)) {
-            Ajustes.fijarArrancarAlEncender(ctx, true)
-            return Reply("Listo: cargaré el motor solo cuando enciendas el teléfono, para que ya esté listo.")
-        }
-        if (rxArranqueNo.matches(f)) {
-            Ajustes.fijarArrancarAlEncender(ctx, false)
-            return Reply("Listo: no cargaré el motor al encender el teléfono.")
-        }
-        if (rxMotorSiempre.matches(f)) {
-            Ajustes.fijarMinutosInactivo(ctx, 0)
-            return Reply("Listo: mantendré el motor encendido para responder al instante. Si Android necesita memoria, lo libero solo.")
-        }
-        val m = rxMotorTiempo.find(f) ?: return null
-        val n = m.groupValues[1].toInt()
-        if (n !in 1..240) return Reply("Elige entre 1 y 240 minutos.")
-        Ajustes.fijarMinutosInactivo(ctx, n)
-        return Reply("Listo: apagaré el motor tras $n minutos sin uso. Después, la primera respuesta tarda más.")
-    }
-
-    // ---------- La voz: elegir voz, velocidad y tono ----------
-
-    private const val SIN_VOCES = "Todavía no cargué las voces. Espera unos segundos y pregúntame de nuevo."
-
-    private fun voz(ctx: Context, f: String): Reply? {
-        val v = Assistant.voiceOut
-        if (rxVozLista.matches(f)) {
-            val l = v.listaVoces()
-            if (l.isEmpty()) return Reply(SIN_VOCES)
-            val actual = v.indiceVozActual()
-            return Reply(
-                "Tengo ${l.size} voces en español:\n" +
-                    l.mapIndexed { i, e -> "- ${i + 1}: $e" + if (i == actual) " (la actual)" else "" }.joinToString("\n")
-            )
-        }
-        if (rxVozCambiar.matches(f)) {
-            val l = v.listaVoces()
-            if (l.isEmpty()) return Reply(SIN_VOCES)
-            if (l.size == 1) return Reply("Solo tengo una voz en español instalada. Di ajustes de voz para instalar otras.")
-            val i = (v.indiceVozActual() + 1) % l.size
-            v.elegirVoz(i)
-            return Reply("Listo: ahora hablo con la voz ${i + 1}, ${l[i]}. Si no te gusta, di cambia la voz.")
-        }
-        rxVozNumero.find(f)?.let { m ->
-            val l = v.listaVoces()
-            if (l.isEmpty()) return Reply(SIN_VOCES)
-            val n = m.groupValues[1].toInt()
-            if (n !in 1..l.size) return Reply("Elige un número entre 1 y ${l.size}.")
-            v.elegirVoz(n - 1)
-            return Reply("Listo: ahora hablo con la voz $n, ${l[n - 1]}.")
-        }
-        if (rxVozRapida.matches(f)) {
-            Ajustes.fijarVelocidadVoz(ctx, (Ajustes.velocidadVoz(ctx) + 0.15f).coerceAtMost(2.0f))
-            v.ajustarVoz()
-            return Reply("Listo: hablo más rápido.")
-        }
-        if (rxVozLenta.matches(f)) {
-            Ajustes.fijarVelocidadVoz(ctx, (Ajustes.velocidadVoz(ctx) - 0.15f).coerceAtLeast(0.5f))
-            v.ajustarVoz()
-            return Reply("Listo: hablo más lento.")
-        }
-        if (rxVozGrave.matches(f)) {
-            Ajustes.fijarTonoVoz(ctx, (Ajustes.tonoVoz(ctx) - 0.1f).coerceAtLeast(0.5f))
-            v.ajustarVoz()
-            return Reply("Listo: mi voz es más grave.")
-        }
-        if (rxVozAguda.matches(f)) {
-            Ajustes.fijarTonoVoz(ctx, (Ajustes.tonoVoz(ctx) + 0.1f).coerceAtMost(1.5f))
-            v.ajustarVoz()
-            return Reply("Listo: mi voz es más aguda.")
-        }
-        if (rxVozNormal.matches(f)) {
-            Ajustes.fijarVelocidadVoz(ctx, 1.0f)
-            Ajustes.fijarTonoVoz(ctx, 1.0f)
-            v.ajustarVoz()
-            return Reply("Listo: velocidad y tono normales.")
-        }
-        if (rxVozAjustes.matches(f)) {
-            return Reply(
-                "Abriendo los ajustes de voz del teléfono, donde puedes instalar otras voces.",
-                despues = { lanzar(ctx, Intent("com.android.settings.TTS_SETTINGS")) }
-            )
-        }
-        return null
-    }
-
-    // ---------- Animación del reactor ----------
-
-    private fun animacion(ctx: Context, f: String): Reply? {
-        if (rxAnimacionNo.matches(f)) {
-            Ajustes.fijarAnimacion(ctx, false)
-            return Reply("Listo: el reactor queda quieto para ahorrar batería.")
-        }
-        if (rxAnimacionSi.matches(f)) {
-            Ajustes.fijarAnimacion(ctx, true)
-            return Reply("Listo: el reactor vuelve a moverse.")
-        }
-        return null
-    }
-
-    // ---------- Cuándo habla ----------
-
-    private fun vozModo(ctx: Context, f: String): Reply? {
-        if (rxVozFinal.matches(f)) {
-            Ajustes.fijarVozEnVivo(ctx, false)
-            return Reply("Listo: mostraré la respuesta completa cuando termine de generarse y recién entonces la leeré en voz alta.")
-        }
-        if (rxVozVivo.matches(f)) {
-            Ajustes.fijarVozEnVivo(ctx, true)
-            return Reply("Listo: el texto aparecerá y lo iré leyendo a medida que lo genero.")
-        }
-        return null
-    }
-
-    // ---------- Conversación ----------
-
-    private fun conversacion(f: String): Reply? {
-        if (!rxNueva.matches(f)) return null
-        Assistant.nuevaConversacion()
-        return Reply("Listo, empecemos de cero.")
     }
 
     // ---------- Memoria ----------
@@ -656,13 +434,8 @@ object Commands {
     // ---------- Lanzar otra app ----------
 
     private fun lanzar(ctx: Context, i: Intent) {
-        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        if (!Assistant.visible) {
-            // Android 10+ no deja abrir apps desde el segundo plano: se deja una notificación para tocar
-            Assistant.notificarAccion(i)
-            return
-        }
         try {
+            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             ctx.startActivity(i)
         } catch (e: Exception) {
             Toast.makeText(ctx, "No encontré una app para eso.", Toast.LENGTH_LONG).show()

@@ -65,7 +65,6 @@ class SentenceSplitter {
     private val buf = StringBuilder()   // texto recibido aún sin cortar
     private val acc = StringBuilder()   // frases limpias esperando alcanzar el largo mínimo
     private var enCodigo = false
-    private var primera = true      // la primera frase de la respuesta sale antes (menos espera para oír a Jarvis)
 
     fun feed(token: String): List<String> {
         buf.append(token)
@@ -79,7 +78,6 @@ class SentenceSplitter {
         buf.setLength(0)
         acc.setLength(0)
         enCodigo = false
-        primera = true
     }
 
     private fun drain(fin: Boolean): List<String> {
@@ -88,11 +86,9 @@ class SentenceSplitter {
         var i = 0
         while (i < buf.length) {
             val c = buf[i]
-            val sigueEspacio = i + 1 < buf.length && buf[i + 1].isWhitespace()
             val corte = c == '\n' ||
-                ((c == '.' || c == '!' || c == '?' || c == '…') && sigueEspacio) ||
-                // Solo en la primera frase: también se corta en coma, punto y coma o dos puntos
-                (primera && (c == ',' || c == ';' || c == ':') && sigueEspacio)
+                ((c == '.' || c == '!' || c == '?' || c == '…') &&
+                    i + 1 < buf.length && buf[i + 1].isWhitespace())
             if (corte) {
                 tomar(buf.substring(start, i + 1), out)
                 start = i + 1
@@ -124,14 +120,11 @@ class SentenceSplitter {
         if (c.isEmpty()) return
         // Un renglón de lista sin punto final: agregar punto para que haya pausa
         if (raw.endsWith("\n") && c.last().isLetterOrDigit()) c += "."
-        // La limpieza quita las comas del final; se devuelve una para que haya pausa al hablar
-        if (primera && raw.trimEnd().let { it.endsWith(",") || it.endsWith(";") || it.endsWith(":") }) c += ","
         if (acc.isNotEmpty()) acc.append(' ')
         acc.append(c)
-        if (acc.length >= (if (primera) MIN_PRIMERA else MIN_CHARS)) {
+        if (acc.length >= MIN_CHARS) {
             out.add(acc.toString())
             acc.setLength(0)
-            primera = false
         }
     }
 
@@ -151,7 +144,6 @@ class SentenceSplitter {
 
     private companion object {
         const val MIN_CHARS = 18
-        const val MIN_PRIMERA = 12
         const val MAX_CHARS = 220
     }
 }
