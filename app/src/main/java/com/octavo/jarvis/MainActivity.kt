@@ -12,7 +12,6 @@ class MainActivity : Activity() {
     private lateinit var scroll: ScrollView
     private lateinit var input: EditText
     private lateinit var sendBtn: Button
-    private lateinit var autopilotBtn: Button
 
     private val system = "Eres J.A.R.V.I.S., el asistente personal del usuario. " +
         "Hablas en español natural, con respuestas breves y directas. " +
@@ -25,10 +24,6 @@ class MainActivity : Activity() {
         val pad = (12 * resources.displayMetrics.density).toInt()
 
         status = TextView(this).apply { textSize = 13f; setPadding(pad, pad, pad, pad) }
-        autopilotBtn = Button(this).apply {
-            text = "◉  JARVIS AUTOPILOT"
-            setOnClickListener { startActivity(android.content.Intent(this@MainActivity, AutopilotActivity::class.java)) }
-        }
         chatText = TextView(this).apply { textSize = 16f; setPadding(pad, pad, pad, pad) }
         scroll = ScrollView(this).apply { addView(chatText) }
         input = EditText(this).apply {
@@ -47,7 +42,6 @@ class MainActivity : Activity() {
         }
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            addView(autopilotBtn, LinearLayout.LayoutParams(-1, LinearLayout.LayoutParams.WRAP_CONTENT))
             addView(status)
             addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
             addView(row)
