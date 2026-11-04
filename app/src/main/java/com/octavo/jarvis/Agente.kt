@@ -191,31 +191,38 @@ object Agente {
 
     // ---------- Reunir información ----------
 
-    /** Busca en Wikipedia y en la web; devuelve hasta 2 fuentes con texto y los enlaces encontrados. */
+    private fun dominio(u: String) = u.substringAfter("//").substringBefore('/').removePrefix("www.")
+
+    /** De un texto largo, las frases que más se parecen a la consulta (en su orden original), hasta `max` caracteres. */
+    private fun relevantes(texto: String, consulta: String, max: Int): String {
+        val claves = Parsers.fold(consulta).split(Regex("[^a-z0-9]+")).filter { it.length > 3 }.toSet()
+        val frases = texto.split(Regex("(?<=[.!?])\\s+")).filter { it.length > 40 }
+        if (frases.isEmpty()) return texto.take(max)
+        val orden = frases.indices.sortedWith(compareByDescending<Int> { i -> val fo = Parsers.fold(frases[i]); claves.count { fo.contains(it) } }.thenBy { it })
+        val elegidas = ArrayList<Int>()
+        var largo = 0
+        for (i in orden) {
+            if (largo + frases[i].length > max) continue
+            elegidas.add(i)
+            largo += frases[i].length + 1
+        }
+        return elegidas.sorted().joinToString(" ") { frases[it] }.ifEmpty { texto.take(max) }
+    }
+
+    /** Busca en toda la web a la vez (varios buscadores + Wikipedia), lee hasta 5 páginas en paralelo y las devuelve completas. */
     private fun reunirFuentes(ctx: Context, id: Long, q: String): Pair<List<Fuente>, List<String>> {
-        log(ctx, id, "Buscando en Wikipedia: $q")
-        val wiki = try { Web.buscarWikipedia(q, 2) } catch (e: Exception) {
-            log(ctx, id, "Wikipedia no respondió (${e.message})"); emptyList()
+        log(ctx, id, "Buscando en toda la web: $q")
+        val res = try { Web.buscarTodo(listOf(q, "$q datos clave")) } catch (e: Exception) {
+            log(ctx, id, "La búsqueda falló (${e.message})"); emptyList()
         }
         revisar(id)
-        log(ctx, id, "Buscando en la web…")
-        val web = try { Web.buscarWeb(q, 5) } catch (e: Exception) {
-            log(ctx, id, "El buscador no respondió (${e.message})"); emptyList()
-        }
-        val fuentes = ArrayList<Fuente>()
-        wiki.firstOrNull { it.texto.isNotBlank() }?.let { fuentes.add(Fuente(it.titulo, it.url, it.texto.take(1000))) }
-        for (r in web) {
-            if (fuentes.size >= 2) break
-            revisar(id)
-            log(ctx, id, "Leyendo: ${r.titulo.take(50)}")
-            try {
-                val texto = Web.textoPrincipal(Web.get(r.url), 900)
-                if (texto.length > 200) fuentes.add(Fuente(r.titulo, r.url, texto))
-            } catch (e: Exception) {
-                log(ctx, id, "No pude leer esa página (${e.message})")
-            }
-        }
-        return fuentes to (fuentes.map { it.url } + web.map { it.url }).distinct().take(5)
+        if (res.isEmpty()) return emptyList<Fuente>() to emptyList()
+        log(ctx, id, "Leyendo ${minOf(8, res.size)} fuentes a la vez…")
+        val leidas = Web.leerVarias(res.take(8), 4000)
+        revisar(id)
+        val fuentes = leidas.map { (r, t) -> Fuente(r.titulo.ifBlank { dominio(r.url) }, r.url, t) }.take(5)
+        log(ctx, id, "Pude leer ${fuentes.size} fuentes.")
+        return fuentes to (fuentes.map { it.url } + res.map { it.url }).distinct().take(6)
     }
 
     private fun investigar(ctx: Context, t: Tarea, q: String) {
@@ -228,7 +235,7 @@ object Agente {
         val id = t.id
         revisar(id)
         log(ctx, id, "Resumiendo con el modelo local (puede tardar un par de minutos)…")
-        val fuentesTxt = fuentes.mapIndexed { i, f -> "[${i + 1}] ${f.titulo}\n${f.texto}" }.joinToString("\n\n")
+        val fuentesTxt = fuentes.take(3).mapIndexed { i, f -> "[${i + 1}] ${f.titulo}\n${relevantes(f.texto, t.titulo, 550)}" }.joinToString("\n\n")
         val resumen = try {
             llm(
                 ctx, id,
@@ -271,8 +278,9 @@ object Agente {
     private fun lista(a: JSONArray?): List<String> =
         if (a == null) emptyList() else (0 until a.length()).mapNotNull { a.optString(it).trim().takeIf { s -> s.isNotEmpty() } }
 
-    private val ESQUEMA_PRESENTACION = """{"type":"object","properties":{"titulo":{"type":"string"},"diapositivas":{"type":"array","minItems":3,"maxItems":5,"items":{"type":"object","properties":{"titulo":{"type":"string"},"puntos":{"type":"array","minItems":3,"maxItems":4,"items":{"type":"string"}}},"required":["titulo","puntos"]}}},"required":["titulo","diapositivas"]}"""
-    private val ESQUEMA_DOCUMENTO = """{"type":"object","properties":{"titulo":{"type":"string"},"secciones":{"type":"array","minItems":3,"maxItems":4,"items":{"type":"object","properties":{"titulo":{"type":"string"},"parrafos":{"type":"array","minItems":1,"maxItems":2,"items":{"type":"string"}}},"required":["titulo","parrafos"]}}},"required":["titulo","secciones"]}"""
+    private val ESQUEMA_INDICE = """{"type":"object","properties":{"titulo":{"type":"string"},"secciones":{"type":"array","minItems":4,"maxItems":6,"items":{"type":"string"}}},"required":["titulo","secciones"]}"""
+    private val ESQUEMA_PUNTOS = """{"type":"object","properties":{"puntos":{"type":"array","minItems":3,"maxItems":4,"items":{"type":"string"}}},"required":["puntos"]}"""
+    private val ESQUEMA_PARRAFOS = """{"type":"object","properties":{"parrafos":{"type":"array","minItems":2,"maxItems":2,"items":{"type":"string"}}},"required":["parrafos"]}"""
     private val ESQUEMA_CONCLUSION = """{"type":"object","properties":{"conclusiones":{"type":"array","minItems":2,"maxItems":3,"items":{"type":"string"}},"seguir":{"type":"array","minItems":1,"maxItems":3,"items":{"type":"string"}}},"required":["conclusiones","seguir"]}"""
     private val ESQUEMA_SEGUIR = """{"type":"object","properties":{"seguir":{"type":"array","minItems":1,"maxItems":3,"items":{"type":"string"}}},"required":["seguir"]}"""
 
@@ -295,50 +303,80 @@ object Agente {
         val esPresentacion = (plan.formato and F_PPTX) != 0
         val (fuentes, enlaces) = reunirFuentes(ctx, id, tema)
         revisar(id)
-        val fuentesTxt = if (fuentes.isEmpty()) "(sin fuentes: usa tu conocimiento general y sé prudente)" else
-            fuentes.mapIndexed { i, f -> "[${i + 1}] ${f.titulo}\n${f.texto.take(800)}" }.joinToString("\n\n")
-
-        // 1) Esquema con el modelo (JSON garantizado)
-        log(ctx, id, if (esPresentacion) "Armando el esquema de la presentación (el modelo local tarda unos minutos)…"
-        else "Escribiendo el documento (el modelo local tarda unos minutos)…")
-        val pedido = if (esPresentacion) {
-            "Crea una presentación en español sobre: $tema.\nUsa las fuentes.\n\nFuentes:\n$fuentesTxt\n\n" +
-                "Devuelve JSON con 'titulo' y 'diapositivas' (de 3 a 5), cada una con 'titulo' y 'puntos' " +
-                "(3 o 4 frases cortas de máximo 14 palabras)."
-        } else {
-            "Escribe un documento en español sobre: $tema.\nUsa las fuentes.\n\nFuentes:\n$fuentesTxt\n\n" +
-                "Devuelve JSON con 'titulo' y 'secciones' (de 3 a 4), cada una con 'titulo' y 'parrafos' " +
-                "(1 o 2 párrafos de máximo 45 palabras)."
-        }
-        val respuesta = try {
-            llm(
-                ctx, id,
-                listOf("system" to "Eres un asistente que redacta contenido claro, correcto y breve en español.", "user" to pedido),
-                if (esPresentacion) 560 else 650,
-                JSONObject(if (esPresentacion) ESQUEMA_PRESENTACION else ESQUEMA_DOCUMENTO)
+        // 1) Índice corto y luego cada sección por separado, con los datos más relevantes de las fuentes
+        //    (el modelo local tiene poca memoria: pedirle todo junto da texto flojo; por partes sale mucho mejor)
+        val resumenFuentes = fuentes.take(4).joinToString("\n") { "- ${it.titulo}: ${relevantes(it.texto, tema, 220)}" }
+            .ifEmpty { "(sin fuentes: usa tu conocimiento general y sé prudente)" }
+        var titulo = tema.replaceFirstChar { it.uppercase() }
+        val cuantas = if (esPresentacion) 6 else 5
+        log(ctx, id, "Armando el índice (el modelo local tarda unos minutos en total)…")
+        val indice = try {
+            json(
+                llm(
+                    ctx, id,
+                    listOf(
+                        "system" to "Eres un asistente que organiza contenido claro, correcto y útil en español.",
+                        "user" to "Tema: $tema\n\nFuentes:\n$resumenFuentes\n\n" +
+                            "Devuelve JSON con 'titulo' y 'secciones': $cuantas títulos cortos (máximo 6 palabras), sin repetir, " +
+                            "que cubran el tema de lo básico a lo más importante."
+                    ),
+                    200, JSONObject(ESQUEMA_INDICE)
+                )
             )
         } catch (e: Cancelacion) {
             throw e
         } catch (e: Exception) {
-            log(ctx, id, "El modelo no pudo armar el esquema (${e.message}); uso las fuentes directamente")
-            ""
+            log(ctx, id, "El modelo no pudo armar el índice (${e.message})")
+            null
         }
-        val j = json(respuesta)
-        var titulo = tema.replaceFirstChar { it.uppercase() }
+        val tIdx = indice?.optString("titulo").orEmpty()
+        if (tIdx.isNotBlank()) titulo = tIdx
+        val titulos = lista(indice?.optJSONArray("secciones")).take(cuantas)
         var secciones: List<Documentos.Seccion> = emptyList()
-        if (j != null) {
-            titulo = j.optString("titulo").ifBlank { titulo }
-            val arr = j.optJSONArray(if (esPresentacion) "diapositivas" else "secciones")
-            if (arr != null) {
-                secciones = (0 until arr.length()).mapNotNull { i ->
-                    val o = arr.optJSONObject(i) ?: return@mapNotNull null
-                    val puntos = lista(o.optJSONArray(if (esPresentacion) "puntos" else "parrafos"))
-                    if (puntos.isEmpty()) null else Documentos.Seccion(o.optString("titulo").ifBlank { "Punto ${i + 1}" }, puntos)
+        if (titulos.size >= 3) {
+            val clave = if (esPresentacion) "puntos" else "parrafos"
+            val hechas = ArrayList<Documentos.Seccion>()
+            titulos.forEachIndexed { i, st ->
+                revisar(id)
+                log(ctx, id, "Escribiendo ${i + 1} de ${titulos.size}: ${st.take(40)}")
+                val base = fuentes.map { relevantes(it.texto, "$tema $st", 350) }.filter { it.isNotBlank() }.take(3)
+                val datos = if (base.isEmpty()) "(sin fuentes: usa tu conocimiento general y sé prudente)"
+                else base.mapIndexed { k, b -> "[${k + 1}] $b" }.joinToString("\n")
+                val pedido = if (esPresentacion) {
+                    "Diapositiva '$st' de una presentación sobre: $tema.\nFuentes:\n$datos\n\n" +
+                        "Devuelve JSON con 'puntos': 3 o 4 frases de máximo 16 palabras, con datos concretos de las fuentes " +
+                        "(cifras, nombres, fechas). Sin relleno."
+                } else {
+                    "Sección '$st' de un documento sobre: $tema.\nFuentes:\n$datos\n\n" +
+                        "Devuelve JSON con 'parrafos': 2 párrafos de máximo 60 palabras con datos concretos de las fuentes " +
+                        "(cifras, nombres, fechas). Sin relleno."
                 }
+                val puntos = try {
+                    lista(
+                        json(
+                            llm(
+                                ctx, id,
+                                listOf("system" to "Eres un asistente que redacta contenido claro, correcto y concreto en español.", "user" to pedido),
+                                if (esPresentacion) 230 else 320,
+                                JSONObject(if (esPresentacion) ESQUEMA_PUNTOS else ESQUEMA_PARRAFOS)
+                            )
+                        )?.optJSONArray(clave)
+                    )
+                } catch (e: Cancelacion) {
+                    throw e
+                } catch (e: Exception) {
+                    log(ctx, id, "No pude escribir esa parte con el modelo (${e.message}); uso las fuentes")
+                    emptyList()
+                }
+                val finales = puntos.ifEmpty {
+                    (base.firstOrNull() ?: "").split(Regex("(?<=[.!?])\\s+")).filter { it.length > 30 }.take(3).map { it.take(140) }
+                }
+                if (finales.isNotEmpty()) hechas.add(Documentos.Seccion(st, finales))
             }
+            secciones = hechas
         }
         if (secciones.isEmpty()) {
-            log(ctx, id, "No obtuve un esquema usable del modelo; armo uno con las fuentes.")
+            log(ctx, id, "No obtuve contenido usable del modelo; armo uno con las fuentes.")
             secciones = respaldo(tema, fuentes)
         }
 
@@ -369,6 +407,9 @@ object Agente {
         val seguir = lista(c?.optJSONArray("seguir")).take(3)
         if (conclusiones.isNotEmpty()) {
             secciones = secciones + Documentos.Seccion("Conclusiones", conclusiones)
+        }
+        if (fuentes.isNotEmpty()) {
+            secciones = secciones + Documentos.Seccion("Fuentes", fuentes.map { "${it.titulo.take(60)} (${dominio(it.url)})" })
         }
 
         // 3) Crear los archivos

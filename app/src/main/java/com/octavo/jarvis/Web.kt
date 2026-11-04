@@ -108,8 +108,8 @@ object Web {
     // ---------- Búsquedas ----------
 
     /** Wikipedia en español: título, enlace y resumen de los mejores artículos. */
-    fun buscarWikipedia(q: String, n: Int = 3): List<Resultado> {
-        val url = "https://es.wikipedia.org/w/api.php?action=query&format=json&generator=search&gsrsearch=${enc(q)}" +
+    fun buscarWikipedia(q: String, n: Int = 3, idioma: String = "es"): List<Resultado> {
+        val url = "https://$idioma.wikipedia.org/w/api.php?action=query&format=json&generator=search&gsrsearch=${enc(q)}" +
             "&gsrlimit=$n&prop=extracts%7Cinfo&exintro=1&explaintext=1&exsentences=6&inprop=url&redirects=1"
         val paginas = JSONObject(get(url, 200_000)).optJSONObject("query")?.optJSONObject("pages") ?: return emptyList()
         val salida = ArrayList<Pair<Int, Resultado>>()
@@ -136,6 +136,68 @@ object Web {
             if (salida.size >= n) break
         }
         return salida
+    }
+
+    /** Segundo buscador (Bing, versión HTML) para cuando DuckDuckGo falla o bloquea. */
+    fun buscarBing(q: String, n: Int = 6): List<Resultado> {
+        val html = get("https://www.bing.com/search?q=${enc(q)}&setlang=es", 300_000)
+        val rx = Regex("""<li class="b_algo".*?<h2[^>]*><a[^>]+href="(https?://[^"]+)"[^>]*>(.*?)</a>""", RegexOption.DOT_MATCHES_ALL)
+        val salida = ArrayList<Resultado>()
+        for (m in rx.findAll(html)) {
+            val u = decodificarHtml(m.groupValues[1])
+            if (u.contains("bing.com/")) continue
+            salida.add(Resultado(textoPlano(m.groupValues[2]), u))
+            if (salida.size >= n) break
+        }
+        return salida
+    }
+
+    private fun host(u: String) = try { URL(u).host.removePrefix("www.") } catch (e: Exception) { u }
+
+    /**
+     * Busca en todos los buscadores a la vez (DuckDuckGo, Bing, Wikipedia en español e inglés) y junta los resultados
+     * sin repetir sitios. Si alguno falla, los demás siguen: basta con que uno responda.
+     */
+    fun buscarTodo(consultas: List<String>, porBuscador: Int = 5): List<Resultado> {
+        val trabajos = ArrayList<() -> List<Resultado>>()
+        for (q in consultas) {
+            trabajos.add { buscarWeb(q, porBuscador) }
+            trabajos.add { buscarBing(q, porBuscador) }
+        }
+        val principal = consultas.first()
+        trabajos.add { buscarWikipedia(principal, 2, "es") }
+        trabajos.add { buscarWikipedia(principal, 1, "en") }
+        val pool = java.util.concurrent.Executors.newFixedThreadPool(minOf(6, trabajos.size))
+        try {
+            val futuros = pool.invokeAll(trabajos.map { t -> java.util.concurrent.Callable { try { t() } catch (e: Exception) { emptyList<Resultado>() } } }, 40, java.util.concurrent.TimeUnit.SECONDS)
+            // Intercala: el primero de cada buscador, luego el segundo… así ningún buscador domina
+            val listas = futuros.map { f -> try { if (f.isCancelled) emptyList() else f.get() } catch (e: Exception) { emptyList<Resultado>() } }
+            val vistos = HashSet<String>()
+            val salida = ArrayList<Resultado>()
+            for (i in 0 until (listas.maxOfOrNull { it.size } ?: 0)) {
+                for (l in listas) {
+                    val r = l.getOrNull(i) ?: continue
+                    if (vistos.add(host(r.url) + r.url.substringAfterLast('/').take(30))) salida.add(r)
+                }
+            }
+            return salida
+        } finally {
+            pool.shutdownNow()
+        }
+    }
+
+    /** Lee varias páginas a la vez; devuelve (resultado, texto principal) de las que se pudieron leer. */
+    fun leerVarias(rs: List<Resultado>, max: Int): List<Pair<Resultado, String>> {
+        if (rs.isEmpty()) return emptyList()
+        val pool = java.util.concurrent.Executors.newFixedThreadPool(minOf(4, rs.size))
+        try {
+            val futuros = pool.invokeAll(rs.map { r -> java.util.concurrent.Callable {
+                try { if (r.texto.isNotBlank()) r to r.texto else r to textoPrincipal(get(r.url), max) } catch (e: Exception) { r to "" }
+            } }, 30, java.util.concurrent.TimeUnit.SECONDS)
+            return futuros.mapNotNull { f -> try { if (f.isCancelled) null else f.get().takeIf { it.second.length > 200 } } catch (e: Exception) { null } }
+        } finally {
+            pool.shutdownNow()
+        }
     }
 
     // ---------- Descargas ----------
