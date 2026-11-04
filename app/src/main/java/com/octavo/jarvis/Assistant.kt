@@ -8,7 +8,12 @@ import android.content.Intent
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
+import android.os.SystemClock
+import android.util.Log
 import android.widget.Toast
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.File
 
 /** Se lanza dentro del callback de tokens para abortar una respuesta en curso. */
 private class Cancelado : RuntimeException()
@@ -35,6 +40,14 @@ object Assistant {
     private const val SISTEMA = "Eres J.A.R.V.I.S., el asistente personal del usuario. " +
         "Hablas en español natural, con respuestas breves y directas. " +
         "Si no sabes algo, lo dices con honestidad."
+    // El historial crece hasta HIST_MAX mensajes y entonces se recorta de golpe a ~HIST_KEEP. Así el inicio
+    // del prompt no cambia en cada turno y llama-server reutiliza su caché en lugar de reprocesar todo.
+    // Nunca queda con menos contexto que antes (7-8 mensajes). Los topes por caracteres (~3,5 por token)
+    // evitan pasarse del contexto del modelo (2048 tokens) cuando las respuestas son largas.
+    private const val HIST_MAX = 10
+    private const val HIST_KEEP = 8
+    private const val HIST_MAX_CHARS = 5000
+    private const val HIST_KEEP_CHARS = 3600
 
     private val main = Handler(Looper.getMainLooper())
     private lateinit var app: Context
@@ -55,6 +68,8 @@ object Assistant {
         private set
 
     @Volatile var listo = false           // el motor arrancó al menos una vez
+        private set
+    @Volatile var modeloListo = false     // el modelo ya está descargado y verificado: se puede escribir mientras el motor carga
         private set
     @Volatile private var arrancando = false
     @Volatile var ocupado = false         // hay una respuesta del modelo en curso
@@ -77,12 +92,15 @@ object Assistant {
         if (iniciado) return
         iniciado = true
         app = ctx.applicationContext
+        registrarCierres()                     // "caja negra": guarda el motivo de un cierre inesperado
+        cargarContexto()                       // retoma la conversación reciente si la app se había cerrado
         EngineManager.iniciar(app)
         JarvisService.crearCanales(app)
 
         voiceOut = VoiceOutput(app)
         voiceOut.onProblem = { msg -> toast(msg) }
         voiceOut.onIdle = { alTerminarDeHablar() }
+        voiceOut.preparar()                    // carga la lista de voces disponibles para poder elegir
 
         voiceIn = VoiceInput(app)
         voiceIn.onStart = { ui?.escuchando(true) }
@@ -96,6 +114,30 @@ object Assistant {
         voiceIn.onError = { msg ->
             toast(msg)
             if (HandsFree.activo) HandsFree.alSilencio()
+        }
+    }
+
+    // ---------- Caja negra: motivo de un cierre inesperado ----------
+
+    private fun archivoError() = File(app.filesDir, "ultimo_error.txt")
+
+    /** Si la app se cierra por un error, guarda cuál fue; al abrirla de nuevo se muestra en la conversación. */
+    private fun registrarCierres() {
+        val anterior = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { hilo, e ->
+            try {
+                archivoError().writeText("${java.util.Date()} · hilo ${hilo.name}\n" + Log.getStackTraceString(e))
+            } catch (_: Exception) {
+            }
+            anterior?.uncaughtException(hilo, e)
+        }
+        try {
+            val f = archivoError()
+            if (f.exists()) {
+                emitir("\n[Cierre inesperado anterior]\n" + f.readText().take(900) + "\n")
+                f.delete()
+            }
+        } catch (_: Exception) {
         }
     }
 
@@ -114,10 +156,12 @@ object Assistant {
                     estado("No se pudo descargar el modelo. Revisa tu internet y reabre la app.")
                     return@Thread
                 }
-                if (EngineManager.asegurar(app) { estado(it) }) {
+                modeloListo = true
+                main.post { ui?.habilitar() }     // ya se puede escribir mientras el motor carga
+                Thread.sleep(600)                 // deja que la pantalla termine de dibujarse antes de la carga pesada
+                if (EngineManager.asegurar(app) { estado("Cargando el motor… ya puedes escribir, respondo apenas termine") }) {
                     listo = true
                     estado("Jarvis listo")
-                    main.post { ui?.habilitar() }
                 } else {
                     estado("El motor no arrancó:\n" + Engine.lastLog())
                 }
@@ -128,6 +172,11 @@ object Assistant {
                 EngineManager.soltar()
             }
         }.start()
+    }
+
+    /** Carga el motor en segundo plano si el modelo ya está descargado (arranque del teléfono, reinicio del servicio). */
+    fun arrancarSiHayModelo() {
+        if (Engine.modelFile(app).exists()) arrancar()
     }
 
     /** Al volver a la app: si el motor se apagó por inactividad, lo enciende en segundo plano. */
@@ -228,34 +277,59 @@ object Assistant {
         ocupado = true
         val miGen = ++genId
         val ticket = voiceOut.startReply()          // empieza una respuesta hablada nueva
-        emitir("\nTú: $text\nJarvis: ")
+        val vozEnVivo = Ajustes.vozEnVivo(app)
+        // Por defecto la voz NO se prepara ni habla mientras el modelo escribe: así no le quita CPU
+        if (vozEnVivo) voiceOut.preparar()
+        // Modo por defecto: solo se muestra tu mensaje; la respuesta aparece COMPLETA cuando termina de generarse
+        emitir(if (vozEnVivo) "\nTú: $text\nJarvis: " else "\nTú: $text\n")
         history.add("user" to text)
-        while (history.size > 8) history.removeAt(0)
+        recortarHistorial()
         val msgs = listOf("system" to systemPrompt()) + history
         generando = true
+        Agente.cederMotor = true                    // si una tarea está usando el motor, lo suelta para atenderte
         renovarSueno()                              // CPU despierta mientras piensa
         EngineManager.retener()
         Thread {
             val reply = StringBuilder()
             var cancelado = false
+            val t0 = SystemClock.elapsedRealtime()
+            var tListo = t0          // motor listo
+            var tPrimero = 0L        // llegó la primera palabra
+            var tokens = 0
             try {
                 // Si el motor se apagó por inactividad, aquí se vuelve a encender
                 if (!EngineManager.asegurar(app) { estado(it) }) throw Exception("el motor no arrancó")
-                Engine.chat(msgs) { t ->
+                tListo = SystemClock.elapsedRealtime()
+                estado("Respondiendo…")
+                Chat.stream(msgs) { t ->
                     if (miGen != genId) throw Cancelado()   // el usuario interrumpió
+                    if (tokens == 0) tPrimero = SystemClock.elapsedRealtime()
+                    tokens++
                     reply.append(t)
-                    emitir(t)
-                    voiceOut.feed(ticket, t)                // se habla frase por frase
+                    if (vozEnVivo) {                        // modo "en vivo": el texto aparece y se habla a medida que llega
+                        emitir(t)
+                        voiceOut.feed(ticket, t)
+                    }
                 }
             } catch (e: Cancelado) {
                 cancelado = true
             } catch (e: Exception) {
                 emitir("\n[error: ${e.message}]")
             }
-            if (reply.isNotEmpty()) history.add("assistant" to reply.toString())
-            else if (cancelado && history.isNotEmpty()) history.removeAt(history.lastIndex)  // no dejar un "user" suelto
+            if (reply.isNotEmpty()) {
+                history.add("assistant" to reply.toString())
+                guardarContexto()
+            } else if (cancelado && history.isNotEmpty()) {
+                history.removeAt(history.lastIndex)  // no dejar un "user" suelto
+            }
+            if (!vozEnVivo && reply.isNotEmpty()) {
+                // Modo por defecto: primero se muestra la respuesta completa y recién entonces empieza la voz (de corrido)
+                emitirYa("Jarvis: " + reply.toString().trim() + (if (cancelado) " […]" else "") + "\n")
+                if (!cancelado) voiceOut.feed(ticket, reply.toString())
+            }
             voiceOut.endReply(ticket)                       // habla lo que quede (si no se cortó)
-            emitir("\n")
+            if (vozEnVivo) emitir("\n")
+            if (tokens > 0 && !cancelado) mostrarMedicion(tListo - t0, tPrimero - tListo, SystemClock.elapsedRealtime() - tPrimero, tokens)
             generando = false
             EngineManager.soltar()
             val siguiente = synchronized(lock) { ocupado = false; pending.also { pending = null } }
@@ -264,6 +338,64 @@ object Assistant {
                 if (siguiente != null) ask(siguiente)
             }
         }.start()
+    }
+
+    // ---------- Contexto reciente (sobrevive al cierre de la app) ----------
+
+    private fun archivoContexto() = File(app.filesDir, "contexto.json")
+
+    /** Guarda los últimos mensajes de la conversación. */
+    private fun guardarContexto() {
+        try {
+            val arr = JSONArray()
+            history.takeLast(HIST_KEEP).forEach { arr.put(JSONObject().put("r", it.first).put("c", it.second)) }
+            val f = archivoContexto()
+            val tmp = File(app.filesDir, "contexto.json.tmp")
+            tmp.writeText(arr.toString())
+            if (!tmp.renameTo(f)) { f.writeText(tmp.readText()); tmp.delete() }
+        } catch (_: Exception) {
+        }
+    }
+
+    /** Recupera la conversación reciente al abrir la app (empieza por el usuario y termina en una respuesta). */
+    private fun cargarContexto() {
+        try {
+            val f = archivoContexto()
+            if (!f.exists()) return
+            val arr = JSONArray(f.readText())
+            for (i in 0 until arr.length()) {
+                val o = arr.getJSONObject(i)
+                history.add(o.getString("r") to o.getString("c"))
+            }
+            while (history.isNotEmpty() && history[0].first != "user") history.removeAt(0)
+            if (history.isNotEmpty() && history.last().first == "user") history.removeAt(history.lastIndex)
+        } catch (e: Exception) {
+            history.clear()
+        }
+    }
+
+    /** "Nueva conversación": olvida el contexto reciente (no toca lo que pediste recordar). */
+    fun nuevaConversacion() {
+        history.clear()
+        archivoContexto().delete()
+    }
+
+    /** Recorta el historial por tandas (ver HIST_MAX) y lo deja siempre empezando por un mensaje del usuario. */
+    private fun recortarHistorial() {
+        fun chars() = history.sumOf { it.second.length }
+        if (history.size <= HIST_MAX && chars() <= HIST_MAX_CHARS) return
+        while (history.size > 1 && (history.size > HIST_KEEP || chars() > HIST_KEEP_CHARS)) history.removeAt(0)
+        while (history.size > 1 && history[0].first != "user") history.removeAt(0)
+    }
+
+    /** Línea de estado con los tiempos de la última respuesta, para comparar mejoras con números reales. */
+    private fun mostrarMedicion(motorMs: Long, esperaMs: Long, generacionMs: Long, tokens: Int) {
+        val tps = if (generacionMs > 300) tokens * 1000f / generacionMs else 0f
+        val motor = if (motorMs > 1000) " · motor %.0f s".format(motorMs / 1000f) else ""
+        val tb = Ajustes.hilosLecturaEfectivos(app)
+        val hilos = Ajustes.hilosEfectivos(app).toString() + (if (tb > 0) "/$tb" else "") +
+            (if (Ajustes.nucleosFijos(app)) " fijos" else "")
+        estado("Jarvis listo · primera palabra %.1f s · %.1f tok/s · hilos %s%s".format(esperaMs / 1000f, tps, hilos, motor))
     }
 
     /** Muestra y dice la respuesta de un comando local (no pasa por el modelo ni por el historial). */
@@ -291,12 +423,40 @@ object Assistant {
     }
 
     /** Agrega texto a la conversación y lo muestra si la pantalla está a la vista. */
-    private fun emitir(t: String) {
-        main.post {
+    // El texto que llega token a token se junta y se pasa a la pantalla cada ~120 ms:
+    // menos trabajo para el hilo principal, y el teclado no se siente lento mientras Jarvis escribe.
+    private val bufferUi = StringBuilder()
+    private var flushProgramado = false
+    private val flushUi = Runnable {
+        val t = synchronized(bufferUi) {
+            val s = bufferUi.toString()
+            bufferUi.setLength(0)
+            flushProgramado = false
+            s
+        }
+        if (t.isNotEmpty()) {
             transcript.append(t)
             if (transcript.length > 20_000) transcript.delete(0, transcript.length - 15_000)
             ui?.texto(t)
         }
+    }
+
+    private fun emitir(t: String) {
+        val programar = synchronized(bufferUi) {
+            bufferUi.append(t)
+            if (flushProgramado) false else { flushProgramado = true; true }
+        }
+        if (programar) main.postDelayed(flushUi, 120)
+    }
+
+    /** Muestra el texto YA (sin esperar la tanda): se usa para la respuesta completa, que debe verse antes de que empiece la voz. */
+    private fun emitirYa(t: String) {
+        synchronized(bufferUi) {
+            bufferUi.append(t)
+            flushProgramado = true
+        }
+        main.removeCallbacks(flushUi)
+        main.post(flushUi)
     }
 
     // ---------- Después de hablar ----------

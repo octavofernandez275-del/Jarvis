@@ -17,16 +17,38 @@ object Chat {
     private const val TEMPERATURA = 0.6
     private const val MAX_TOKENS = 300
 
-    fun stream(messages: List<Pair<String, String>>, onToken: (String) -> Unit) {
+    /** Chat normal: usa la temperatura y el largo máximo de siempre. */
+    fun stream(messages: List<Pair<String, String>>, onToken: (String) -> Unit): Unit =
+        stream(messages, MAX_TOKENS, TEMPERATURA, onToken)
+
+    /** Igual, pero con largo máximo y temperatura propios (lo usan las tareas de Jarvis). */
+    fun completar(
+        messages: List<Pair<String, String>>, maxTokens: Int, temperatura: Double,
+        esquema: JSONObject? = null, onToken: (String) -> Unit = {}
+    ): String {
+        val sb = StringBuilder()
+        stream(messages, maxTokens, temperatura, esquema) { t -> sb.append(t); onToken(t) }
+        return sb.toString().trim()
+    }
+
+    fun stream(messages: List<Pair<String, String>>, maxTokens: Int, temperatura: Double, onToken: (String) -> Unit): Unit =
+        stream(messages, maxTokens, temperatura, null, onToken)
+
+    /** Con esquema, llama-server obliga al modelo a responder un JSON válido con esa forma (incluso un modelo chico). */
+    fun stream(
+        messages: List<Pair<String, String>>, maxTokens: Int, temperatura: Double,
+        esquema: JSONObject?, onToken: (String) -> Unit
+    ) {
         val arr = JSONArray()
         messages.forEach { arr.put(JSONObject().put("role", it.first).put("content", it.second)) }
         val body = JSONObject()
             .put("stream", true)
-            .put("temperature", TEMPERATURA)
-            .put("max_tokens", MAX_TOKENS)
+            .put("temperature", temperatura)
+            .put("max_tokens", maxTokens)
             .put("cache_prompt", true)                                              // reutilizar lo ya procesado
             .put("chat_template_kwargs", JSONObject().put("enable_thinking", false)) // sin razonamiento extendido
             .put("messages", arr)
+        if (esquema != null) body.put("response_format", JSONObject().put("type", "json_object").put("schema", esquema))
 
         val c = URL("http://127.0.0.1:${Engine.PORT}/v1/chat/completions").openConnection() as HttpURLConnection
         try {

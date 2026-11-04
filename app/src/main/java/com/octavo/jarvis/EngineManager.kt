@@ -8,14 +8,15 @@ import java.net.URL
 
 /**
  * Ciclo de vida del motor (llama-server) para cuidar la RAM y la batería.
- * El modelo ocupa ~2 GB: si nadie lo usa durante IDLE_APAGADO_MS, se apaga solo
- * (y con él el servicio en primer plano). Se vuelve a encender cuando hace falta.
+ * El motor se puede apagar (y con él el servicio en primer plano) y se vuelve a encender cuando hace falta.
+ * Por defecto NO se apaga nunca (el arranque en frío tarda ~30 s): el modelo ocupa memoria de archivo que
+ * Android recupera sola cuando hace falta. Se puede cambiar con el comando "apaga el motor tras N minutos".
+ * Si Android avisa que falta memoria de verdad, JarvisService llama a liberarPorMemoria().
  *
  * "Usar" el motor = retener() ... soltar(). Lo retienen: la pantalla visible,
  * una respuesta en curso y el modo manos libres.
  */
 object EngineManager {
-    private const val IDLE_APAGADO_MS = 3 * 60_000L
 
     private val main = Handler(Looper.getMainLooper())
     private val lockUso = Any()        // contador de usos (nunca se bloquea mucho)
@@ -32,7 +33,15 @@ object EngineManager {
         }
     }
 
-    fun iniciar(ctx: Context) { appCtx = ctx.applicationContext }
+    private var limpio = false
+
+    fun iniciar(ctx: Context) {
+        appCtx = ctx.applicationContext
+        if (!limpio) {
+            limpio = true
+            Thread { Engine.matarHuerfanos() }.start()   // restos de una ejecución anterior (RAM y puerto ocupados)
+        }
+    }
 
     /** Alguien necesita el motor: cancela el apagado programado. */
     fun retener() {
@@ -40,13 +49,46 @@ object EngineManager {
         main.removeCallbacks(apagar)
     }
 
-    /** Ya no lo necesita: si nadie más lo usa, se apagará tras IDLE_APAGADO_MS. */
+    /** Ya no lo necesita: si nadie más lo usa, se apagará tras unos minutos. */
     fun soltar() {
         val libre = synchronized(lockUso) {
             if (usos > 0) usos--
             usos == 0
         }
-        if (libre) main.postDelayed(apagar, IDLE_APAGADO_MS)
+        val min = appCtx?.let { Ajustes.minutosInactivo(it) } ?: 0
+        if (libre && min > 0) main.postDelayed(apagar, min * 60_000L)
+    }
+
+    @Volatile private var vigilando = false
+
+    /**
+     * Lo llama el servicio cada minuto: si el motor murió (por ejemplo, Android lo cerró) y debe estar siempre listo,
+     * lo levanta en segundo plano para que la próxima pregunta no espere.
+     */
+    fun vigilar(ctx: Context) {
+        if (Ajustes.minutosInactivo(ctx) != 0) return   // el usuario eligió apagarlo por inactividad
+        if (!Assistant.listo || Assistant.ocupado || vigilando) return
+        vigilando = true
+        Thread {
+            try {
+                asegurar(ctx)
+            } finally {
+                vigilando = false
+            }
+        }.start()
+    }
+
+    /** Aplica un ajuste que necesita reiniciar el servidor: lo reinicia YA en segundo plano, así la próxima pregunta no espera. */
+    fun reiniciarYa(ctx: Context) {
+        apagarYa()
+        Thread {
+            if (asegurar(ctx) { Assistant.estado("Reiniciando el motor con tu ajuste…") }) Assistant.estado("Jarvis listo")
+        }.start()
+    }
+
+    /** Android avisa que falta memoria de verdad: si nadie usa el motor, se libera para que no cierren la app entera. */
+    fun liberarPorMemoria() {
+        main.post { apagar.run() }
     }
 
     /** Apaga el motor ya (botón Detener de la notificación). */

@@ -10,7 +10,9 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.graphics.drawable.Icon
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 
 /**
  * Servicio en primer plano: mantiene vivo el proceso (y con él el motor de IA y la voz)
@@ -21,6 +23,16 @@ import android.os.IBinder
  */
 class JarvisService : Service() {
 
+    // Vigilante: cada minuto comprueba que el motor siga vivo y, si murió, lo levanta (ver EngineManager.vigilar)
+    private val handler = Handler(Looper.getMainLooper())
+    private val vigilante = object : Runnable {
+        override fun run() {
+            EngineManager.vigilar(applicationContext)
+            Agente.tic(applicationContext)       // piloto automático: toma la siguiente tarea pendiente
+            handler.postDelayed(this, 60_000L)
+        }
+    }
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
@@ -28,19 +40,20 @@ class JarvisService : Service() {
         instancia = this
         Assistant.iniciar(this)          // por si el sistema creó el proceso solo para el servicio
         crearCanales(this)
+        handler.postDelayed(vigilante, 60_000L)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         // Obligatorio llamar a startForeground enseguida
         foreground(intent?.getBooleanExtra(EXTRA_MIC, HandsFree.activo) ?: HandsFree.activo)
-        if (intent?.getBooleanExtra(EXTRA_ARRANCAR, false) == true) {
-            Assistant.arrancar()
-        }
         when (intent?.action) {
             ACCION_DETENER -> apagarTodo()
             ACCION_INTERRUMPIR -> Assistant.interrupt()
         }
-        return START_NOT_STICKY
+        // Reinicio automático por el sistema (intent nulo) o arranque del teléfono: carga el motor en segundo plano
+        if (intent == null || intent.getBooleanExtra(EXTRA_ARRANCAR, false)) Assistant.arrancarSiHayModelo()
+        // START_STICKY: si Android cierra el servicio por falta de memoria, lo vuelve a levantar solo
+        return START_STICKY
     }
 
     /** Pone/actualiza la notificación y el tipo de servicio. Devuelve false si no pudo con el micrófono. */
@@ -109,8 +122,16 @@ class JarvisService : Service() {
         stopSelf()
     }
 
+    /** Android avisa que se está quedando sin memoria. Solo cuenta lo realmente crítico (no "pantalla oculta"). */
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        // 15 = RUNNING_CRITICAL; 60 y más = el sistema está por cerrar procesos en segundo plano
+        if (level == 15 || level >= 60) EngineManager.liberarPorMemoria()
+    }
+
     override fun onDestroy() {
         instancia = null
+        handler.removeCallbacks(vigilante)
         stopForeground(STOP_FOREGROUND_REMOVE)
         super.onDestroy()
     }
