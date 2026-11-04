@@ -94,6 +94,7 @@ object Assistant {
         app = ctx.applicationContext
         registrarCierres()                     // "caja negra": guarda el motivo de un cierre inesperado
         cargarContexto()                       // retoma la conversación reciente si la app se había cerrado
+        Termico.iniciar(app)
         EngineManager.iniciar(app)
         JarvisService.crearCanales(app)
 
@@ -395,7 +396,8 @@ object Assistant {
         val tb = Ajustes.hilosLecturaEfectivos(app)
         val hilos = Ajustes.hilosEfectivos(app).toString() + (if (tb > 0) "/$tb" else "") +
             (if (Ajustes.nucleosFijos(app)) " fijos" else "")
-        estado("Jarvis listo · primera palabra %.1f s · %.1f tok/s · hilos %s%s".format(esperaMs / 1000f, tps, hilos, motor))
+        val calor = if (Termico.nivel(app) >= Termico.TIBIO) " · " + Termico.descripcion(app) else ""
+        estado("Jarvis listo · primera palabra %.1f s · %.1f tok/s · hilos %s%s%s".format(esperaMs / 1000f, tps, hilos, motor, calor))
     }
 
     /** Muestra y dice la respuesta de un comando local (no pasa por el modelo ni por el historial). */

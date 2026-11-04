@@ -43,7 +43,8 @@ object Agente {
     private const val F_DOCX = 2
     private const val F_PDF = 4
 
-    private val pool = Executors.newSingleThreadExecutor()
+    // Tareas de fondo con prioridad baja: Android las manda a los núcleos eficientes y la pantalla no se resiente
+    private val pool = Hilos.unico("jarvis-agente")
     @Volatile private var actual = -1L
     @Volatile private var cancelarId = -1L
 
@@ -106,6 +107,7 @@ object Agente {
         if (!Ajustes.piloto(ctx)) return
         if (!Assistant.listo || Assistant.ocupado || HandsFree.activo) return
         if (!bateriaOk(ctx)) return
+        if (!Termico.permiteFondo(ctx)) return     // caliente o en ahorro de energía: el piloto automático espera
         val todas = Tareas.todas(ctx)
         if (todas.any { it.estado == Tareas.EN_CURSO }) return
         val propia = todas.filter { it.estado == Tareas.PENDIENTE && !it.sugerida }.minByOrNull { it.creada }
@@ -616,6 +618,7 @@ object Agente {
             Thread.sleep(2000)
             if (++espera > 450) throw Exception("el motor estuvo ocupado demasiado tiempo")
         }
+        Termico.esperarEnfriar(ctx) { revisar(id) }   // pausa corta entre peticiones; si está muy caliente, espera a que se enfríe
         cederMotor = false
         EngineManager.retener()
         try {

@@ -167,37 +167,28 @@ object Web {
         val principal = consultas.first()
         trabajos.add { buscarWikipedia(principal, 2, "es") }
         trabajos.add { buscarWikipedia(principal, 1, "en") }
-        val pool = java.util.concurrent.Executors.newFixedThreadPool(minOf(6, trabajos.size))
-        try {
-            val futuros = pool.invokeAll(trabajos.map { t -> java.util.concurrent.Callable { try { t() } catch (e: Exception) { emptyList<Resultado>() } } }, 40, java.util.concurrent.TimeUnit.SECONDS)
-            // Intercala: el primero de cada buscador, luego el segundo… así ningún buscador domina
-            val listas = futuros.map { f -> try { if (f.isCancelled) emptyList() else f.get() } catch (e: Exception) { emptyList<Resultado>() } }
-            val vistos = HashSet<String>()
-            val salida = ArrayList<Resultado>()
-            for (i in 0 until (listas.maxOfOrNull { it.size } ?: 0)) {
-                for (l in listas) {
-                    val r = l.getOrNull(i) ?: continue
-                    if (vistos.add(host(r.url) + r.url.substringAfterLast('/').take(30))) salida.add(r)
-                }
+        // Grupo compartido de prioridad baja (antes se creaba y destruía uno en cada búsqueda); invokeAll cancela lo que no llegó a tiempo
+        val futuros = Hilos.red.invokeAll(trabajos.map { t -> java.util.concurrent.Callable { try { t() } catch (e: Exception) { emptyList<Resultado>() } } }, 40, java.util.concurrent.TimeUnit.SECONDS)
+        // Intercala: el primero de cada buscador, luego el segundo… así ningún buscador domina
+        val listas = futuros.map { f -> try { if (f.isCancelled) emptyList() else f.get() } catch (e: Exception) { emptyList<Resultado>() } }
+        val vistos = HashSet<String>()
+        val salida = ArrayList<Resultado>()
+        for (i in 0 until (listas.maxOfOrNull { it.size } ?: 0)) {
+            for (l in listas) {
+                val r = l.getOrNull(i) ?: continue
+                if (vistos.add(host(r.url) + r.url.substringAfterLast('/').take(30))) salida.add(r)
             }
-            return salida
-        } finally {
-            pool.shutdownNow()
         }
+        return salida
     }
 
     /** Lee varias páginas a la vez; devuelve (resultado, texto principal) de las que se pudieron leer. */
     fun leerVarias(rs: List<Resultado>, max: Int): List<Pair<Resultado, String>> {
         if (rs.isEmpty()) return emptyList()
-        val pool = java.util.concurrent.Executors.newFixedThreadPool(minOf(4, rs.size))
-        try {
-            val futuros = pool.invokeAll(rs.map { r -> java.util.concurrent.Callable {
-                try { if (r.texto.isNotBlank()) r to r.texto else r to textoPrincipal(get(r.url), max) } catch (e: Exception) { r to "" }
-            } }, 30, java.util.concurrent.TimeUnit.SECONDS)
-            return futuros.mapNotNull { f -> try { if (f.isCancelled) null else f.get().takeIf { it.second.length > 200 } } catch (e: Exception) { null } }
-        } finally {
-            pool.shutdownNow()
-        }
+        val futuros = Hilos.red.invokeAll(rs.map { r -> java.util.concurrent.Callable {
+            try { if (r.texto.isNotBlank()) r to r.texto else r to textoPrincipal(get(r.url), max) } catch (e: Exception) { r to "" }
+        } }, 30, java.util.concurrent.TimeUnit.SECONDS)
+        return futuros.mapNotNull { f -> try { if (f.isCancelled) null else f.get().takeIf { it.second.length > 200 } } catch (e: Exception) { null } }
     }
 
     // ---------- Descargas ----------

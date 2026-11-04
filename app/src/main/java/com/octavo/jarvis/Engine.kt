@@ -19,6 +19,20 @@ object Engine {
     private var proc: Process? = null
     private val tail = ArrayDeque<String>()
 
+    /**
+     * true si el servidor rechazó alguna opción opcional de ahorro (por ejemplo, una versión de llama.cpp que no la conoce):
+     * desde entonces se arranca solo con las opciones básicas de siempre, para que el motor nunca deje de funcionar.
+     */
+    @Volatile private var opcionalesRechazados = false
+
+    /** Se llama tras un arranque fallido: si el servidor se quejó de un argumento, el reintento va en modo básico. */
+    fun marcarSiArgumentoRechazado() {
+        val l = lastLog().lowercase()
+        if (l.contains("invalid argument") || l.contains("unknown argument") || l.contains("unrecognized")) {
+            opcionalesRechazados = true
+        }
+    }
+
     fun modelFile(ctx: Context) = File(ctx.getExternalFilesDir("models") ?: ctx.filesDir, MODEL_NAME)
 
     fun lastLog(): String = synchronized(tail) { tail.joinToString("\n") }
@@ -90,21 +104,36 @@ object Engine {
 
     fun start(ctx: Context) {
         if (proc?.isAlive == true) return
+        val basico = opcionalesRechazados
         if (!modelFile(ctx).exists()) throw java.io.FileNotFoundException("Falta el modelo: ${modelFile(ctx).path}")
         val bin = File(ctx.applicationInfo.nativeLibraryDir, "libllama_server.so")
         // Hilos de CPU: se pueden cambiar con el comando "hilos N" (ver Ajustes) para probar el más rápido
+        val t = Ajustes.hilosEfectivos(ctx)
         val args = mutableListOf(
             bin.path, "-m", modelFile(ctx).path,
             "--host", "127.0.0.1", "--port", PORT.toString(),
-            "-c", "2048", "-t", Ajustes.hilosEfectivos(ctx).toString(), "-np", "1",
+            "-c", "2048", "-t", t.toString(), "-np", "1",
             "--chat-template-kwargs", "{\"enable_thinking\":false}"
         )
+        // Reparto por complejidad: pocos hilos para escribir la respuesta (límite de memoria, no de cálculo)
+        // y más hilos para leer el prompt (cálculo puro, dura poco). Ver Cpu.perfil().
         val tb = Ajustes.hilosLecturaEfectivos(ctx)
         if (tb > 0) { args.add("-tb"); args.add(tb.toString()) }
         // Hilos fijados a los núcleos más rápidos, dejando 2 libres para Android, la voz y la pantalla (ver Cpu)
         if (Ajustes.nucleosFijos(ctx)) {
-            val mascara = Cpu.mascara(maxOf(Ajustes.hilosEfectivos(ctx), tb))
+            val mascara = Cpu.mascara(t)
             if (mascara != null) { args.add("-C"); args.add(mascara); args.add("--cpu-strict"); args.add("1") }
+            // La lectura del prompt tiene su propia máscara (antes heredaba una de tamaño distinto)
+            if (!basico && tb > t) {
+                val mascaraLectura = Cpu.mascara(tb)
+                if (mascaraLectura != null) { args.add("-Cb"); args.add(mascaraLectura); args.add("--cpu-strict-batch"); args.add("1") }
+            }
+        }
+        if (!basico) {
+            // Los hilos no se quedan girando esperando trabajo entre un token y otro (menos calor y batería)
+            args.add("--poll"); args.add("0")
+            // Sin la página web integrada del servidor: menos memoria y nada expuesto (solo usamos la API)
+            args.add("--no-webui")
         }
         val pb = ProcessBuilder(args)
         pb.redirectErrorStream(true)
@@ -123,12 +152,16 @@ object Engine {
         Thread {
             // Al detener el servidor se cierra su salida y esta lectura lanza una excepción;
             // sin este try/catch esa excepción cerraba toda la app.
+            var rechazo = false
             try {
                 p.inputStream.bufferedReader().forEachLine { line ->
+                    // El registro solo guarda las últimas líneas: el aviso de "argumento no válido" se detecta aquí
+                    if (line.contains("invalid argument", ignoreCase = true) || line.contains("unknown argument", ignoreCase = true)) rechazo = true
                     synchronized(tail) { tail.addLast(line); while (tail.size > 12) tail.removeFirst() }
                 }
             } catch (_: Exception) {
             }
+            if (rechazo && !basico) opcionalesRechazados = true   // el reintento arranca con las opciones básicas
         }.start()
     }
 

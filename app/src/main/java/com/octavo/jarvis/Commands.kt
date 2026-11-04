@@ -83,6 +83,12 @@ object Commands {
     private val rxNucleosRapidos = Regex("""^(?:usa |pon |fija )?(?:los )?nucleos rapidos$""")
     private val rxNucleosTodos = Regex("""^(?:usa |pon )?(?:todos los nucleos|nucleos libres|sin fijar nucleos)$""")
 
+    // Modos de rendimiento y temperatura
+    private val rxModoAhorro = Regex("""^(?:usa |pon |activa )?modo ahorro(?: de energia)?$""")
+    private val rxModoEquilibrado = Regex("""^(?:usa |pon |activa )?modo (?:equilibrado|automatico)$""")
+    private val rxModoRendimiento = Regex("""^(?:usa |pon |activa )?modo (?:rendimiento|maximo|potencia)$""")
+    private val rxTemperatura = Regex("""^(?:estado termico|temperatura del (?:telefono|celular|movil)|como esta (?:el|la) (?:telefono|celular|temperatura del telefono))$""")
+
     // Memoria
     private val rxRecuerda = Regex("""^(?:recuerda|recorda|acuerdate|anota|memoriza|guarda)(?: en tu memoria)?(?: que)?\s+(.+)$""")
     private val rxListar = Regex("""^(?:que (?:recuerdas|sabes|tienes anotado|tienes en tu memoria)(?: de mi| sobre mi)?|que sabes de mi|dime lo que (?:recuerdas|sabes)(?: de mi)?|muestra(?:me)? tu memoria|lee tu memoria)$""")
@@ -173,6 +179,7 @@ object Commands {
             ?: animacion(ctx, f)
             ?: motorModo(ctx, f)
             ?: nucleos(ctx, f)
+            ?: modos(ctx, f)
             ?: tareas(ctx, orig, f)
             ?: memoria(ctx, orig, f)
             ?: horaFecha(f)
@@ -230,6 +237,48 @@ object Commands {
         Ajustes.fijarHilos(ctx, n)
         EngineManager.reiniciarYa(ctx)
         return Reply("Listo: ahora uso $n hilos. $AVISO_REINICIO")
+    }
+
+    // ---------- Modos de rendimiento ----------
+
+    /**
+     * Tres perfiles listos para usar (todos reinician el motor):
+     *  - ahorro: solo los núcleos rápidos escriben la respuesta; el teléfono se mantiene fresco.
+     *  - equilibrado (por defecto): reparto automático según el procesador y se reduce solo si hay calor.
+     *  - rendimiento: el reparto de antes (todos los núcleos menos 2) para generar y leer.
+     */
+    private fun modos(ctx: Context, f: String): Reply? {
+        if (rxTemperatura.matches(f)) {
+            val per = Cpu.perfil()
+            return Reply(
+                "Ahora mismo: " + Termico.descripcion(ctx) + ". Tengo ${per.total} núcleos (${per.grandes} rápidos); " +
+                    "escribo con ${Ajustes.hilosEfectivos(ctx)} hilos."
+            )
+        }
+        if (rxModoAhorro.matches(f)) {
+            val per = Cpu.perfil()
+            val gen = maxOf(1, if (per.grandes in 1 until per.total) per.grandes else per.generacion / 2)
+            Ajustes.fijarHilos(ctx, gen)
+            Ajustes.fijarHilosLectura(ctx, maxOf(gen, per.lectura - 2))
+            EngineManager.reiniciarYa(ctx)
+            return Reply("Modo ahorro: $gen hilos para escribir y ${Ajustes.hilosLecturaEfectivos(ctx)} para leer. $AVISO_REINICIO")
+        }
+        if (rxModoEquilibrado.matches(f)) {
+            Ajustes.hilosAutomaticos(ctx)
+            EngineManager.reiniciarYa(ctx)
+            return Reply(
+                "Modo equilibrado: ${Ajustes.hilosEfectivos(ctx)} hilos para escribir y " +
+                    "${Ajustes.hilosLecturaEfectivos(ctx)} para leer, y bajo el ritmo si el teléfono se calienta. $AVISO_REINICIO"
+            )
+        }
+        if (rxModoRendimiento.matches(f)) {
+            val n = Ajustes.maxHilos()
+            Ajustes.fijarHilos(ctx, n)
+            Ajustes.fijarHilosLectura(ctx, n)
+            EngineManager.reiniciarYa(ctx)
+            return Reply("Modo rendimiento: $n hilos para escribir y leer. Responde lo más rápido que da el teléfono, pero se calienta más. $AVISO_REINICIO")
+        }
+        return null
     }
 
     // ---------- Núcleos del procesador ----------

@@ -140,7 +140,7 @@ private object MissionRunner {
 /** Centro de mando visual Iron Man. */
 class AutopilotActivity : Activity() {
     private val missions = mutableListOf<Mission>()
-    private val executor = Executors.newSingleThreadExecutor()
+    private val executor = Hilos.unico("jarvis-misiones")
     private lateinit var list: LinearLayout
     private lateinit var status: TextView
     private lateinit var count: TextView

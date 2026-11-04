@@ -10,6 +10,7 @@ import android.graphics.RectF
 import android.graphics.Shader
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.view.View
 import kotlin.math.PI
 import kotlin.math.cos
@@ -22,7 +23,8 @@ import kotlin.math.sin
  *  - escuchando (o manos libres): los acentos pasan a rojo;
  *  - pensando: gira rápido;
  *  - hablando: el brillo late fuerte.
- * Se dibuja a ~30 cuadros por segundo, solo mientras la pantalla está a la vista.
+ * Se dibuja a ~30 cuadros por segundo cuando Jarvis hace algo y a ~15 en reposo; baja más si el teléfono
+ * está tibio o en ahorro de energía (ver Termico). Solo se dibuja mientras la pantalla está a la vista.
  * Se puede apagar con el comando "apaga la animación" (ahorra batería).
  */
 class ReactorView(context: Context) : View(context) {
@@ -46,6 +48,8 @@ class ReactorView(context: Context) : View(context) {
     private var cx = 0f
     private var cy = 0f
     private var r = 0f
+    private var marcas = FloatArray(0)      // 72 marcas del anillo exterior, precalculadas (una sola llamada de dibujo)
+    private var segmentos = FloatArray(0)   // 10 segmentos del anillo interior
     private var ultimo = System.nanoTime()
     private var ang1 = 0f
     private var ang2 = 0f
@@ -53,10 +57,37 @@ class ReactorView(context: Context) : View(context) {
     private var amplitud = 0.03f
     private var rojo = false
 
+    // Preferencias y estado térmico se consultan cada ~2 s (antes se leían las preferencias dos veces por cuadro)
+    private var animOn = true
+    private var termico = Termico.NORMAL
+    private var ultimaLectura = -10_000L
+    private var activoAhora = false
+
+    private fun retardoMs(): Long {
+        val ahora = SystemClock.uptimeMillis()
+        if (ahora - ultimaLectura > 2000) {
+            ultimaLectura = ahora
+            animOn = Ajustes.animacion(context)
+            termico = try {
+                val n = Termico.nivel(context)
+                if (Termico.ahorroEnergia(context)) maxOf(n, Termico.TIBIO) else n
+            } catch (e: Exception) {
+                Termico.NORMAL
+            }
+        }
+        if (!animOn) return 500L
+        return when {
+            termico >= Termico.CALIENTE -> if (activoAhora) 66L else 133L
+            termico >= Termico.TIBIO -> if (activoAhora) 50L else 100L
+            else -> if (activoAhora) 33L else 66L
+        }
+    }
+
     private val bucle = object : Runnable {
         override fun run() {
-            if (Ajustes.animacion(context)) invalidate()
-            reloj.postDelayed(this, 33)
+            val espera = retardoMs()
+            if (animOn) invalidate()
+            reloj.postDelayed(this, espera)
         }
     }
 
@@ -85,11 +116,34 @@ class ReactorView(context: Context) : View(context) {
         cx = w / 2f
         cy = h / 2f
         r = minOf(w, h) / 2f * 0.92f
+        calcularMarcas()
         brillo.shader = RadialGradient(
             cx, cy, r * 0.62f,
             intArrayOf(0xCC9FE8FF.toInt(), 0x6618B6FF, 0x0018B6FF),
             floatArrayOf(0f, 0.45f, 1f), Shader.TileMode.CLAMP
         )
+    }
+
+    /** Calcula una vez las líneas que antes se dibujaban rotando el lienzo 72 + 10 veces en cada cuadro. */
+    private fun calcularMarcas() {
+        marcas = FloatArray(72 * 4)
+        for (i in 0 until 72) {
+            val a = i * 5.0 * PI / 180.0
+            val largo = if (i % 6 == 0) 0.07f else 0.035f
+            val r2 = r * (1f - largo)
+            marcas[i * 4] = cx + r * sin(a).toFloat()
+            marcas[i * 4 + 1] = cy - r * cos(a).toFloat()
+            marcas[i * 4 + 2] = cx + r2 * sin(a).toFloat()
+            marcas[i * 4 + 3] = cy - r2 * cos(a).toFloat()
+        }
+        segmentos = FloatArray(10 * 4)
+        for (i in 0 until 10) {
+            val a = i * 36.0 * PI / 180.0
+            segmentos[i * 4] = cx + r * 0.40f * sin(a).toFloat()
+            segmentos[i * 4 + 1] = cy - r * 0.40f * cos(a).toFloat()
+            segmentos[i * 4 + 2] = cx + r * 0.30f * sin(a).toFloat()
+            segmentos[i * 4 + 3] = cy - r * 0.30f * cos(a).toFloat()
+        }
     }
 
     /** Lee qué está haciendo Jarvis y avanza la animación. */
@@ -106,7 +160,7 @@ class ReactorView(context: Context) : View(context) {
         } catch (e: Exception) {
         }
         val ahora = System.nanoTime()
-        val dt = ((ahora - ultimo) / 1e9f).coerceIn(0f, 0.1f)
+        val dt = ((ahora - ultimo) / 1e9f).coerceIn(0f, 0.25f)   // con menos cuadros por segundo, el movimiento sigue a la misma velocidad
         ultimo = ahora
         val vel: Float
         val frec: Float
@@ -120,11 +174,12 @@ class ReactorView(context: Context) : View(context) {
         ang2 = (ang2 - vel * 0.6f * dt) % 360f
         fase = (fase + frec * dt) % 1f
         rojo = escuchando || manos
+        activoAhora = escuchando || pensando || hablando
     }
 
     override fun onDraw(c: Canvas) {
         if (r <= 0f) return
-        if (Ajustes.animacion(context)) actualizar()
+        if (animOn) actualizar()
         val acento = if (rojo) ROJO else AZUL
         val pulso = sin(fase * 2f * PI.toFloat())
 
@@ -144,11 +199,7 @@ class ReactorView(context: Context) : View(context) {
         trazo.strokeWidth = 1.5f
         c.save()
         c.rotate(ang1 * 0.25f, cx, cy)
-        for (i in 0 until 72) {
-            val largo = if (i % 6 == 0) 0.07f else 0.035f
-            c.drawLine(cx, cy - r, cx, cy - r * (1f - largo), trazo)
-            c.rotate(5f, cx, cy)
-        }
+        c.drawLines(marcas, trazo)
         c.restore()
 
         // Dos arcos de acento (rojo al escuchar)
@@ -175,10 +226,7 @@ class ReactorView(context: Context) : View(context) {
         trazo.strokeWidth = r * 0.05f
         c.save()
         c.rotate(ang1 * 0.15f, cx, cy)
-        for (i in 0 until 10) {
-            c.drawLine(cx, cy - r * 0.40f, cx, cy - r * 0.30f, trazo)
-            c.rotate(36f, cx, cy)
-        }
+        c.drawLines(segmentos, trazo)
         c.restore()
 
         // Triángulo central

@@ -19,7 +19,7 @@ object Chat {
 
     /** Chat normal: usa la temperatura y el largo máximo de siempre. */
     fun stream(messages: List<Pair<String, String>>, onToken: (String) -> Unit): Unit =
-        stream(messages, MAX_TOKENS, TEMPERATURA, onToken)
+        stream(messages, Termico.limiteTokens(MAX_TOKENS), TEMPERATURA, onToken)   // más corto si el teléfono está muy caliente
 
     /** Igual, pero con largo máximo y temperatura propios (lo usan las tareas de Jarvis). */
     fun completar(

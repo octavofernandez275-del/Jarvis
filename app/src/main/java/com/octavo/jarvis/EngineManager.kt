@@ -68,6 +68,7 @@ object EngineManager {
     fun vigilar(ctx: Context) {
         if (Ajustes.minutosInactivo(ctx) != 0) return   // el usuario eligió apagarlo por inactividad
         if (!Assistant.listo || Assistant.ocupado || vigilando) return
+        if (Termico.nivel(ctx) >= Termico.CRITICO) return   // con el teléfono muy caliente no se levanta el motor en segundo plano
         vigilando = true
         Thread {
             try {
@@ -122,6 +123,7 @@ object EngineManager {
                 if (intento == 2) {
                     Engine.stop()
                     Thread.sleep(2000)
+                    Engine.marcarSiArgumentoRechazado()   // si falló por una opción opcional, el reintento va en modo básico
                 }
                 Engine.start(c)
                 if (Engine.waitReady()) { listo = true; break }

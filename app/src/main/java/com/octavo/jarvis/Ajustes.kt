@@ -4,7 +4,9 @@ import android.content.Context
 
 /**
  * Ajustes de rendimiento del motor que se cambian con comandos ("hilos 4"), sin recompilar.
- * Por defecto: 6 hilos con PRIORIDAD BAJA (la pantalla y el teclado siempre tienen preferencia) y sin fijar núcleos.
+ * Por defecto: reparto AUTOMÁTICO según el procesador (ver Cpu.perfil: pocos hilos para escribir la respuesta y más para
+ * leer el prompt), PRIORIDAD BAJA (la pantalla y el teclado siempre tienen preferencia), sin fijar núcleos, y con
+ * menos hilos si el teléfono se calienta (ver Termico). Si eliges "hilos N" a mano, se respeta tal cual.
  * Los lee Engine.start() al arrancar el servidor.
  */
 object Ajustes {
@@ -17,10 +19,35 @@ object Ajustes {
     private fun p(ctx: Context) = ctx.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
     /** Hilos de CPU para generar texto (-t). */
-    fun hilos(ctx: Context): Int = p(ctx).getInt("hilos", HILOS_POR_DEFECTO)
+    fun hilos(ctx: Context): Int {
+        val pr = p(ctx)
+        // Si nunca se eligió a mano, se adapta al procesador (en 2 rápidos + 6 eficientes: 4 hilos para generar)
+        return if (pr.contains("hilos")) pr.getInt("hilos", HILOS_POR_DEFECTO) else Cpu.perfil().generacion
+    }
 
     /** Hilos para leer el prompt (-tb). 0 = los mismos que para generar. */
-    fun hilosLectura(ctx: Context): Int = p(ctx).getInt("hilos_lectura", 0)
+    fun hilosLectura(ctx: Context): Int {
+        val pr = p(ctx)
+        // Por defecto, leer el prompt usa todos los núcleos menos los libres: es cálculo puro y termina pronto
+        return if (pr.contains("hilos_lectura")) pr.getInt("hilos_lectura", 0) else Cpu.perfil().lectura
+    }
+
+    /** Vuelve al reparto automático de hilos (borra lo elegido a mano). */
+    fun hilosAutomaticos(ctx: Context) { p(ctx).edit().remove("hilos").remove("hilos_lectura").apply() }
+
+    /** ¿Los hilos son automáticos (no elegidos a mano)? Solo entonces se reducen con el calor. */
+    private fun hilosAuto(ctx: Context): Boolean = !p(ctx).contains("hilos")
+
+    /** Hilos que se restan por calor o ahorro de energía (solo en modo automático). */
+    private fun reduccionTermica(ctx: Context): Int {
+        if (!hilosAuto(ctx)) return 0
+        val n = Termico.nivel(ctx)
+        return when {
+            n >= Termico.CRITICO -> 2
+            n >= Termico.CALIENTE || Termico.ahorroEnergia(ctx) -> 1
+            else -> 0
+        }
+    }
 
     /**
      * false (por defecto): Jarvis genera TODA la respuesta, la muestra completa y recién entonces la lee en voz alta.
@@ -39,12 +66,12 @@ object Ajustes {
     fun maxHilos(): Int = maxOf(1, Runtime.getRuntime().availableProcessors() - NUCLEOS_LIBRES)
 
     /** Hilos que realmente se usan al generar (nunca más de maxHilos). */
-    fun hilosEfectivos(ctx: Context): Int = minOf(hilos(ctx), maxHilos())
+    fun hilosEfectivos(ctx: Context): Int = maxOf(1, minOf(hilos(ctx), maxHilos()) - reduccionTermica(ctx))
 
     /** Hilos que realmente se usan al leer el prompt; 0 = los mismos que al generar. */
     fun hilosLecturaEfectivos(ctx: Context): Int {
         val t = hilosLectura(ctx)
-        return if (t > 0) minOf(t, maxHilos()) else 0
+        return if (t > 0) maxOf(1, minOf(t, maxHilos()) - reduccionTermica(ctx)) else 0
     }
 
     /** false (por defecto): Android reparte los hilos. true: se fijan a los núcleos más rápidos (puede dejar lenta la pantalla). */

@@ -29,6 +29,36 @@ object Cpu {
         return valores.map { it!! }
     }
 
+    /**
+     * Reparto de hilos según el procesador.
+     *  - generacion: hilos para escribir la respuesta (limitada por memoria, no por cálculo: más hilos no la aceleran
+     *    y solo suman calor). Los núcleos rápidos más 2 eficientes (p. ej. 2 A75 + 2 A55 = 4 de 8).
+     *  - lectura: hilos para procesar el prompt (cálculo puro, y dura poco): todos menos los núcleos que se dejan libres.
+     */
+    class Perfil(val total: Int, val grandes: Int, val generacion: Int, val lectura: Int)
+
+    private val perfilCalculado: Perfil by lazy { calcularPerfil() }
+
+    fun perfil(): Perfil = perfilCalculado
+
+    private fun calcularPerfil(): Perfil {
+        val total = Runtime.getRuntime().availableProcessors()
+        val tope = maxOf(1, total - Ajustes.NUCLEOS_LIBRES)
+        val v = capacidades()
+        if (v == null || v.isEmpty()) {
+            // El kernel no informa los núcleos: se usa la mitad para generar
+            return Perfil(total, 0, maxOf(1, minOf(tope, total / 2)), tope)
+        }
+        val max = v.maxOrNull() ?: 1
+        val grandes = v.count { it.toLong() * 100 >= max.toLong() * 70 }   // núcleos con ≥70% de la potencia del más rápido
+        val generacion = when {
+            grandes >= total -> minOf(tope, 4)             // todos iguales: 4 hilos bastan para generar
+            grandes >= 4 -> minOf(tope, grandes)           // 4+4: solo los rápidos
+            else -> minOf(tope, grandes + 2)               // 2+6: los 2 rápidos y 2 eficientes
+        }
+        return Perfil(total, grandes, maxOf(1, generacion), tope)
+    }
+
     private fun aHex(mascara: Long) = "0x" + java.lang.Long.toHexString(mascara).uppercase()
 
     /**
