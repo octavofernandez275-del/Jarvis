@@ -15,11 +15,36 @@ import java.net.URL
  */
 object Chat {
     private const val TEMPERATURA = 0.6
-    private const val MAX_TOKENS = 300
+    // Prácticamente sin tope: la respuesta termina cuando el modelo termina (o cuando se llena el contexto de 4096).
+    private const val MAX_TOKENS = 3500
+
+    // Presupuesto del pedido (sin contar la respuesta): ~2400 tokens a 3 letras por token, para que quede lugar de sobra
+    // para responder dentro del contexto de 4096. Con la conversación larga se descarta lo MÁS VIEJO automáticamente.
+    private const val PRESUPUESTO_CHARS = 7200
+
+    /**
+     * Recorta el historial: conserva los mensajes "system" del principio y los mensajes más recientes que entren
+     * en el presupuesto. El último mensaje (lo que se acaba de pedir) nunca se descarta.
+     */
+    fun recortar(messages: List<Pair<String, String>>): List<Pair<String, String>> {
+        val sistema = messages.takeWhile { it.first == "system" }
+        val resto = messages.drop(sistema.size)
+        var usado = sistema.sumOf { it.second.length }
+        if (usado + resto.sumOf { it.second.length } <= PRESUPUESTO_CHARS) return messages   // entra todo: no se toca
+        val quedan = ArrayDeque<Pair<String, String>>()
+        for (m in resto.asReversed()) {
+            if (quedan.isNotEmpty() && usado + m.second.length > PRESUPUESTO_CHARS) break
+            quedan.addFirst(m)
+            usado += m.second.length
+        }
+        // Después de lo "system" el modelo espera un mensaje del usuario, no una respuesta suelta
+        while (quedan.size > 1 && quedan.first().first == "assistant") quedan.removeFirst()
+        return sistema + quedan
+    }
 
     /** Chat normal: usa la temperatura y el largo máximo de siempre. */
     fun stream(messages: List<Pair<String, String>>, onToken: (String) -> Unit): Unit =
-        stream(messages, Termico.limiteTokens(MAX_TOKENS), TEMPERATURA, onToken)   // más corto si el teléfono está muy caliente
+        stream(messages, MAX_TOKENS, TEMPERATURA, onToken)
 
     /** Igual, pero con largo máximo y temperatura propios (lo usan las tareas de Jarvis). */
     fun completar(
@@ -40,7 +65,7 @@ object Chat {
         esquema: JSONObject?, onToken: (String) -> Unit
     ) {
         val arr = JSONArray()
-        messages.forEach { arr.put(JSONObject().put("role", it.first).put("content", it.second)) }
+        recortar(messages).forEach { arr.put(JSONObject().put("role", it.first).put("content", it.second)) }
         val body = JSONObject()
             .put("stream", true)
             .put("temperature", temperatura)

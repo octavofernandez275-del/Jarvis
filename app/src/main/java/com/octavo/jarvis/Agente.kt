@@ -43,8 +43,7 @@ object Agente {
     private const val F_DOCX = 2
     private const val F_PDF = 4
 
-    // Tareas de fondo con prioridad baja: Android las manda a los núcleos eficientes y la pantalla no se resiente
-    private val pool = Hilos.unico("jarvis-agente")
+    private val pool = Executors.newSingleThreadExecutor()
     @Volatile private var actual = -1L
     @Volatile private var cancelarId = -1L
 
@@ -59,7 +58,7 @@ object Agente {
     private val rxPresentacion = Regex("""\b(presentacion|powerpoint|ppt|pptx|diapositivas)\b""")
     private val rxWord = Regex("""\b(word|docx|informe|documento|reporte)\b""")
     private val rxPdf = Regex("""\bpdf\b""")
-    private val rxImagen = Regex("""^(?:genera|generar|crea|crear|dibuja|dibujar|haz|hazme|hace|disena)\s+(?:me\s+)?(?:una\s+|un\s+)?(?:imagen|foto|ilustracion|dibujo|logo|poster|afiche|wallpaper)\b""")
+    private val rxImagen = Regex("""^(?:ahora\s+|y\s+)?(?:genera|generar|crea|crear|dibuja|dibujar|haz|hazme|hace|disena)\s+(?:me\s+)?(?:una\s+|un\s+|las\s+|unas\s+)?(?:imagenes|imagen|fotos|foto|ilustraciones|ilustracion|dibujos|dibujo|logo|poster|afiche|wallpaper)\b""")
 
     private val rxPrefijoDescarga = Regex("""^(?:descarga|descargar|baja|bajar|bajame|consigue|conseguir)\s+(?:me\s+)?""", RegexOption.IGNORE_CASE)
     private val rxPrefijoBusca = Regex("""^(?:busca|buscar|investiga|investigar|averigua|encuentra|resume|resumi)\s+(?:sobre\s+|acerca de\s+|de\s+|me\s+)?""", RegexOption.IGNORE_CASE)
@@ -71,7 +70,7 @@ object Agente {
     )
     // Para las imágenes solo se quita el verbo: "una imagen de un robot azul" le sirve al modelo para armar el prompt
     private val rxPrefijoImagen = Regex(
-        """^(?:genera|generar|crea|crear|dibuja|dibujar|haz|hazme|hace|diseña|disena)\s+(?:me\s+)?""",
+        """^(?:ahora\s+|y\s+)?(?:genera|generar|crea|crear|dibuja|dibujar|haz|hazme|hace|diseña|disena)\s+(?:me\s+)?""",
         RegexOption.IGNORE_CASE
     )
 
@@ -107,7 +106,6 @@ object Agente {
         if (!Ajustes.piloto(ctx)) return
         if (!Assistant.listo || Assistant.ocupado || HandsFree.activo) return
         if (!bateriaOk(ctx)) return
-        if (!Termico.permiteFondo(ctx)) return     // caliente o en ahorro de energía: el piloto automático espera
         val todas = Tareas.todas(ctx)
         if (todas.any { it.estado == Tareas.EN_CURSO }) return
         val propia = todas.filter { it.estado == Tareas.PENDIENTE && !it.sugerida }.minByOrNull { it.creada }
@@ -191,40 +189,173 @@ object Agente {
         return Plan(INVESTIGAR, titulo.replace(rxPrefijoBusca, "").trim().ifEmpty { titulo })
     }
 
-    // ---------- Reunir información ----------
+    // ---------- Contraste de fuentes ----------
 
-    private fun dominio(u: String) = u.substringAfter("//").substringBefore('/').removePrefix("www.")
-
-    /** De un texto largo, las frases que más se parecen a la consulta (en su orden original), hasta `max` caracteres. */
-    private fun relevantes(texto: String, consulta: String, max: Int): String {
-        val claves = Parsers.fold(consulta).split(Regex("[^a-z0-9]+")).filter { it.length > 3 }.toSet()
-        val frases = texto.split(Regex("(?<=[.!?])\\s+")).filter { it.length > 40 }
-        if (frases.isEmpty()) return texto.take(max)
-        val orden = frases.indices.sortedWith(compareByDescending<Int> { i -> val fo = Parsers.fold(frases[i]); claves.count { fo.contains(it) } }.thenBy { it })
-        val elegidas = ArrayList<Int>()
-        var largo = 0
-        for (i in orden) {
-            if (largo + frases[i].length > max) continue
-            elegidas.add(i)
-            largo += frases[i].length + 1
-        }
-        return elegidas.sorted().joinToString(" ") { frases[it] }.ifEmpty { texto.take(max) }
+    /**
+     * El dato es creíble en esa fuente si sus cifras aparecen tal cual y la mayoría de sus palabras clave también.
+     * Es una verificación en código (sin modelo): evita que el modelo diga "aparece en 2 fuentes" sin que sea cierto.
+     */
+    private fun respalda(dato: String, texto: String): Boolean {
+        val d = Parsers.fold(dato)
+        val t = Parsers.fold(texto)
+        val cifras = Regex("""\d{2,}""").findAll(d).map { it.value }.toList()
+        if (cifras.any { it !in t }) return false
+        val palabras = Regex("""[a-z]{5,}""").findAll(d).map { it.value }.distinct().toList()
+        if (palabras.isEmpty()) return true
+        return palabras.count { it in t } * 100 / palabras.size >= 60
     }
 
-    /** Busca en toda la web a la vez (varios buscadores + Wikipedia), lee hasta 5 páginas en paralelo y las devuelve completas. */
-    private fun reunirFuentes(ctx: Context, id: Long, q: String): Pair<List<Fuente>, List<String>> {
-        log(ctx, id, "Buscando en toda la web: $q")
-        val res = try { Web.buscarTodo(listOf(q, "$q datos clave")) } catch (e: Exception) {
-            log(ctx, id, "La búsqueda falló (${e.message})"); emptyList()
+    /**
+     * El modelo marca qué datos aparecen en 2 o más fuentes; el código lo comprueba y deja solo esos.
+     * Devuelve null si no se pudo contrastar (menos de 2 fuentes, error o muy pocos datos confirmados):
+     * en ese caso se sigue como antes, con las fuentes completas.
+     */
+    private fun contrastar(ctx: Context, id: Long, tema: String, fuentes: List<Fuente>): List<String>? {
+        if (fuentes.size < 2) return null
+        return try {
+            revisar(id)
+            log(ctx, id, "Contrastando datos entre ${fuentes.size} fuentes…")
+            val txt = fuentes.mapIndexed { i, f -> "[${i + 1}] ${f.titulo}\n${f.texto.take(700)}" }.joinToString("\n\n")
+            val j = json(
+                llm(
+                    ctx, id,
+                    listOf(
+                        "system" to "Eres un verificador de datos. Solo usas lo que dicen las fuentes.",
+                        "user" to "Tema: $tema\n\nFuentes:\n$txt\n\n" +
+                            "Lista los datos concretos (cifras, fechas, nombres, hechos) útiles para el tema. " +
+                            "En 'fuentes' pon los números de TODAS las fuentes donde aparece ese dato; " +
+                            "si aparece en una sola, pon solo esa. No inventes nada. Devuelve JSON con 'datos'."
+                    ),
+                    600, JSONObject(ESQUEMA_CONTRASTE)
+                )
+            )
+            val arr = j?.optJSONArray("datos") ?: return null
+            val confirmados = ArrayList<String>()
+            var descartados = 0
+            for (k in 0 until arr.length()) {
+                val o = arr.optJSONObject(k) ?: continue
+                val dato = o.optString("dato").trim()
+                val nums = o.optJSONArray("fuentes")
+                val citadas = (0 until (nums?.length() ?: 0)).map { nums!!.optInt(it) }.filter { it in 1..fuentes.size }.distinct()
+                // Cuenta solo las fuentes donde el dato de verdad se encuentra
+                val validas = citadas.filter { respalda(dato, fuentes[it - 1].texto) }
+                if (dato.length >= 10 && validas.size >= 2) confirmados.add(dato) else descartados++
+            }
+            log(ctx, id, "Datos confirmados: ${confirmados.size}; descartados por aparecer en una sola fuente: $descartados")
+            if (confirmados.size >= 2) confirmados.take(8) else null
+        } catch (e: Cancelacion) {
+            throw e
+        } catch (e: Exception) {
+            log(ctx, id, "No pude contrastar las fuentes (${e.message}); sigo con ellas completas")
+            null
         }
-        revisar(id)
-        if (res.isEmpty()) return emptyList<Fuente>() to emptyList()
-        log(ctx, id, "Leyendo ${minOf(8, res.size)} fuentes a la vez…")
-        val leidas = Web.leerVarias(res.take(8), 4000)
-        revisar(id)
-        val fuentes = leidas.map { (r, t) -> Fuente(r.titulo.ifBlank { dominio(r.url) }, r.url, t) }.take(5)
-        log(ctx, id, "Pude leer ${fuentes.size} fuentes.")
-        return fuentes to (fuentes.map { it.url } + res.map { it.url }).distinct().take(6)
+    }
+
+    // ---------- Tema recordado entre pedidos ----------
+
+    private const val PREFS_TEMA = "jarvis_tema"
+    private const val TEMA_VIGENTE_MS = 6 * 60 * 60 * 1000L   // pasadas 6 horas se olvida
+
+    /** Guarda de qué se acaba de hablar (tema + datos clave) para pedidos como "ahora hazme las imágenes". */
+    fun recordarTema(ctx: Context, tema: String, contexto: String) {
+        ctx.getSharedPreferences(PREFS_TEMA, Context.MODE_PRIVATE).edit()
+            .putString("tema", tema.take(150)).putString("contexto", contexto.take(600))
+            .putLong("hora", System.currentTimeMillis()).apply()
+    }
+
+    /** El tema del último pedido (si es reciente) o null. */
+    fun temaReciente(ctx: Context): String? {
+        val sp = ctx.getSharedPreferences(PREFS_TEMA, Context.MODE_PRIVATE)
+        if (System.currentTimeMillis() - sp.getLong("hora", 0L) > TEMA_VIGENTE_MS) return null
+        return sp.getString("tema", null)?.takeIf { it.isNotBlank() }
+    }
+
+    /** Datos clave del último tema (vacío si no hay o ya pasó mucho tiempo). */
+    fun contextoReciente(ctx: Context): String =
+        if (temaReciente(ctx) == null) "" else ctx.getSharedPreferences(PREFS_TEMA, Context.MODE_PRIVATE).getString("contexto", "").orEmpty()
+
+    private val rxRelleno = Regex("""\b(ahora|y|las|los|unas|unos|una|un|de|del|la|el|para|sobre|me|imagen|imagenes|foto|fotos|ilustracion|ilustraciones|dibujo|dibujos|logo|poster|afiche|wallpaper|ese|esa|eso|este|esta|tema|mismo|misma|anterior)\b""")
+
+    /** "las imágenes", "de eso": no dice de qué; entonces se usa el tema recordado. */
+    private fun esVaga(descripcion: String): Boolean =
+        Regex("""[a-z]{3,}""").findAll(rxRelleno.replace(Parsers.fold(descripcion), " ")).count() < 2
+
+    // ---------- Reunir información ----------
+
+    /** El modelo reescribe el pedido en 2 búsquedas claras (aclaran de qué se habla); la original queda de respaldo. */
+    private fun consultasMejoradas(ctx: Context, id: Long, q: String): List<String> {
+        return try {
+            log(ctx, id, "Pensando mejores búsquedas…")
+            val j = json(
+                llm(
+                    ctx, id,
+                    listOf(
+                        "system" to "Eres un experto en buscar información en internet.",
+                        "user" to "Pedido: $q\n\nEscribe 2 consultas de búsqueda en español, de 3 a 6 palabras cada una, " +
+                            "que aclaren de qué se trata exactamente (persona, lugar, objeto, época) y cubran ángulos distintos. " +
+                            "No repitas el pedido tal cual. Devuelve JSON con 'consultas'."
+                    ),
+                    120, JSONObject(ESQUEMA_CONSULTAS)
+                )
+            )
+            val mejoradas = lista(j?.optJSONArray("consultas")).map { it.trim().trim('"') }.filter { it.length in 4..80 }
+            (mejoradas.take(2) + q).distinctBy { Parsers.fold(it) }
+        } catch (e: Cancelacion) {
+            throw e
+        } catch (e: Exception) {
+            listOf(q)
+        }
+    }
+
+    private fun buscarWebConReintento(ctx: Context, id: Long, c: String): List<Web.Resultado> =
+        try { Web.buscarWeb(c, 5) } catch (e: Exception) {
+            log(ctx, id, "El buscador no respondió (${e.message}); reintento…")
+            try { Thread.sleep(1500); Web.buscarWeb(c, 5) } catch (e2: Exception) {
+                log(ctx, id, "El buscador sigue sin responder; sigo con lo que tengo"); emptyList()
+            }
+        }
+
+    /** Busca en Wikipedia y en la web con varias consultas; devuelve hasta maxFuentes con texto y los enlaces encontrados. */
+    private fun reunirFuentes(ctx: Context, id: Long, q: String, maxFuentes: Int = 3): Pair<List<Fuente>, List<String>> {
+        val consultas = consultasMejoradas(ctx, id, q)
+        val wiki = ArrayList<Web.Resultado>()
+        for (c in consultas) {
+            revisar(id)
+            log(ctx, id, "Buscando en Wikipedia: $c")
+            try {
+                for (r in Web.buscarWikipedia(c, 2)) if (wiki.none { it.url == r.url }) wiki.add(r)
+            } catch (e: Exception) {
+                log(ctx, id, "Wikipedia no respondió (${e.message})")
+            }
+        }
+        val listas = ArrayList<List<Web.Resultado>>()
+        for (c in consultas) {
+            revisar(id)
+            log(ctx, id, "Buscando en la web: $c")
+            listas.add(buscarWebConReintento(ctx, id, c))
+        }
+        // Se mezclan los resultados de cada consulta, de a uno, para tener fuentes variadas
+        val web = ArrayList<Web.Resultado>()
+        var k = 0
+        while (web.size < 10 && listas.any { k < it.size }) {
+            for (l in listas) if (k < l.size && web.none { it.url == l[k].url }) web.add(l[k])
+            k++
+        }
+        val fuentes = ArrayList<Fuente>()
+        wiki.firstOrNull { it.texto.isNotBlank() }?.let { fuentes.add(Fuente(it.titulo, it.url, it.texto.take(1000))) }
+        for (r in web) {
+            if (fuentes.size >= maxFuentes) break
+            if (fuentes.any { it.url == r.url }) continue
+            revisar(id)
+            log(ctx, id, "Leyendo: ${r.titulo.take(50)}")
+            try {
+                val texto = Web.textoPrincipal(Web.get(r.url), 900)
+                if (texto.length > 200) fuentes.add(Fuente(r.titulo, r.url, texto))
+            } catch (e: Exception) {
+                log(ctx, id, "No pude leer esa página (${e.message})")
+            }
+        }
+        return fuentes to (fuentes.map { it.url } + web.map { it.url }).distinct().take(5)
     }
 
     private fun investigar(ctx: Context, t: Tarea, q: String) {
@@ -237,17 +368,23 @@ object Agente {
         val id = t.id
         revisar(id)
         log(ctx, id, "Resumiendo con el modelo local (puede tardar un par de minutos)…")
-        val fuentesTxt = fuentes.take(3).mapIndexed { i, f -> "[${i + 1}] ${f.titulo}\n${relevantes(f.texto, t.titulo, 550)}" }.joinToString("\n\n")
+        val fuentesTxt = fuentes.mapIndexed { i, f -> "[${i + 1}] ${f.titulo}\n${f.texto}" }.joinToString("\n\n")
+        // Contraste: si se pudo, el resumen se escribe SOLO con los datos que aparecen en 2 o más fuentes
+        val confirmados = contrastar(ctx, id, t.titulo, fuentes)
         val resumen = try {
             llm(
                 ctx, id,
                 listOf(
                     "system" to "Eres un asistente que resume información en español de forma clara y breve.",
-                    "user" to "Tarea: ${t.titulo}\n\nFuentes:\n$fuentesTxt\n\n" +
-                        "Responde la tarea en español con 4 a 6 viñetas breves basadas solo en las fuentes. " +
-                        "Si las fuentes no alcanzan, dilo."
+                    "user" to if (confirmados != null)
+                        "Tarea: ${t.titulo}\n\nDatos confirmados por 2 o más fuentes:\n" + confirmados.joinToString("\n") { "- $it" } + "\n\n" +
+                            "Responde la tarea en español con 4 a 6 viñetas breves usando SOLO esos datos. No agregues nada más."
+                    else
+                        "Tarea: ${t.titulo}\n\nFuentes:\n$fuentesTxt\n\n" +
+                            "Responde la tarea en español con 4 a 6 viñetas breves basadas solo en las fuentes. " +
+                            "Si las fuentes no alcanzan, dilo."
                 ),
-                220
+                1500
             )
         } catch (e: Cancelacion) {
             throw e
@@ -256,11 +393,21 @@ object Agente {
             fuentes.first().texto.take(600)
         }
         val links = (enlaces.ifEmpty { fuentes.map { it.url } }).joinToString("\n")
+        val aviso = when {
+            confirmados != null -> "✔ Solo incluí datos confirmados por 2 o más fuentes.\n\n"
+            fuentes.size >= 2 -> "⚠ No pude confirmar los datos entre fuentes; verifícalos antes de usarlos.\n\n"
+            else -> ""
+        }
+        // Lo recuerda para pedidos posteriores ("ahora hazme las imágenes")
+        if (!rxUrl.containsMatchIn(t.titulo)) {   // si el pedido era una dirección web, no hay un "tema" que recordar
+            recordarTema(ctx, t.titulo.replace(rxPrefijoBusca, "").trim().ifEmpty { t.titulo },
+                (confirmados ?: fuentes.map { it.texto.take(150) }).take(4).joinToString(" | "))
+        }
         // Curiosidad: propone temas relacionados para seguir
         val seguir = if (Ajustes.curiosidad(ctx)) temasParaSeguir(ctx, id, t.titulo, resumen) else emptyList()
         Tareas.cambiar(ctx, id) {
             it.estado = Tareas.HECHA
-            it.resultado = resumen + "\n\nFuentes:\n" + links +
+            it.resultado = aviso + resumen + "\n\nFuentes:\n" + links +
                 (if (seguir.isNotEmpty()) "\n\nTemas relacionados que dejé como sugeridos 💡:\n" + seguir.joinToString("\n") { s -> "• $s" } else "")
         }
         log(ctx, id, "Lista.")
@@ -280,11 +427,104 @@ object Agente {
     private fun lista(a: JSONArray?): List<String> =
         if (a == null) emptyList() else (0 until a.length()).mapNotNull { a.optString(it).trim().takeIf { s -> s.isNotEmpty() } }
 
-    private val ESQUEMA_INDICE = """{"type":"object","properties":{"titulo":{"type":"string"},"secciones":{"type":"array","minItems":4,"maxItems":6,"items":{"type":"string"}}},"required":["titulo","secciones"]}"""
-    private val ESQUEMA_PUNTOS = """{"type":"object","properties":{"puntos":{"type":"array","minItems":3,"maxItems":4,"items":{"type":"string"}}},"required":["puntos"]}"""
-    private val ESQUEMA_PARRAFOS = """{"type":"object","properties":{"parrafos":{"type":"array","minItems":2,"maxItems":2,"items":{"type":"string"}}},"required":["parrafos"]}"""
+    private val ESQUEMA_PRESENTACION = """{"type":"object","properties":{"titulo":{"type":"string"},"diapositivas":{"type":"array","minItems":3,"maxItems":5,"items":{"type":"object","properties":{"titulo":{"type":"string"},"puntos":{"type":"array","minItems":3,"maxItems":4,"items":{"type":"string"}}},"required":["titulo","puntos"]}}},"required":["titulo","diapositivas"]}"""
+    private val ESQUEMA_DOCUMENTO = """{"type":"object","properties":{"titulo":{"type":"string"},"secciones":{"type":"array","minItems":3,"maxItems":4,"items":{"type":"object","properties":{"titulo":{"type":"string"},"parrafos":{"type":"array","minItems":1,"maxItems":2,"items":{"type":"string"}}},"required":["titulo","parrafos"]}}},"required":["titulo","secciones"]}"""
     private val ESQUEMA_CONCLUSION = """{"type":"object","properties":{"conclusiones":{"type":"array","minItems":2,"maxItems":3,"items":{"type":"string"}},"seguir":{"type":"array","minItems":1,"maxItems":3,"items":{"type":"string"}}},"required":["conclusiones","seguir"]}"""
     private val ESQUEMA_SEGUIR = """{"type":"object","properties":{"seguir":{"type":"array","minItems":1,"maxItems":3,"items":{"type":"string"}}},"required":["seguir"]}"""
+
+    // Contraste de fuentes: cada dato lleva los números de las fuentes donde aparece
+    private val ESQUEMA_CONTRASTE = """{"type":"object","properties":{"datos":{"type":"array","minItems":1,"maxItems":8,"items":{"type":"object","properties":{"dato":{"type":"string"},"fuentes":{"type":"array","minItems":1,"maxItems":4,"items":{"type":"integer"}}},"required":["dato","fuentes"]}}},"required":["datos"]}"""
+    // Imagen: el sujeto (en inglés) y el prompt que debe mostrarlo
+    private val ESQUEMA_IMAGEN = """{"type":"object","properties":{"sujeto":{"type":"string"},"prompt":{"type":"string"}},"required":["sujeto","prompt"]}"""
+
+    private const val SISTEMA_PROYECTO = "Eres un asistente que organiza y redacta contenido en español: claro, correcto, breve y basado solo en las fuentes dadas."
+    private val ESQUEMA_CONSULTAS = """{"type":"object","properties":{"consultas":{"type":"array","minItems":2,"maxItems":2,"items":{"type":"string"}}},"required":["consultas"]}"""
+    private val ESQUEMA_TITULOS_PRES = """{"type":"object","properties":{"titulo":{"type":"string"},"secciones":{"type":"array","minItems":4,"maxItems":5,"items":{"type":"string"}}},"required":["titulo","secciones"]}"""
+    private val ESQUEMA_TITULOS_DOC = """{"type":"object","properties":{"titulo":{"type":"string"},"secciones":{"type":"array","minItems":3,"maxItems":4,"items":{"type":"string"}}},"required":["titulo","secciones"]}"""
+    private val ESQUEMA_PUNTOS = """{"type":"object","properties":{"puntos":{"type":"array","minItems":3,"maxItems":4,"items":{"type":"string"}}},"required":["puntos"]}"""
+    private val ESQUEMA_PARRAFOS = """{"type":"object","properties":{"parrafos":{"type":"array","minItems":1,"maxItems":2,"items":{"type":"string"}}},"required":["parrafos"]}"""
+
+    /**
+     * Calidad: primero solo los títulos y después UNA llamada corta por sección.
+     * Un modelo chico rinde mucho mejor con tareas pequeñas que con un pedido grande.
+     * Devuelve null si algo falla, y entonces se usa el método de una sola llamada.
+     */
+    private fun generarPorPartes(ctx: Context, id: Long, tema: String, esPresentacion: Boolean, fuentesTxt: String): Pair<String, List<Documentos.Seccion>>? {
+        log(ctx, id, "Armando el esquema…")
+        val r = llm(
+            ctx, id,
+            listOf(
+                "system" to SISTEMA_PROYECTO,
+                "user" to "Fuentes:\n$fuentesTxt\n\nTema: $tema\n\n" +
+                    "Devuelve JSON con 'titulo' (máximo 8 palabras) y 'secciones': " +
+                    (if (esPresentacion) "de 4 a 5 títulos de diapositiva" else "de 3 a 4 títulos de sección") +
+                    ", cortos (máximo 6 palabras), distintos entre sí y que cubran el tema de punta a punta."
+            ),
+            300, JSONObject(if (esPresentacion) ESQUEMA_TITULOS_PRES else ESQUEMA_TITULOS_DOC)
+        )
+        val j = json(r) ?: return null
+        val titulos = lista(j.optJSONArray("secciones"))
+            .map { it.trim().trim('.', ':') }
+            .filter { it.length in 3..70 }
+            .distinctBy { Parsers.fold(it) }
+            .take(if (esPresentacion) 5 else 4)
+        if (titulos.size < 2) return null
+        val titulo = j.optString("titulo").trim().ifBlank { tema.replaceFirstChar { it.uppercase() } }
+
+        val salida = ArrayList<Documentos.Seccion>()
+        titulos.forEachIndexed { i, t ->
+            revisar(id)
+            log(ctx, id, "Escribiendo ${i + 1} de ${titulos.size}: ${t.take(40)}")
+            val previos = titulos.take(i).joinToString("; ")
+            val pedido = "Fuentes:\n$fuentesTxt\n\nTema general: $tema\n" +
+                (if (esPresentacion) "Diapositiva: «$t»" else "Sección: «$t»") + "\n\n" +
+                (if (esPresentacion)
+                    "Devuelve JSON con 'puntos': 3 o 4 frases completas de máximo 14 palabras para esa diapositiva, "
+                else
+                    "Devuelve JSON con 'parrafos': 1 o 2 párrafos de máximo 45 palabras para esa sección, ") +
+                "usando solo datos de las fuentes." +
+                (if (previos.isNotEmpty()) " No repitas lo que ya cubren estas partes: $previos." else "")
+            val rs = try {
+                llm(
+                    ctx, id,
+                    listOf("system" to SISTEMA_PROYECTO, "user" to pedido),
+                    if (esPresentacion) 350 else 600,
+                    JSONObject(if (esPresentacion) ESQUEMA_PUNTOS else ESQUEMA_PARRAFOS)
+                )
+            } catch (e: Cancelacion) {
+                throw e
+            } catch (e: Exception) {
+                log(ctx, id, "No pude escribir «${t.take(30)}» (${e.message})")
+                null
+            }
+            val puntos = lista(rs?.let { json(it) }?.optJSONArray(if (esPresentacion) "puntos" else "parrafos"))
+            if (puntos.isNotEmpty()) salida.add(Documentos.Seccion(t, puntos))
+        }
+        return if (salida.size >= 2) titulo to salida else null
+    }
+
+    /** Limpieza sin modelo: quita citas [1], viñetas y repetidos; cada frase queda con mayúscula inicial. */
+    private fun pulir(secciones: List<Documentos.Seccion>): List<Documentos.Seccion> {
+        val vistos = HashSet<String>()
+        val rxCita = Regex("\\[\\d+\\]")
+        val rxVineta = Regex("^\\s*(?:[-•*·]+|\\d{1,2}[.)])\\s*")
+        val salida = ArrayList<Documentos.Seccion>()
+        for (s in secciones) {
+            val puntos = ArrayList<String>()
+            for (p in s.puntos) {
+                var t = p.replace(rxCita, "").replace(rxVineta, "").replace(Regex("\\s+"), " ").trim()
+                if (t.length < 15) continue
+                t = t.replaceFirstChar { it.uppercase() }
+                if (!vistos.add(Parsers.fold(t).take(60))) continue
+                puntos.add(t)
+            }
+            if (puntos.isNotEmpty()) salida.add(Documentos.Seccion(s.titulo.trim().trimEnd('.', ':'), puntos))
+        }
+        return salida
+    }
+
+    private fun dominio(url: String): String =
+        try { java.net.URI(url).host?.removePrefix("www.") ?: url } catch (e: Exception) { url }
 
     /** Esquema de emergencia si el modelo no devolvió algo usable: un tema por cada fuente, con sus frases principales. */
     private fun respaldo(tema: String, fuentes: List<Fuente>): List<Documentos.Seccion> {
@@ -305,80 +545,73 @@ object Agente {
         val esPresentacion = (plan.formato and F_PPTX) != 0
         val (fuentes, enlaces) = reunirFuentes(ctx, id, tema)
         revisar(id)
-        // 1) Índice corto y luego cada sección por separado, con los datos más relevantes de las fuentes
-        //    (el modelo local tiene poca memoria: pedirle todo junto da texto flojo; por partes sale mucho mejor)
-        val resumenFuentes = fuentes.take(4).joinToString("\n") { "- ${it.titulo}: ${relevantes(it.texto, tema, 220)}" }
-            .ifEmpty { "(sin fuentes: usa tu conocimiento general y sé prudente)" }
+        // Contraste: los textos se escriben solo con datos que aparecen en 2 o más fuentes (si se pudo contrastar)
+        val confirmados = contrastar(ctx, id, tema, fuentes)
+        revisar(id)
+        val fuentesTxt = when {
+            fuentes.isEmpty() -> "(sin fuentes: usa tu conocimiento general y sé prudente)"
+            confirmados != null -> "Datos confirmados por 2 o más fuentes (usa solo estos; si no alcanzan, escribe menos):\n" +
+                confirmados.joinToString("\n") { "- $it" }
+            else -> fuentes.mapIndexed { i, f -> "[${i + 1}] ${f.titulo}\n${f.texto.take(800)}" }.joinToString("\n\n")
+        }
+        recordarTema(ctx, tema, (confirmados ?: fuentes.map { it.texto.take(150) }).take(4).joinToString(" | "))
+
+        // 1) Esquema + contenido con el modelo (primero por partes; si falla, una sola llamada)
         var titulo = tema.replaceFirstChar { it.uppercase() }
-        val cuantas = if (esPresentacion) 6 else 5
-        log(ctx, id, "Armando el índice (el modelo local tarda unos minutos en total)…")
-        val indice = try {
-            json(
-                llm(
-                    ctx, id,
-                    listOf(
-                        "system" to "Eres un asistente que organiza contenido claro, correcto y útil en español.",
-                        "user" to "Tema: $tema\n\nFuentes:\n$resumenFuentes\n\n" +
-                            "Devuelve JSON con 'titulo' y 'secciones': $cuantas títulos cortos (máximo 6 palabras), sin repetir, " +
-                            "que cubran el tema de lo básico a lo más importante."
-                    ),
-                    200, JSONObject(ESQUEMA_INDICE)
-                )
-            )
+        var secciones: List<Documentos.Seccion> = emptyList()
+        val porPartes = try {
+            generarPorPartes(ctx, id, tema, esPresentacion, fuentesTxt)
         } catch (e: Cancelacion) {
             throw e
         } catch (e: Exception) {
-            log(ctx, id, "El modelo no pudo armar el índice (${e.message})")
+            log(ctx, id, "No pude escribir por partes (${e.message}); pruebo con una sola llamada")
             null
         }
-        val tIdx = indice?.optString("titulo").orEmpty()
-        if (tIdx.isNotBlank()) titulo = tIdx
-        val titulos = lista(indice?.optJSONArray("secciones")).take(cuantas)
-        var secciones: List<Documentos.Seccion> = emptyList()
-        if (titulos.size >= 3) {
-            val clave = if (esPresentacion) "puntos" else "parrafos"
-            val hechas = ArrayList<Documentos.Seccion>()
-            titulos.forEachIndexed { i, st ->
-                revisar(id)
-                log(ctx, id, "Escribiendo ${i + 1} de ${titulos.size}: ${st.take(40)}")
-                val base = fuentes.map { relevantes(it.texto, "$tema $st", 350) }.filter { it.isNotBlank() }.take(3)
-                val datos = if (base.isEmpty()) "(sin fuentes: usa tu conocimiento general y sé prudente)"
-                else base.mapIndexed { k, b -> "[${k + 1}] $b" }.joinToString("\n")
-                val pedido = if (esPresentacion) {
-                    "Diapositiva '$st' de una presentación sobre: $tema.\nFuentes:\n$datos\n\n" +
-                        "Devuelve JSON con 'puntos': 3 o 4 frases de máximo 16 palabras, con datos concretos de las fuentes " +
-                        "(cifras, nombres, fechas). Sin relleno."
-                } else {
-                    "Sección '$st' de un documento sobre: $tema.\nFuentes:\n$datos\n\n" +
-                        "Devuelve JSON con 'parrafos': 2 párrafos de máximo 60 palabras con datos concretos de las fuentes " +
-                        "(cifras, nombres, fechas). Sin relleno."
-                }
-                val puntos = try {
-                    lista(
-                        json(
-                            llm(
-                                ctx, id,
-                                listOf("system" to "Eres un asistente que redacta contenido claro, correcto y concreto en español.", "user" to pedido),
-                                if (esPresentacion) 230 else 320,
-                                JSONObject(if (esPresentacion) ESQUEMA_PUNTOS else ESQUEMA_PARRAFOS)
-                            )
-                        )?.optJSONArray(clave)
-                    )
-                } catch (e: Cancelacion) {
-                    throw e
-                } catch (e: Exception) {
-                    log(ctx, id, "No pude escribir esa parte con el modelo (${e.message}); uso las fuentes")
-                    emptyList()
-                }
-                val finales = puntos.ifEmpty {
-                    (base.firstOrNull() ?: "").split(Regex("(?<=[.!?])\\s+")).filter { it.length > 30 }.take(3).map { it.take(140) }
-                }
-                if (finales.isNotEmpty()) hechas.add(Documentos.Seccion(st, finales))
-            }
-            secciones = hechas
+        if (porPartes != null) {
+            titulo = porPartes.first
+            secciones = porPartes.second
         }
         if (secciones.isEmpty()) {
-            log(ctx, id, "No obtuve contenido usable del modelo; armo uno con las fuentes.")
+            log(ctx, id, if (esPresentacion) "Armando el esquema de la presentación (el modelo local tarda unos minutos)…"
+            else "Escribiendo el documento (el modelo local tarda unos minutos)…")
+            val pedido = if (esPresentacion) {
+                "Crea una presentación en español sobre: $tema.\nUsa las fuentes.\n\nFuentes:\n$fuentesTxt\n\n" +
+                    "Devuelve JSON con 'titulo' y 'diapositivas' (de 3 a 5), cada una con 'titulo' y 'puntos' " +
+                    "(3 o 4 frases cortas de máximo 14 palabras)."
+            } else {
+                "Escribe un documento en español sobre: $tema.\nUsa las fuentes.\n\nFuentes:\n$fuentesTxt\n\n" +
+                    "Devuelve JSON con 'titulo' y 'secciones' (de 3 a 4), cada una con 'titulo' y 'parrafos' " +
+                    "(1 o 2 párrafos de máximo 45 palabras)."
+            }
+            val respuesta = try {
+                llm(
+                    ctx, id,
+                    listOf("system" to "Eres un asistente que redacta contenido claro, correcto y breve en español.", "user" to pedido),
+                    if (esPresentacion) 1000 else 1200,
+                    JSONObject(if (esPresentacion) ESQUEMA_PRESENTACION else ESQUEMA_DOCUMENTO)
+                )
+            } catch (e: Cancelacion) {
+                throw e
+            } catch (e: Exception) {
+                log(ctx, id, "El modelo no pudo armar el esquema (${e.message}); uso las fuentes directamente")
+                ""
+            }
+            val j = json(respuesta)
+            if (j != null) {
+                titulo = j.optString("titulo").ifBlank { titulo }
+                val arr = j.optJSONArray(if (esPresentacion) "diapositivas" else "secciones")
+                if (arr != null) {
+                    secciones = (0 until arr.length()).mapNotNull { i ->
+                        val o = arr.optJSONObject(i) ?: return@mapNotNull null
+                        val puntos = lista(o.optJSONArray(if (esPresentacion) "puntos" else "parrafos"))
+                        if (puntos.isEmpty()) null else Documentos.Seccion(o.optString("titulo").ifBlank { "Punto ${i + 1}" }, puntos)
+                    }
+                }
+            }
+        }
+        secciones = pulir(secciones)
+        if (secciones.isEmpty()) {
+            log(ctx, id, "No obtuve un esquema usable del modelo; armo uno con las fuentes.")
             secciones = respaldo(tema, fuentes)
         }
 
@@ -396,7 +629,7 @@ object Agente {
                             "Devuelve JSON con 'conclusiones' (2 o 3 frases cortas) y 'seguir' " +
                             "(1 a 3 temas relacionados que valga la pena investigar después, cada uno en pocas palabras)."
                     ),
-                    220, JSONObject(ESQUEMA_CONCLUSION)
+                    400, JSONObject(ESQUEMA_CONCLUSION)
                 )
             )
         } catch (e: Cancelacion) {
@@ -432,7 +665,7 @@ object Agente {
         Tareas.cambiar(ctx, id) {
             creados.forEach { a -> it.archivos.add("${a.nombre}|${a.uri}") }
             it.estado = Tareas.HECHA
-            it.resultado = "Listo. Creé:\n" + creados.joinToString("\n") { a -> "• ${a.nombre}" } +
+            it.resultado = (if (confirmados != null) "✔ Solo incluí datos confirmados por 2 o más fuentes.\n\n" else "") + "Listo. Creé:\n" + creados.joinToString("\n") { a -> "• ${a.nombre}" } +
                 "\n(en Descargas/JARVIS)" +
                 (if (conclusiones.isNotEmpty()) "\n\nConclusiones:\n" + conclusiones.joinToString("\n") { s -> "• $s" } else "") +
                 (if (enlaces.isNotEmpty()) "\n\nFuentes:\n" + enlaces.joinToString("\n") else "") +
@@ -447,20 +680,40 @@ object Agente {
     private fun imagen(ctx: Context, t: Tarea, descripcion: String) {
         val id = t.id
         log(ctx, id, "Preparando la descripción para el generador de imágenes…")
+        // Si el pedido no dice de qué ("las imágenes"), se usa el tema de la última investigación
+        val tema = if (esVaga(descripcion)) temaReciente(ctx) else null
+        val sujetoBase = tema ?: descripcion
+        var contexto = if (tema != null) contextoReciente(ctx) else ""
+        if (contexto.isEmpty()) {
+            // Sin tema recordado: un dato de Wikipedia ayuda a que el modelo entienda quién o qué es
+            contexto = try { Web.buscarWikipedia(sujetoBase, 1).firstOrNull()?.texto?.take(300).orEmpty() } catch (e: Exception) { "" }
+        }
+        val respaldo = tema ?: descripcion
         val prompt = try {
-            llm(
-                ctx, id,
-                listOf(
-                    "system" to "You write short image-generation prompts in English.",
-                    "user" to "Turn this idea into one detailed English image prompt (max 40 words, one line, no quotes): $descripcion"
-                ),
-                70
-            ).lines().first().trim().trim('"').ifEmpty { descripcion }
+            val j = json(
+                llm(
+                    ctx, id,
+                    listOf(
+                        "system" to "You write short image-generation prompts in English.",
+                        "user" to "Idea: $descripcion\nTema de fondo: $sujetoBase\nDatos de contexto: $contexto\n\n" +
+                            "Devuelve JSON con 'sujeto': el protagonista de la imagen, en inglés, 2 a 5 palabras " +
+                            "(la persona, animal, lugar u objeto DEL QUE TRATA el tema; si el tema es una persona, el sujeto es la persona, no sus cosas), " +
+                            "y 'prompt': un prompt de imagen en inglés, detallado, máximo 40 palabras, una sola línea, sin comillas, que muestre a ese sujeto."
+                    ),
+                    160, JSONObject(ESQUEMA_IMAGEN)
+                )
+            )
+            val sujeto = j?.optString("sujeto")?.trim().orEmpty()
+            var p = j?.optString("prompt")?.lines()?.firstOrNull()?.trim()?.trim('"').orEmpty()
+            if (p.isEmpty()) throw Exception("el modelo no devolvió un prompt")
+            // Garantía en código: el sujeto tiene que estar en el prompt
+            if (sujeto.isNotEmpty() && !p.contains(sujeto, ignoreCase = true)) p = "$sujeto, $p"
+            p
         } catch (e: Cancelacion) {
             throw e
         } catch (e: Exception) {
             log(ctx, id, "No pude mejorar la descripción (${e.message}); uso la tuya")
-            descripcion
+            respaldo
         }
         revisar(id)
         log(ctx, id, "Generando la imagen en un servicio en línea gratuito (puede tardar hasta un minuto)…")
@@ -558,7 +811,7 @@ object Agente {
                         "user" to "Tarea: $titulo\nResultado:\n${resumen.take(700)}\n\n" +
                             "Devuelve JSON con 'seguir': 1 a 3 temas relacionados y útiles para investigar después, en pocas palabras."
                     ),
-                    100, JSONObject(ESQUEMA_SEGUIR)
+                    200, JSONObject(ESQUEMA_SEGUIR)
                 )
             )
             val temas = lista(j?.optJSONArray("seguir")).take(3)
@@ -618,7 +871,6 @@ object Agente {
             Thread.sleep(2000)
             if (++espera > 450) throw Exception("el motor estuvo ocupado demasiado tiempo")
         }
-        Termico.esperarEnfriar(ctx) { revisar(id) }   // pausa corta entre peticiones; si está muy caliente, espera a que se enfríe
         cederMotor = false
         EngineManager.retener()
         try {
