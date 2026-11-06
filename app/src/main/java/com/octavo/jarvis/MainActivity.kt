@@ -119,9 +119,9 @@ class MainActivity : Activity(), Assistant.Ui {
         val fila2 = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             setPadding(dp(10), dp(8), dp(10), dp(10))
-            addView(handsBtn, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.5f).apply { rightMargin = dp(6) })
-            addView(tareasBtn, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { rightMargin = dp(6) })
-            addView(batBtn, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+            addView(handsBtn, LinearLayout.LayoutParams(0, dp(40), 1.5f).apply { rightMargin = dp(6) })
+            addView(tareasBtn, LinearLayout.LayoutParams(0, dp(40), 1f).apply { rightMargin = dp(6) })
+            addView(batBtn, LinearLayout.LayoutParams(0, dp(40), 1f))
         }
         estilo(handsBtn, ReactorView.AZUL)
         estilo(batBtn, ReactorView.AZUL)
@@ -192,7 +192,7 @@ class MainActivity : Activity(), Assistant.Ui {
     }
 
     /** Botón con borde de neón del color de acento (azul o rojo). */
-    private fun estilo(b: Button, acento: Int) = Tema.boton(b, acento)
+    private fun estilo(b: Button, acento: Int) { Tema.boton(b, acento); Tema.compacto(b, 12f) }
 
     private fun copiar(t: CharSequence) {
         val cm = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager

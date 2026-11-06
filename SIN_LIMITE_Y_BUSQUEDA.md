@@ -44,3 +44,8 @@ No se pudo compilar aquí (sin Kotlin/Android SDK). Ejecuta el workflow *Compila
 **Tareas (`TareasActivity.kt`)**: botón ← para volver, tarjetas con franja de color y píldora de estado (verde lista, ámbar trabajando, rojo falló/espera tu OK), barra de progreso y última línea de la bitácora mientras Jarvis trabaja, pantalla vacía más clara.
 
 **Compartido (`Tema.kt`)**: paleta ampliada, fondo degradado, botón circular, píldora, respuesta táctil y animación de entrada.
+
+## Tareas: reorganización (a partir de una captura)
+- El campo "Nueva tarea" pasó a una cápsula ABAJO, con botones redondos ＋ y ▶, y un texto más corto (el ejemplo largo ocupaba 5 líneas).
+- Atajos en una fila desplazable de 38 dp de alto, con 💡 Sugerir primero; Piloto automático y Curiosidad en dos botones anchos de una línea, sin cortarse.
+- Botones de tamaño fijo en dp (no se agrandan con la fuente grande del sistema) en Tareas y en la fila inferior del chat.

@@ -55,6 +55,15 @@ object Tema {
         GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0xFF0A1830.toInt(), ReactorView.FONDO, ReactorView.FONDO)
     )
 
+    /** Texto de botón de una sola línea con tamaño fijo en dp (no se agranda con la fuente del sistema), sin altura mínima. */
+    fun compacto(b: Button, tam: Float) {
+        b.setTextSize(android.util.TypedValue.COMPLEX_UNIT_DIP, tam)
+        b.minHeight = 0; b.minimumHeight = 0; b.minWidth = 0; b.minimumWidth = 0
+        b.maxLines = 1
+        b.ellipsize = android.text.TextUtils.TruncateAt.END
+        b.setPadding(dp(b.context, 12), 0, dp(b.context, 12), 0)
+    }
+
     /** Botón redondo (micrófono, enviar, volver). */
     fun circulo(b: Button, acento: Int, lleno: Boolean = false, tam: Int = 44, texto: Float = 18f) {
         val ctx = b.context

@@ -21,6 +21,7 @@ class TareasActivity : Activity() {
     private lateinit var input: EditText
     private lateinit var pilotoBtn: Button
     private lateinit var curiosidadBtn: Button
+    private lateinit var sugerirBtn: Button
     private val abiertas = HashSet<Long>()
 
     private fun dp(n: Int) = Tema.dp(this, n)
@@ -62,65 +63,46 @@ class TareasActivity : Activity() {
             addView(textos, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { leftMargin = dp(12) })
         }
 
-        // Atajos para empezar una tarea típica
+        // Fila de atajos (desplazable): empezar una tarea típica con un toque
         val atajos = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            setPadding(dp(8), dp(2), dp(8), dp(2))
+            setPadding(dp(10), dp(4), dp(10), dp(4))
         }
-        fun atajo(texto: String, prefijo: String) {
-            val b = Button(this).apply { text = texto; textSize = 12f }
-            Tema.boton(b, ReactorView.AZUL)
-            b.setOnClickListener {
-                input.setText(prefijo)
-                input.setSelection(prefijo.length)
-                input.requestFocus()
-            }
-            atajos.addView(b, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { rightMargin = dp(6) })
+        fun atajo(texto: String, acento: Int = ReactorView.AZUL, accion: () -> Unit) {
+            val b = Button(this).apply { text = texto }
+            Tema.boton(b, acento)
+            Tema.compacto(b, 12.5f)
+            b.setOnClickListener { accion() }
+            atajos.addView(b, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, dp(38)).apply { rightMargin = dp(6) })
         }
-        atajo("📊 Presentación", "Haz una presentación sobre ")
-        atajo("📄 Documento", "Haz un documento de Word sobre ")
-        atajo("📕 PDF", "Haz un PDF sobre ")
-        atajo("🖼 Imagen", "Genera una imagen de ")
-        atajo("🔎 Investigar", "Investiga ")
-        atajo("⬇ Descargar", "Descarga ")
+        fun plantilla(texto: String, prefijo: String) = atajo(texto) {
+            input.setText(prefijo)
+            input.setSelection(prefijo.length)
+            input.requestFocus()
+        }
+        sugerirBtn = Button(this).apply { text = "💡 Sugerir" }
+        Tema.boton(sugerirBtn, ReactorView.AZUL)
+        Tema.compacto(sugerirBtn, 12.5f)
+        atajos.addView(sugerirBtn, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, dp(38)).apply { rightMargin = dp(6) })
+        plantilla("📊 Presentación", "Haz una presentación sobre ")
+        plantilla("📄 Documento", "Haz un documento de Word sobre ")
+        plantilla("📕 PDF", "Haz un PDF sobre ")
+        plantilla("🖼 Imagen", "Genera una imagen de ")
+        plantilla("🔎 Investigar", "Investiga ")
+        plantilla("⬇ Descargar", "Descarga ")
         val atajosScroll = HorizontalScrollView(this).apply {
             isHorizontalScrollBarEnabled = false
             addView(atajos)
         }
 
-        // Nueva tarea
-        input = EditText(this).apply {
-            hint = "Nueva tarea… (ej: haz una presentación sobre la energía solar)"
-            maxLines = 3
-            setTextColor(Color.WHITE)
-            setHintTextColor(Color.argb(140, 159, 232, 255))
-            setPadding(dp(14), dp(10), dp(14), dp(10))
-            background = Tema.caja(this@TareasActivity, Color.argb(60, 24, 182, 255), Color.argb(170, 24, 182, 255))
-        }
-        val agregarBtn = Button(this).apply { text = "＋" }
-        val hacerBtn = Button(this).apply { text = "▶" }
-        Tema.boton(agregarBtn, ReactorView.AZUL)
-        Tema.boton(hacerBtn, ReactorView.ROJO)
-        val fila1 = LinearLayout(this).apply {
+        // Interruptores: dos botones anchos, de una sola línea, con el estado a la vista
+        pilotoBtn = Button(this)
+        curiosidadBtn = Button(this)
+        val interruptores = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(10), dp(4), dp(10), dp(4))
-            addView(input, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-            addView(agregarBtn, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { leftMargin = dp(6) })
-            addView(hacerBtn, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { leftMargin = dp(6) })
-        }
-
-        // Piloto automático, curiosidad y sugerencias
-        pilotoBtn = Button(this).apply { textSize = 12f }
-        curiosidadBtn = Button(this).apply { textSize = 12f }
-        val sugerirBtn = Button(this).apply { text = "💡 Sugerir"; textSize = 12f }
-        Tema.boton(sugerirBtn, ReactorView.AZUL)
-        val fila2 = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            setPadding(dp(10), 0, dp(10), dp(6))
-            addView(pilotoBtn, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { rightMargin = dp(6) })
-            addView(curiosidadBtn, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { rightMargin = dp(6) })
-            addView(sugerirBtn, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+            setPadding(dp(10), dp(2), dp(10), dp(6))
+            addView(pilotoBtn, LinearLayout.LayoutParams(0, dp(40), 1f).apply { rightMargin = dp(6) })
+            addView(curiosidadBtn, LinearLayout.LayoutParams(0, dp(40), 1f))
         }
 
         lista = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
@@ -129,14 +111,39 @@ class TareasActivity : Activity() {
             addView(lista)
         }
 
+        // Nueva tarea: barra en cápsula ABAJO, al alcance del pulgar (igual que en el chat)
+        input = EditText(this).apply {
+            hint = "Nueva tarea…"
+            maxLines = 3
+            textSize = 15f
+            setTextColor(Color.WHITE)
+            setHintTextColor(Color.argb(140, 159, 232, 255))
+            setPadding(dp(8), dp(10), dp(8), dp(10))
+            background = null
+        }
+        val agregarBtn = Button(this).apply { text = "＋" }
+        val hacerBtn = Button(this).apply { text = "▶" }
+        Tema.circulo(agregarBtn, ReactorView.AZUL)
+        Tema.circulo(hacerBtn, ReactorView.ROJO, lleno = true)
+        Tema.tactil(agregarBtn); Tema.tactil(hacerBtn)
+        val barra = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(14), dp(3), dp(6), dp(3))
+            background = Tema.caja(this@TareasActivity, Tema.SUPERFICIE, Tema.transparente(ReactorView.AZUL, 110), 1, 28)
+            addView(input, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+            addView(agregarBtn, LinearLayout.LayoutParams(dp(44), dp(44)).apply { leftMargin = dp(4) })
+            addView(hacerBtn, LinearLayout.LayoutParams(dp(44), dp(44)).apply { leftMargin = dp(6) })
+        }
+
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             background = Tema.fondo()
             addView(cabecera)
             addView(atajosScroll)
-            addView(fila1)
-            addView(fila2)
+            addView(interruptores)
             addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
+            addView(barra, LinearLayout.LayoutParams(-1, -2).apply { setMargins(dp(10), dp(4), dp(10), dp(10)) })
         }
         setContentView(root)
 
@@ -188,11 +195,13 @@ class TareasActivity : Activity() {
         resumen.text = "$pendientes pendientes · $enCurso en curso · $hechas listas"
 
         val piloto = Ajustes.piloto(this)
-        pilotoBtn.text = if (piloto) "🤖 Piloto: ON" else "🤖 Piloto: OFF"
+        pilotoBtn.text = if (piloto) "🤖 Piloto automático: ON" else "🤖 Piloto automático: OFF"
         Tema.boton(pilotoBtn, if (piloto) ReactorView.ROJO else ReactorView.AZUL)
+        Tema.compacto(pilotoBtn, 12f)
         val curiosidad = Ajustes.curiosidad(this)
         curiosidadBtn.text = if (curiosidad) "🔭 Curiosidad: ON" else "🔭 Curiosidad: OFF"
         Tema.boton(curiosidadBtn, if (curiosidad) ReactorView.ROJO else ReactorView.AZUL)
+        Tema.compacto(curiosidadBtn, 12f)
 
         lista.removeAllViews()
         if (todas.isEmpty()) {
@@ -294,10 +303,11 @@ class TareasActivity : Activity() {
             setPadding(0, dp(8), 0, 0)
         }
         fun boton(texto: String, acento: Int, accion: () -> Unit) {
-            val b = Button(ctx).apply { text = texto; textSize = 12f }
+            val b = Button(ctx).apply { text = texto }
             Tema.boton(b, acento)
+            Tema.compacto(b, 12f)
             b.setOnClickListener { accion() }
-            fila.addView(b, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { rightMargin = dp(6) })
+            fila.addView(b, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, dp(36)).apply { rightMargin = dp(6) })
         }
         when (t.estado) {
             Tareas.EN_CURSO -> boton("⏹ Detener", ReactorView.ROJO) { Agente.cancelar(t.id) }
