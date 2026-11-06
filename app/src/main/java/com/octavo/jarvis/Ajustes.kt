@@ -95,12 +95,12 @@ object Ajustes {
     fun fijarVozNombre(ctx: Context, n: String) { p(ctx).edit().putString("voz_nombre", n).apply() }
 
     /** Velocidad de la voz (1.0 = normal). */
-    fun velocidadVoz(ctx: Context): Float = p(ctx).getFloat("voz_velocidad", 1.0f)
+    fun velocidadVoz(ctx: Context): Float = p(ctx).getFloat("voz_velocidad", 0.94f)
 
     fun fijarVelocidadVoz(ctx: Context, v: Float) { p(ctx).edit().putFloat("voz_velocidad", v).apply() }
 
     /** Tono de la voz (1.0 = normal; menos = más grave). */
-    fun tonoVoz(ctx: Context): Float = p(ctx).getFloat("voz_tono", 1.0f)
+    fun tonoVoz(ctx: Context): Float = p(ctx).getFloat("voz_tono", 0.86f)
 
     fun fijarTonoVoz(ctx: Context, v: Float) { p(ctx).edit().putFloat("voz_tono", v).apply() }
 

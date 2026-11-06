@@ -231,9 +231,33 @@ class VoiceOutput(context: Context) {
         }
     }
 
+    /** ¿El nombre interno de la voz indica que es masculina? (Android no lo expone de forma estándar: se mira el nombre.) */
+    private fun esMasculina(nombre: String): Boolean {
+        val n = nombre.lowercase()
+        if (n.contains("female") || n.contains("-f-") || n.endsWith("-f") || n.contains("fem")) return false
+        return n.contains("male") || n.contains("-m-") || n.endsWith("-m") || n.contains("masc")
+    }
+
+    /**
+     * Ajusta la voz al estilo de mayordomo digital: voz masculina si se reconoce una (preferida sin internet),
+     * un poco grave y de ritmo pausado. Devuelve un texto para decirle al usuario qué pasó.
+     */
+    fun vozJarvis(): String {
+        Ajustes.fijarTonoVoz(app, 0.84f)
+        Ajustes.fijarVelocidadVoz(app, 0.93f)
+        val candidata = vocesEs.filter { esMasculina(it) }.let { m -> m.firstOrNull { !it.contains("network") } ?: m.firstOrNull() }
+        if (candidata != null) Ajustes.fijarVozNombre(app, candidata)
+        ajustarVoz()
+        runMain { val t = tts; if (ready && t != null) aplicarVoz(t) }
+        return if (candidata != null) "Listo: voz masculina, grave y pausada, al estilo de un mayordomo digital."
+        else "Dejé la voz grave y pausada. No pude reconocer cuál de tus voces es masculina: di «lista voces» y elige una con «voz 2», por ejemplo."
+    }
+
     private fun aplicarVoz(t: TextToSpeech) {
         try {
-            val nombre = Ajustes.vozNombre(app)
+            var nombre = Ajustes.vozNombre(app)
+            // Sin voz elegida: si hay una masculina reconocible, se usa por defecto (más parecida a un mayordomo digital)
+            if (nombre.isEmpty()) nombre = vocesEs.filter { esMasculina(it) }.let { m -> m.firstOrNull { !it.contains("network") } ?: m.firstOrNull() } ?: ""
             if (nombre.isNotEmpty()) {
                 t.voices?.firstOrNull { it.name == nombre }?.let { t.setVoice(it) }
             }

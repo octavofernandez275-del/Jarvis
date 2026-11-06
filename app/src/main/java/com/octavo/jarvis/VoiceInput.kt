@@ -55,7 +55,12 @@ class VoiceInput(context: Context) {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, "es-AR")
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5)   // varias hipótesis: se elige la que suena a "Jarvis"
+            // Pista para el reconocedor (Android 13+): palabras que probablemente diré
+            putExtra("android.speech.extra.BIASING_STRINGS", arrayListOf("Jarvis", "J.A.R.V.I.S.", "oye Jarvis", "hey Jarvis", "hola Jarvis"))
+            // No cortar si hago una pausa breve para pensar
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 1800L)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 1400L)
             putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, app.packageName)
         }
         r.startListening(intent)
@@ -108,15 +113,14 @@ class VoiceInput(context: Context) {
 
         override fun onPartialResults(partialResults: Bundle?) {
             if (mine != session) return
-            val t = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                ?.firstOrNull().orEmpty()
+            val t = CorreccionVoz.corregir(partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                ?.firstOrNull().orEmpty())
             if (t.isNotEmpty()) onPartial?.invoke(t)
         }
 
         override fun onResults(results: Bundle?) {
             if (mine != session) return
-            val t = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                ?.firstOrNull()?.trim().orEmpty()
+            val t = CorreccionVoz.elegir(results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION).orEmpty()).trim()
             end()
             if (t.isNotEmpty()) onResult?.invoke(t)
             else onError?.invoke("No te entendí, intenta de nuevo.")

@@ -59,6 +59,7 @@ object Commands {
     private val rxVozLenta = Regex("""^(?:habla|hablas|lee) mas lento$""")
     private val rxVozGrave = Regex("""^voz mas grave$""")
     private val rxVozAguda = Regex("""^voz mas aguda$""")
+    private val rxVozJarvis = Regex("""^voz (?:de |estilo |tipo )?(?:jarvis|mayordomo|robot|asistente)$|^(?:habla|suena|ponte) como jarvis$""")
     private val rxVozNormal = Regex("""^voz normal$""")
     private val rxVozAjustes = Regex("""^(?:abre |abrir )?ajustes de (?:la )?voz$""")
     private val rxAnimacionNo = Regex("""^(?:apaga|desactiva|quita) (?:la )?animacion(?: del reactor)?$""")
@@ -383,6 +384,7 @@ object Commands {
             v.ajustarVoz()
             return Reply("Listo: mi voz es más aguda.")
         }
+        if (rxVozJarvis.matches(f)) return Reply(v.vozJarvis())
         if (rxVozNormal.matches(f)) {
             Ajustes.fijarVelocidadVoz(ctx, 1.0f)
             Ajustes.fijarTonoVoz(ctx, 1.0f)

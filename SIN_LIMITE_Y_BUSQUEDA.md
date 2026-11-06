@@ -49,3 +49,13 @@ No se pudo compilar aquí (sin Kotlin/Android SDK). Ejecuta el workflow *Compila
 - El campo "Nueva tarea" pasó a una cápsula ABAJO, con botones redondos ＋ y ▶, y un texto más corto (el ejemplo largo ocupaba 5 líneas).
 - Atajos en una fila desplazable de 38 dp de alto, con 💡 Sugerir primero; Piloto automático y Curiosidad en dos botones anchos de una línea, sin cortarse.
 - Botones de tamaño fijo en dp (no se agrandan con la fuente grande del sistema) en Tareas y en la fila inferior del chat.
+
+## Voz estilo mayordomo digital (sin clonar a nadie)
+- Voz por defecto más grave y pausada (tono 0.86, velocidad 0.94) y, si hay una voz masculina reconocible entre las instaladas, se usa sola.
+- Comando nuevo: `voz jarvis` (o `voz de mayordomo`, `habla como jarvis`) aplica el preset completo. Se afina con `voz más grave`, `habla más lento`, `lista voces`, `voz 2`.
+- El modelo responde con tono de mayordomo: cortés, preciso, ingenio seco y sin símbolos raros para que se lean bien en voz alta.
+
+## Mejor entendimiento de la voz ("Jarvis" entendido como "llaves")
+- `CorreccionVoz.kt`: corrige variantes mal entendidas (llaves, yarvis, charvis, garvis, travis…) al inicio de la frase o tras "oye/hey/hola". "Las llaves del auto" o "busca las llaves" NO se tocan.
+- El reconocedor ahora devuelve hasta 5 hipótesis y se elige la que empieza diciendo Jarvis.
+- Pista de vocabulario (Android 13+) con "Jarvis", "oye Jarvis", "hey Jarvis"; y 1,8 s de silencio antes de cortar, para que no te interrumpa si haces una pausa.
