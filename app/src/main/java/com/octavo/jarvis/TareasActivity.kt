@@ -52,6 +52,12 @@ class TareasActivity : Activity() {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             setPadding(dp(12), dp(8), dp(12), dp(4))
+            addView(Button(this@TareasActivity).apply {
+                text = "←"
+                Tema.circulo(this, ReactorView.AZUL, tam = 40, texto = 20f)
+                setOnClickListener { finish() }
+                Tema.tactil(this)
+            }, LinearLayout.LayoutParams(dp(40), dp(40)).apply { rightMargin = dp(10) })
             addView(ReactorView(this@TareasActivity), LinearLayout.LayoutParams(dp(60), dp(60)))
             addView(textos, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { leftMargin = dp(12) })
         }
@@ -125,7 +131,7 @@ class TareasActivity : Activity() {
 
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(ReactorView.FONDO)
+            background = Tema.fondo()
             addView(cabecera)
             addView(atajosScroll)
             addView(fila1)
@@ -190,12 +196,25 @@ class TareasActivity : Activity() {
 
         lista.removeAllViews()
         if (todas.isEmpty()) {
-            lista.addView(TextView(this).apply {
-                text = "Sin tareas todavía.\nEscribe una arriba o toca un atajo. Ejemplos:\n" +
-                    "• Haz una presentación sobre la energía solar\n• Descarga el manual de Python\n• Investiga cómo funciona un reactor"
-                textSize = 14f
-                setTextColor(Color.argb(190, 159, 232, 255))
-                setPadding(dp(18), dp(20), dp(18), dp(10))
+            lista.addView(LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER_HORIZONTAL
+                setPadding(dp(24), dp(48), dp(24), dp(16))
+                addView(TextView(context).apply { text = "📋"; textSize = 46f; gravity = Gravity.CENTER })
+                addView(TextView(context).apply {
+                    text = "Sin tareas todavía"
+                    textSize = 18f
+                    typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+                    setTextColor(ReactorView.AZUL)
+                    gravity = Gravity.CENTER
+                    setPadding(0, dp(8), 0, dp(6))
+                })
+                addView(TextView(context).apply {
+                    text = "Escribe una arriba o toca un atajo.\n\n• Haz una presentación sobre la energía solar\n• Descarga el manual de Python\n• Investiga cómo funciona un reactor"
+                    textSize = 14f
+                    setLineSpacing(dp(3).toFloat(), 1f)
+                    setTextColor(Color.argb(190, 159, 232, 255))
+                })
             })
             return
         }
@@ -205,9 +224,9 @@ class TareasActivity : Activity() {
     private fun tarjeta(t: Tarea): View {
         val ctx = this
         val color = when (t.estado) {
-            Tareas.EN_CURSO -> ReactorView.AZUL_CLARO
+            Tareas.EN_CURSO -> Tema.AMBAR
             Tareas.FALLO, Tareas.ESPERA_OK -> ReactorView.ROJO
-            Tareas.HECHA -> Color.argb(150, 230, 246, 255)
+            Tareas.HECHA -> Tema.VERDE
             else -> ReactorView.AZUL
         }
         val etiqueta = when (t.estado) {
@@ -220,13 +239,19 @@ class TareasActivity : Activity() {
         val abierta = t.id in abiertas
         val hayDetalle = t.resultado.isNotBlank() || t.archivos.isNotEmpty() || t.bitacora.isNotEmpty()
 
-        val tarjeta = LinearLayout(ctx).apply {
+        val contenido = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
-            background = Tema.caja(ctx, Tema.transparente(color, 25), color)
             setPadding(dp(12), dp(10), dp(12), dp(10))
-            layoutParams = LinearLayout.LayoutParams(-1, -2).apply { setMargins(dp(10), dp(5), dp(10), dp(5)) }
         }
-        tarjeta.addView(TextView(ctx).apply {
+        val tarjeta = LinearLayout(ctx).apply {
+            orientation = LinearLayout.HORIZONTAL
+            background = Tema.caja(ctx, Tema.SUPERFICIE, Tema.transparente(color, 90), 1, 14)
+            layoutParams = LinearLayout.LayoutParams(-1, -2).apply { setMargins(dp(10), dp(5), dp(10), dp(5)) }
+            // franja de color a la izquierda: se ve de un vistazo el estado
+            addView(View(ctx).apply { background = Tema.caja(ctx, color, color, 0, 3) }, LinearLayout.LayoutParams(dp(5), -1).apply { setMargins(dp(6), dp(8), 0, dp(8)) })
+            addView(contenido, LinearLayout.LayoutParams(0, -2, 1f))
+        }
+        contenido.addView(TextView(ctx).apply {
             text = t.titulo
             textSize = 16f
             typeface = Typeface.DEFAULT_BOLD
@@ -236,12 +261,32 @@ class TareasActivity : Activity() {
                 pintar()
             }
         })
-        tarjeta.addView(TextView(ctx).apply {
+        contenido.addView(TextView(ctx).apply {
             text = etiqueta + if (hayDetalle && !abierta) "  ·  toca el título para ver el detalle" else ""
-            textSize = 11f
+            textSize = 10.5f
             typeface = Typeface.MONOSPACE
             setTextColor(color)
+            setPadding(dp(8), dp(2), dp(8), dp(2))
+            background = Tema.pildora(ctx, color)
+            layoutParams = LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(6) }
         })
+        // Mientras trabaja: barra de progreso y la última línea de la bitácora, para ver el avance sin abrir la tarjeta
+        if (t.estado == Tareas.EN_CURSO) {
+            contenido.addView(ProgressBar(ctx, null, android.R.attr.progressBarStyleHorizontal).apply {
+                isIndeterminate = true
+                indeterminateTintList = android.content.res.ColorStateList.valueOf(color)
+            }, LinearLayout.LayoutParams(-1, dp(4)).apply { topMargin = dp(8) })
+            t.bitacora.lastOrNull()?.let { ultima ->
+                contenido.addView(TextView(ctx).apply {
+                    text = ultima
+                    textSize = 11f
+                    typeface = Typeface.MONOSPACE
+                    maxLines = 2
+                    setTextColor(Color.argb(190, 159, 232, 255))
+                    setPadding(0, dp(6), 0, 0)
+                })
+            }
+        }
 
         // Botones
         val fila = LinearLayout(ctx).apply {
@@ -270,12 +315,12 @@ class TareasActivity : Activity() {
             Tareas.borrar(ctx, t.id)
             abiertas.remove(t.id)
         }
-        tarjeta.addView(fila)
+        contenido.addView(fila)
 
         // Detalle: resultado, archivos y bitácora
         if (abierta) {
             if (t.resultado.isNotBlank()) {
-                tarjeta.addView(TextView(ctx).apply {
+                contenido.addView(TextView(ctx).apply {
                     text = t.resultado
                     textSize = 14f
                     setTextIsSelectable(true)
@@ -286,7 +331,7 @@ class TareasActivity : Activity() {
             for (a in t.archivos) {
                 val partes = a.split("|", limit = 2)
                 if (partes.size < 2) continue
-                tarjeta.addView(TextView(ctx).apply {
+                contenido.addView(TextView(ctx).apply {
                     text = "📎 ${partes[0]}  (toca para abrir)"
                     textSize = 14f
                     setTextColor(ReactorView.AZUL)
@@ -295,7 +340,7 @@ class TareasActivity : Activity() {
                 })
             }
             if (t.bitacora.isNotEmpty()) {
-                tarjeta.addView(TextView(ctx).apply {
+                contenido.addView(TextView(ctx).apply {
                     text = "Bitácora:\n" + t.bitacora.takeLast(12).joinToString("\n")
                     textSize = 10.5f
                     typeface = Typeface.MONOSPACE

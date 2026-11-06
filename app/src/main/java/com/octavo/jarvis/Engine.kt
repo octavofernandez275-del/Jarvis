@@ -11,6 +11,8 @@ import java.net.URL
 /** Motor local: corre llama-server (empaquetado en la APK) y habla con él por HTTP en 127.0.0.1. */
 object Engine {
     const val PORT = 8001
+    /** Contexto del modelo en tokens (antes 2048). Con context-shift la generación no se corta aunque se llene. */
+    const val CONTEXTO = 32768
     const val MODEL_URL =
         "https://huggingface.co/Repasar-Labs/qwen3.5-2b-gguf/resolve/main/Qwen3.5-2B-Q4_K_M.gguf"
     private const val MODEL_NAME = "modelo.gguf"
@@ -112,7 +114,7 @@ object Engine {
         val args = mutableListOf(
             bin.path, "-m", modelFile(ctx).path,
             "--host", "127.0.0.1", "--port", PORT.toString(),
-            "-c", "2048", "-t", t.toString(), "-np", "1",
+            "-c", CONTEXTO.toString(), "-t", t.toString(), "-np", "1",
             "--chat-template-kwargs", "{\"enable_thinking\":false}"
         )
         // Reparto por complejidad: pocos hilos para escribir la respuesta (límite de memoria, no de cálculo)
@@ -134,6 +136,8 @@ object Engine {
             args.add("--poll"); args.add("0")
             // Sin la página web integrada del servidor: menos memoria y nada expuesto (solo usamos la API)
             args.add("--no-webui")
+            // Si la conversación llena el contexto, descarta lo más viejo y sigue escribiendo (respuestas sin límite)
+            args.add("--context-shift")
         }
         val pb = ProcessBuilder(args)
         pb.redirectErrorStream(true)
@@ -234,7 +238,7 @@ object Engine {
         val body = JSONObject()
             .put("stream", false)
             .put("temperature", 0.6)
-            .put("max_tokens", 300)
+            .put("max_tokens", -1)
             .put("messages", arr)
             .toString()
 

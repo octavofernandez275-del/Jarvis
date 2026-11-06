@@ -43,11 +43,11 @@ object Assistant {
     // El historial crece hasta HIST_MAX mensajes y entonces se recorta de golpe a ~HIST_KEEP. Así el inicio
     // del prompt no cambia en cada turno y llama-server reutiliza su caché en lugar de reprocesar todo.
     // Nunca queda con menos contexto que antes (7-8 mensajes). Los topes por caracteres (~3,5 por token)
-    // evitan pasarse del contexto del modelo (2048 tokens) cuando las respuestas son largas.
-    private const val HIST_MAX = 10
-    private const val HIST_KEEP = 8
-    private const val HIST_MAX_CHARS = 5000
-    private const val HIST_KEEP_CHARS = 3600
+    // evitan pasarse del contexto del modelo (Engine.CONTEXTO tokens) cuando las respuestas son largas.
+    private const val HIST_MAX = 24
+    private const val HIST_KEEP = 20
+    private const val HIST_MAX_CHARS = Engine.CONTEXTO * 3 * 45 / 100
+    private const val HIST_KEEP_CHARS = Engine.CONTEXTO * 3 * 33 / 100
 
     private val main = Handler(Looper.getMainLooper())
     private lateinit var app: Context
@@ -285,7 +285,14 @@ object Assistant {
         emitir(if (vozEnVivo) "\nTú: $text\nJarvis: " else "\nTú: $text\n")
         history.add("user" to text)
         recortarHistorial()
-        val msgs = listOf("system" to systemPrompt()) + history
+        // Búsqueda en vivo: si la pregunta es de datos o actualidad, se busca en internet mientras arranca el motor
+        val previo = history.dropLast(1).lastOrNull { it.first == "user" }?.second
+        val consultaWeb = if (text.trim().split(Regex("\\s+")).size < 5 && previo != null) "$previo $text" else text
+        val buscarWeb = Ajustes.busquedaEnChat(app) && Web.necesitaInternet(text)
+        val webListo = arrayOfNulls<Pair<String, List<String>>>(1)
+        val hiloWeb = if (buscarWeb) Thread {
+            try { webListo[0] = Web.contextoEnVivo(consultaWeb) } catch (_: Exception) {}
+        }.also { it.isDaemon = true; it.start() } else null
         generando = true
         Agente.cederMotor = true                    // si una tarea está usando el motor, lo suelta para atenderte
         renovarSueno()                              // CPU despierta mientras piensa
@@ -297,11 +304,16 @@ object Assistant {
             var tListo = t0          // motor listo
             var tPrimero = 0L        // llegó la primera palabra
             var tokens = 0
+            var fuentesWeb: List<String> = emptyList()
             try {
                 // Si el motor se apagó por inactividad, aquí se vuelve a encender
                 if (!EngineManager.asegurar(app) { estado(it) }) throw Exception("el motor no arrancó")
+                if (hiloWeb != null) { estado("Buscando en internet…"); try { hiloWeb.join(30_000) } catch (_: InterruptedException) {} }
                 tListo = SystemClock.elapsedRealtime()
                 estado("Respondiendo…")
+                val web = webListo[0]
+                fuentesWeb = web?.second.orEmpty()
+                val msgs = listOf("system" to systemPrompt() + (web?.first ?: "")) + history
                 Chat.stream(msgs) { t ->
                     if (miGen != genId) throw Cancelado()   // el usuario interrumpió
                     if (tokens == 0) tPrimero = SystemClock.elapsedRealtime()
@@ -325,11 +337,11 @@ object Assistant {
             }
             if (!vozEnVivo && reply.isNotEmpty()) {
                 // Modo por defecto: primero se muestra la respuesta completa y recién entonces empieza la voz (de corrido)
-                emitirYa("Jarvis: " + reply.toString().trim() + (if (cancelado) " […]" else "") + "\n")
+                emitirYa("Jarvis: " + reply.toString().trim() + (if (cancelado) " […]" else "") + pieFuentes(fuentesWeb, cancelado) + "\n")
                 if (!cancelado) voiceOut.feed(ticket, reply.toString())
             }
             voiceOut.endReply(ticket)                       // habla lo que quede (si no se cortó)
-            if (vozEnVivo) emitir("\n")
+            if (vozEnVivo) { emitir(pieFuentes(fuentesWeb, cancelado)); emitir("\n") }
             if (tokens > 0 && !cancelado) mostrarMedicion(tListo - t0, tPrimero - tListo, SystemClock.elapsedRealtime() - tPrimero, tokens)
             generando = false
             EngineManager.soltar()
@@ -380,6 +392,10 @@ object Assistant {
         history.clear()
         archivoContexto().delete()
     }
+
+    /** Enlaces de las páginas que se consultaron para contestar (solo se muestran; la voz no los lee). */
+    private fun pieFuentes(urls: List<String>, cancelado: Boolean): String =
+        if (urls.isEmpty() || cancelado) "" else "\n\nFuentes:\n" + urls.mapIndexed { i, u -> "[${i + 1}] $u" }.joinToString("\n")
 
     /** Recorta el historial por tandas (ver HIST_MAX) y lo deja siempre empezando por un mensaje del usuario. */
     private fun recortarHistorial() {

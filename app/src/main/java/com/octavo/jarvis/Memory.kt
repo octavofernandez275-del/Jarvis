@@ -6,7 +6,7 @@ import java.io.File
 /**
  * Memoria de Jarvis: cosas que el usuario le pide recordar ("recuerda que mi gato se llama Tomás").
  * Se guardan en un archivo de texto privado de la app (una por línea), sin IA ni base de datos.
- * Límites pequeños a propósito: el contexto del modelo es de solo 2048 tokens.
+ * Límites pequeños a propósito: el contexto del modelo es de Engine.CONTEXTO tokens (32768).
  */
 object Memory {
     private const val ARCHIVO = "memoria.txt"

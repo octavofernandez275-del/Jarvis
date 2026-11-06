@@ -69,6 +69,7 @@ object Commands {
     private val rxTareaHacer = Regex("""^(?:haz|hace|ejecuta|ejecutar|realiza|hazme)(?: la)? tarea (?:numero )?(\d{1,2})$""")
     private val rxTareaSugerir = Regex("""^(?:sugiere|sugiereme|sugerime)(?: me)?(?: algunas)? tareas(?: utiles)?$""")
     private val rxPiloto = Regex("""^(activa|enciende|prende|desactiva|apaga) (?:el )?piloto automatico$""")
+    private val rxBusquedaChat = Regex("""^(activa|enciende|prende|desactiva|apaga) (?:la )?busqueda (?:en|por|de) (?:internet|la web|linea|red)$""")
     private val rxCuriosidad = Regex("""^(activa|enciende|prende|desactiva|apaga) (?:la )?curiosidad$""")
     private val rxVozFinal = Regex("""^(?:voz al final|(?:habla|lee|di|dictalo) (?:todo )?(?:al terminar|al final|despues de escribir|despues de responder))$""")
     private val rxVozVivo = Regex("""^(?:voz en vivo|(?:habla|lee|di|dictalo) (?:mientras (?:escribes|respondes|generas)|en vivo))$""")
@@ -436,6 +437,12 @@ object Commands {
                 if (on) "Piloto automático activado: haré solo tus tareas pendientes cuando haya batería y no estés hablando conmigo."
                 else "Piloto automático desactivado."
             )
+        }
+        rxBusquedaChat.find(f)?.let { m ->
+            val on = m.groupValues[1] in setOf("activa", "enciende", "prende")
+            Ajustes.fijarBusquedaEnChat(ctx, on)
+            return Reply(if (on) "Búsqueda en internet activada: consultaré la web antes de contestar preguntas de datos o actualidad."
+                else "Búsqueda en internet desactivada: contestaré solo con lo que sé.")
         }
         rxCuriosidad.find(f)?.let { m ->
             val on = m.groupValues[1] in setOf("activa", "enciende", "prende")

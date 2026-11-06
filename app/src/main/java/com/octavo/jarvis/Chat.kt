@@ -15,12 +15,13 @@ import java.net.URL
  */
 object Chat {
     private const val TEMPERATURA = 0.6
-    // Prácticamente sin tope: la respuesta termina cuando el modelo termina (o cuando se llena el contexto de 4096).
-    private const val MAX_TOKENS = 3500
+    // SIN TOPE: -1 = el modelo escribe hasta terminar por sí mismo (llama-server con --context-shift nunca se queda sin lugar).
+    private const val SIN_LIMITE = -1
+    private const val MAX_TOKENS = SIN_LIMITE
 
-    // Presupuesto del pedido (sin contar la respuesta): ~2400 tokens a 3 letras por token, para que quede lugar de sobra
-    // para responder dentro del contexto de 4096. Con la conversación larga se descarta lo MÁS VIEJO automáticamente.
-    private const val PRESUPUESTO_CHARS = 7200
+    // Presupuesto del pedido (sin contar la respuesta): 60 % del contexto a ~3 letras por token; el resto queda para responder.
+    // Con la conversación larga se descarta lo MÁS VIEJO automáticamente.
+    private const val PRESUPUESTO_CHARS = Engine.CONTEXTO * 3 * 60 / 100
 
     /**
      * Recorta el historial: conserva los mensajes "system" del principio y los mensajes más recientes que entren
@@ -69,7 +70,7 @@ object Chat {
         val body = JSONObject()
             .put("stream", true)
             .put("temperature", temperatura)
-            .put("max_tokens", maxTokens)
+            .put("max_tokens", SIN_LIMITE)   // el parámetro maxTokens se conserva por compatibilidad, pero ya no limita
             .put("cache_prompt", true)                                              // reutilizar lo ya procesado
             .put("chat_template_kwargs", JSONObject().put("enable_thinking", false)) // sin razonamiento extendido
             .put("messages", arr)
@@ -80,7 +81,7 @@ object Chat {
             c.requestMethod = "POST"
             c.doOutput = true
             c.connectTimeout = 10_000
-            c.readTimeout = 120_000
+            c.readTimeout = 0   // sin tiempo límite: la respuesta puede ser tan larga como haga falta
             c.setRequestProperty("Content-Type", "application/json")
             c.setRequestProperty("Accept", "text/event-stream")
             c.outputStream.use { it.write(body.toString().toByteArray(Charsets.UTF_8)) }

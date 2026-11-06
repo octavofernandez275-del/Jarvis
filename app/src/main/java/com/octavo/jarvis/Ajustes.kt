@@ -115,6 +115,9 @@ object Ajustes {
     fun fijarPiloto(ctx: Context, v: Boolean) { p(ctx).edit().putBoolean("piloto", v).apply() }
 
     /** Curiosidad: al terminar, Jarvis propone y (con el piloto) investiga temas relacionados, hasta un cupo diario. */
+    /** Buscar en internet antes de contestar preguntas de hechos o actualidad en el chat (por defecto sí). */
+    fun busquedaEnChat(ctx: Context): Boolean = p(ctx).getBoolean("busqueda_chat", true)
+    fun fijarBusquedaEnChat(ctx: Context, v: Boolean) { p(ctx).edit().putBoolean("busqueda_chat", v).apply() }
     fun curiosidad(ctx: Context): Boolean = p(ctx).getBoolean("curiosidad", false)
 
     fun fijarCuriosidad(ctx: Context, v: Boolean) { p(ctx).edit().putBoolean("curiosidad", v).apply() }

@@ -151,7 +151,7 @@ object Agente {
                 IMAGEN -> imagen(ctx, t, plan.dato)
                 LEER -> {
                     log(ctx, id, "Leyendo la página…")
-                    val texto = Web.textoPrincipal(Web.get(plan.dato), 1200)
+                    val texto = Web.mejoresPasajes(Web.textoPrincipal(Web.get(plan.dato)), listOf(t.titulo), PRESUPUESTO_FUENTES)
                     if (texto.length < 150) throw Exception("la página casi no tiene texto")
                     terminarConResumen(ctx, t, listOf(Fuente(plan.dato, plan.dato, texto)), emptyList())
                 }
@@ -215,7 +215,7 @@ object Agente {
         return try {
             revisar(id)
             log(ctx, id, "Contrastando datos entre ${fuentes.size} fuentes…")
-            val txt = fuentes.mapIndexed { i, f -> "[${i + 1}] ${f.titulo}\n${f.texto.take(700)}" }.joinToString("\n\n")
+            val txt = fuentes.mapIndexed { i, f -> "[${i + 1}] ${f.titulo}\n${f.texto.take(1400)}" }.joinToString("\n\n")
             val j = json(
                 llm(
                     ctx, id,
@@ -282,7 +282,7 @@ object Agente {
 
     // ---------- Reunir información ----------
 
-    /** El modelo reescribe el pedido en 2 búsquedas claras (aclaran de qué se habla); la original queda de respaldo. */
+    /** El modelo reescribe el pedido en 3 búsquedas claras (aclaran de qué se habla); la original queda de respaldo. */
     private fun consultasMejoradas(ctx: Context, id: Long, q: String): List<String> {
         return try {
             log(ctx, id, "Pensando mejores búsquedas…")
@@ -291,7 +291,7 @@ object Agente {
                     ctx, id,
                     listOf(
                         "system" to "Eres un experto en buscar información en internet.",
-                        "user" to "Pedido: $q\n\nEscribe 2 consultas de búsqueda en español, de 3 a 6 palabras cada una, " +
+                        "user" to "Pedido: $q\n\nEscribe 3 consultas de búsqueda, de 3 a 7 palabras cada una (una en español, una en inglés si el tema es internacional, y una con términos técnicos o nombres propios), " +
                             "que aclaren de qué se trata exactamente (persona, lugar, objeto, época) y cubran ángulos distintos. " +
                             "No repitas el pedido tal cual. Devuelve JSON con 'consultas'."
                     ),
@@ -299,7 +299,7 @@ object Agente {
                 )
             )
             val mejoradas = lista(j?.optJSONArray("consultas")).map { it.trim().trim('"') }.filter { it.length in 4..80 }
-            (mejoradas.take(2) + q).distinctBy { Parsers.fold(it) }
+            (mejoradas.take(3) + q).distinctBy { Parsers.fold(it) }
         } catch (e: Cancelacion) {
             throw e
         } catch (e: Exception) {
@@ -315,47 +315,82 @@ object Agente {
             }
         }
 
-    /** Busca en Wikipedia y en la web con varias consultas; devuelve hasta maxFuentes con texto y los enlaces encontrados. */
-    private fun reunirFuentes(ctx: Context, id: Long, q: String, maxFuentes: Int = 3): Pair<List<Fuente>, List<String>> {
+    /** Caracteres de fuentes que caben en el contexto (~11 000 de ~24 000) dejando lugar a instrucciones y respuesta. */
+    private val EXT_NO_TEXTO = setOf("pdf", "jpg", "jpeg", "png", "gif", "webp", "mp3", "mp4", "zip", "docx", "xlsx", "pptx")
+    private const val PRESUPUESTO_FUENTES = 12_000   // fijo: leer prompts enormes en el teléfono tardaría minutos
+
+    /**
+     * Busca con TODOS los buscadores a la vez (DuckDuckGo, Bing, Mojeek, Wikipedia es/en), ordena por relevancia,
+     * lee las mejores páginas en paralelo y de cada una se queda con los pasajes que contestan la consulta.
+     * Devuelve hasta maxFuentes con texto y los enlaces encontrados.
+     */
+    private fun reunirFuentes(ctx: Context, id: Long, q: String, maxFuentes: Int = 8): Pair<List<Fuente>, List<String>> {
         val consultas = consultasMejoradas(ctx, id, q)
-        val wiki = ArrayList<Web.Resultado>()
-        for (c in consultas) {
-            revisar(id)
-            log(ctx, id, "Buscando en Wikipedia: $c")
-            try {
-                for (r in Web.buscarWikipedia(c, 2)) if (wiki.none { it.url == r.url }) wiki.add(r)
-            } catch (e: Exception) {
-                log(ctx, id, "Wikipedia no respondió (${e.message})")
+        revisar(id)
+        log(ctx, id, "Buscando en ${consultas.size} consultas y +15 fuentes a la vez (web, noticias, foros, ciencia, libros)…")
+        var web: List<Web.Resultado> = try { Web.buscarTodo(consultas) } catch (e: Exception) { emptyList() }
+        if (web.isEmpty()) {
+            log(ctx, id, "Los buscadores no respondieron; reintento…")
+            Thread.sleep(2000)
+            web = try { Web.buscarTodo(consultas) } catch (e: Exception) { emptyList() }
+        }
+        if (web.size < 4) {
+            // Quizá hay un error de ortografía: se prueba con la corrección sugerida
+            val sug = Web.sugerencia(q)
+            if (sug != null) {
+                log(ctx, id, "Probando con la ortografía corregida: $sug")
+                web = (web + (try { Web.buscarTodo(listOf(sug)) } catch (e: Exception) { emptyList() })).distinctBy { it.url }
             }
         }
-        val listas = ArrayList<List<Web.Resultado>>()
-        for (c in consultas) {
-            revisar(id)
-            log(ctx, id, "Buscando en la web: $c")
-            listas.add(buscarWebConReintento(ctx, id, c))
-        }
-        // Se mezclan los resultados de cada consulta, de a uno, para tener fuentes variadas
-        val web = ArrayList<Web.Resultado>()
-        var k = 0
-        while (web.size < 10 && listas.any { k < it.size }) {
-            for (l in listas) if (k < l.size && web.none { it.url == l[k].url }) web.add(l[k])
-            k++
-        }
+        log(ctx, id, "Encontré ${web.size} resultados; leyendo los mejores…")
+        val porFuente = (PRESUPUESTO_FUENTES / maxFuentes).coerceAtLeast(1200)
         val fuentes = ArrayList<Fuente>()
-        wiki.firstOrNull { it.texto.isNotBlank() }?.let { fuentes.add(Fuente(it.titulo, it.url, it.texto.take(1000))) }
-        for (r in web) {
-            if (fuentes.size >= maxFuentes) break
-            if (fuentes.any { it.url == r.url }) continue
+        // 0) Si pide algo reciente, titulares de noticias como una fuente más
+        if (Web.esUrgente(q)) try {
+            val nots = Web.buscarNoticias(consultas.first(), 8).filter { it.titulo.length > 15 }
+            if (nots.size >= 2) fuentes.add(Fuente("Titulares recientes", nots.first().url,
+                nots.joinToString("\n") { "• " + it.titulo + (if (it.texto.length > 40) " — " + it.texto.take(200) else "") }))
+        } catch (e: Exception) {}
+        // 1) Wikipedia completa del mejor artículo (lo más confiable para definiciones y datos duros)
+        val wiki = web.firstOrNull { it.url.contains("wikipedia.org") }
+        if (wiki != null) {
+            val idioma = wiki.url.substringAfter("://").substringBefore('.')
+            val completo = Web.wikipediaCompleta(wiki.titulo, idioma)
+            val txt = if (completo.length > wiki.texto.length) completo else wiki.texto
+            if (txt.length > 100) fuentes.add(Fuente(wiki.titulo, wiki.url, Web.mejoresPasajes(txt, consultas, porFuente)))
+        }
+        // 2) Páginas web, leídas en paralelo, de mejor a peor, en tandas hasta juntar las necesarias
+        var candidatas = web.filter { !it.url.contains("wikipedia.org") && Web.extension(it.url) !in EXT_NO_TEXTO && Web.calidadDominio(it.url) > -1.0 }
+        var desde = 0
+        var reforzado = false
+        while (fuentes.size < maxFuentes && (desde < candidatas.size || (!reforzado && candidatas.isEmpty())) && desde < 24) {
             revisar(id)
-            log(ctx, id, "Leyendo: ${r.titulo.take(50)}")
-            try {
-                val texto = Web.textoPrincipal(Web.get(r.url), 900)
-                if (texto.length > 200) fuentes.add(Fuente(r.titulo, r.url, texto))
-            } catch (e: Exception) {
-                log(ctx, id, "No pude leer esa página (${e.message})")
+            val tanda = if (desde < candidatas.size) candidatas.subList(desde, minOf(desde + maxFuentes + 2, candidatas.size)) else emptyList()
+            desde += tanda.size
+            for ((r, texto) in Web.leerVarias(tanda, Int.MAX_VALUE)) {
+                if (fuentes.size >= maxFuentes) break
+                if (fuentes.any { it.url == r.url }) continue
+                val pasajes = Web.mejoresPasajes(texto, consultas, porFuente)
+                if (fuentes.any { Web.sonParecidos(it.texto, pasajes) }) continue   // copia de otra fuente
+                log(ctx, id, "Leyendo: ${r.titulo.take(50)}")
+                fuentes.add(Fuente(r.titulo, r.url, pasajes))
+            }
+            // Segunda ronda: si tras la primera tanda faltan fuentes, se buscan términos nuevos sacados de lo hallado
+            if (!reforzado && fuentes.size < 4 && desde >= minOf(candidatas.size, 8)) {
+                reforzado = true
+                val extra = Web.consultasDeRefuerzo(consultas, web)
+                log(ctx, id, "Pocas fuentes; busco con términos nuevos: ${extra.first()}")
+                val mas = try { Web.buscarTodo(extra) } catch (e: Exception) { emptyList() }
+                candidatas = candidatas + mas.filter { m -> !m.url.contains("wikipedia.org") && candidatas.none { it.url == m.url } &&
+                    Web.extension(m.url) !in EXT_NO_TEXTO && Web.calidadDominio(m.url) > -1.0 }
             }
         }
-        return fuentes to (fuentes.map { it.url } + web.map { it.url }).distinct().take(5)
+        // Si hay otros resultados de Wikipedia con resumen, sirven de apoyo cuando faltan fuentes
+        if (fuentes.size < 3) for (r in web) {
+            if (fuentes.size >= 3) break
+            if (r.texto.length > 200 && fuentes.none { it.url == r.url }) fuentes.add(Fuente(r.titulo, r.url, r.texto))
+        }
+        return fuentes to (fuentes.map { it.url } + web.map { it.url }).distinct().take(8)
     }
 
     private fun investigar(ctx: Context, t: Tarea, q: String) {
@@ -552,7 +587,7 @@ object Agente {
             fuentes.isEmpty() -> "(sin fuentes: usa tu conocimiento general y sé prudente)"
             confirmados != null -> "Datos confirmados por 2 o más fuentes (usa solo estos; si no alcanzan, escribe menos):\n" +
                 confirmados.joinToString("\n") { "- $it" }
-            else -> fuentes.mapIndexed { i, f -> "[${i + 1}] ${f.titulo}\n${f.texto.take(800)}" }.joinToString("\n\n")
+            else -> fuentes.mapIndexed { i, f -> "[${i + 1}] ${f.titulo}\n${f.texto.take(1800)}" }.joinToString("\n\n")
         }
         recordarTema(ctx, tema, (confirmados ?: fuentes.map { it.texto.take(150) }).take(4).joinToString(" | "))
 
@@ -750,7 +785,7 @@ object Agente {
         if (url == null) {
             val ext = tipoDeArchivo(dato)
             log(ctx, id, "Buscando un archivo $ext de: $dato")
-            val res = Web.buscarWeb("$dato filetype:$ext", 8)
+            val res = Web.buscarTodo(listOf("$dato filetype:$ext", "$dato $ext descargar"), 8)
             url = res.firstOrNull { Web.extension(it.url) in Web.PERMITIDAS }?.url
             if (url == null) {
                 val enlaces = res.take(5).joinToString("\n") { it.titulo + "\n" + it.url }

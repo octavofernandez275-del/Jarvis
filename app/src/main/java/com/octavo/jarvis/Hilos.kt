@@ -35,9 +35,9 @@ object Hilos {
     /** Un solo hilo de fondo con prioridad baja (cola ordenada). */
     fun unico(nombre: String): ExecutorService = Executors.newSingleThreadExecutor(Fabrica(nombre))
 
-    /** Grupo compartido para descargas y búsquedas en paralelo (máx. 6 a la vez; los ociosos se cierran a los 20 s). */
+    /** Grupo compartido para descargas y búsquedas en paralelo (máx. 16 a la vez; los ociosos se cierran a los 20 s). */
     val red: ExecutorService by lazy {
-        val p = ThreadPoolExecutor(6, 6, 20L, TimeUnit.SECONDS, LinkedBlockingQueue<Runnable>(), Fabrica("jarvis-red"))
+        val p = ThreadPoolExecutor(16, 16, 20L, TimeUnit.SECONDS, LinkedBlockingQueue<Runnable>(), Fabrica("jarvis-red"))
         p.allowCoreThreadTimeOut(true)
         p
     }

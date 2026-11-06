@@ -87,7 +87,7 @@ object Termico {
     /** Reduce el largo máximo de una respuesta cuando el teléfono está muy caliente (menos CPU sostenida). */
     fun limiteTokens(base: Int): Int {
         val c = app ?: return base
-        return if (nivel(c) >= CRITICO) maxOf(96, base * 55 / 100) else base
+        return base   // sin tope: el calor se maneja con pausas y menos hilos, no recortando respuestas
     }
 
     /**
