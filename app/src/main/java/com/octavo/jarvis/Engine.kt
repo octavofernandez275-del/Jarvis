@@ -12,7 +12,27 @@ import java.net.URL
 object Engine {
     const val PORT = 8001
     /** Contexto del modelo en tokens (antes 2048). Con context-shift la generación no se corta aunque se llene. */
-    const val CONTEXTO = 32768
+    @Volatile var contexto = 8192
+
+    /**
+     * Contexto según la RAM del teléfono (el caché del modelo crece con el contexto): así rinde al máximo sin que Android
+     * cierre la app por falta de memoria. Se puede forzar con el comando «contexto 16384» (y volver con «contexto automático»).
+     */
+    fun calcularContexto(ctx: Context): Int {
+        val manual = Ajustes.contextoManual(ctx)
+        contexto = if (manual >= 2048) manual else {
+            val mi = android.app.ActivityManager.MemoryInfo()
+            (ctx.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager).getMemoryInfo(mi)
+            val gb = mi.totalMem / 1_073_741_824.0
+            when {
+                gb >= 10.5 -> 32768
+                gb >= 6.5 -> 16384
+                gb >= 4.5 -> 8192
+                else -> 4096
+            }
+        }
+        return contexto
+    }
     const val MODEL_URL =
         "https://huggingface.co/Repasar-Labs/qwen3.5-2b-gguf/resolve/main/Qwen3.5-2B-Q4_K_M.gguf"
     private const val MODEL_NAME = "modelo.gguf"
@@ -114,7 +134,7 @@ object Engine {
         val args = mutableListOf(
             bin.path, "-m", modelFile(ctx).path,
             "--host", "127.0.0.1", "--port", PORT.toString(),
-            "-c", CONTEXTO.toString(), "-t", t.toString(), "-np", "1",
+            "-c", calcularContexto(ctx).toString(), "-t", t.toString(), "-np", "1",
             "--chat-template-kwargs", "{\"enable_thinking\":false}"
         )
         // Reparto por complejidad: pocos hilos para escribir la respuesta (límite de memoria, no de cálculo)

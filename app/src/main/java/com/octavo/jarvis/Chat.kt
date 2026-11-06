@@ -21,7 +21,7 @@ object Chat {
 
     // Presupuesto del pedido (sin contar la respuesta): 60 % del contexto a ~3 letras por token; el resto queda para responder.
     // Con la conversación larga se descarta lo MÁS VIEJO automáticamente.
-    private const val PRESUPUESTO_CHARS = Engine.CONTEXTO * 3 * 60 / 100
+    private val PRESUPUESTO_CHARS get() = Engine.contexto * 3 * 60 / 100
 
     /**
      * Recorta el historial: conserva los mensajes "system" del principio y los mensajes más recientes que entren

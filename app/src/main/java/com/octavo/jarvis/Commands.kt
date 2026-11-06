@@ -50,6 +50,8 @@ object Commands {
     // Rendimiento del motor (para probar qué configuración es más rápida)
     private val rxHilos = Regex("""^(?:usa |pon |ajusta )?(?:los )?hilos(?: de cpu)?(?: a| en)? (\d{1,2})$|^(?:usa |pon )?(\d{1,2}) hilos(?: de cpu)?$""")
     private val rxHilosLectura = Regex("""^(?:usa |pon |ajusta )?hilos de lectura(?: a| en)? (\d{1,2}|igual)$""")
+    private val rxMemoriaAuto = Regex("""^(?:(activa|enciende|prende) (?:el )?aprendizaje(?: automatico| solo)?|(desactiva|apaga) (?:el )?aprendizaje(?: automatico| solo)?|(aprende|no aprendas) (?:cosas )?solo)$""")
+    private val rxContexto = Regex("""^(?:usa |pon |ajusta )?(?:el )?contexto(?: a| en| de)? (\d{4,6}|automatico|auto)$|^(?:cuanto|que) contexto (?:usas|tienes)$""")
     private val rxHilosPregunta = Regex("""^(?:cuantos hilos usas|que hilos usas|hilos actuales|cuantos hilos)$""")
 
     private val rxVozCambiar = Regex("""^(?:cambia|cambiar|cambiame)(?: de)?(?: la)? voz$""")
@@ -439,6 +441,20 @@ object Commands {
                 if (on) "Piloto automático activado: haré solo tus tareas pendientes cuando haya batería y no estés hablando conmigo."
                 else "Piloto automático desactivado."
             )
+        }
+        rxMemoriaAuto.find(f)?.let { m ->
+            val on = m.groupValues[1].isNotEmpty() || m.groupValues[3] == "aprende"
+            Ajustes.fijarMemoriaAuto(ctx, on)
+            return Reply(if (on) "Aprendizaje activado: anotaré solo lo que me cuentes de ti, como tu nombre, dónde vives o tus gustos."
+                else "Aprendizaje desactivado: solo anotaré lo que me pidas con «recuerda que…».")
+        }
+        rxContexto.find(f)?.let { m ->
+            val v = m.groupValues[1]
+            if (v.isEmpty()) return Reply("Uso un contexto de ${Engine.contexto} tokens (${if (Ajustes.contextoManual(ctx) >= 2048) "fijado a mano" else "automático según la RAM"}).")
+            val n = if (v.startsWith("auto")) 0 else v.toInt().coerceIn(2048, 65536)
+            Ajustes.fijarContextoManual(ctx, n)
+            return Reply(if (n == 0) "Contexto automático. Se aplica al reiniciar el motor de la IA (cierra y abre la app)."
+                else "Contexto fijado en $n tokens. Se aplica al reiniciar el motor de la IA (cierra y abre la app).")
         }
         rxBusquedaChat.find(f)?.let { m ->
             val on = m.groupValues[1] in setOf("activa", "enciende", "prende")

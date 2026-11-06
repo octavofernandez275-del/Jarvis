@@ -44,11 +44,11 @@ object Assistant {
     // El historial crece hasta HIST_MAX mensajes y entonces se recorta de golpe a ~HIST_KEEP. Así el inicio
     // del prompt no cambia en cada turno y llama-server reutiliza su caché en lugar de reprocesar todo.
     // Nunca queda con menos contexto que antes (7-8 mensajes). Los topes por caracteres (~3,5 por token)
-    // evitan pasarse del contexto del modelo (Engine.CONTEXTO tokens) cuando las respuestas son largas.
+    // evitan pasarse del contexto del modelo (Engine.contexto tokens) cuando las respuestas son largas.
     private const val HIST_MAX = 24
     private const val HIST_KEEP = 20
-    private const val HIST_MAX_CHARS = Engine.CONTEXTO * 3 * 45 / 100
-    private const val HIST_KEEP_CHARS = Engine.CONTEXTO * 3 * 33 / 100
+    private val HIST_MAX_CHARS get() = Engine.contexto * 3 * 45 / 100
+    private val HIST_KEEP_CHARS get() = Engine.contexto * 3 * 33 / 100
 
     private val main = Handler(Looper.getMainLooper())
     private lateinit var app: Context
@@ -93,6 +93,7 @@ object Assistant {
         if (iniciado) return
         iniciado = true
         app = ctx.applicationContext
+        Engine.calcularContexto(app)           // presupuestos de texto según el contexto que el teléfono aguanta
         registrarCierres()                     // "caja negra": guarda el motivo de un cierre inesperado
         cargarContexto()                       // retoma la conversación reciente si la app se había cerrado
         Termico.iniciar(app)
@@ -252,7 +253,7 @@ object Assistant {
     private fun systemPrompt(): String {
         // Solo la FECHA (no la hora): así el prompt no cambia en cada pregunta y llama-server
         // puede reutilizar su caché y no reprocesar todo (en el teléfono eso tarda).
-        val memoria = Memory.bloqueParaPrompt(app)
+        val memoria = Memory.bloqueParaPrompt(app, history.lastOrNull { it.first == "user" }?.second.orEmpty())
         return SISTEMA + " Hoy es ${Parsers.fechaHoy()}." + if (memoria.isEmpty()) "" else "\n\n$memoria"
     }
 
@@ -285,6 +286,11 @@ object Assistant {
         // Modo por defecto: solo se muestra tu mensaje; la respuesta aparece COMPLETA cuando termina de generarse
         emitir(if (vozEnVivo) "\nTú: $text\nJarvis: " else "\nTú: $text\n")
         history.add("user" to text)
+        // Memoria: anota solo lo que el usuario cuenta de sí mismo (nombre, dónde vive, gustos…) y se lo avisa
+        try {
+            val aprendido = Memory.aprender(app, text)
+            if (aprendido.isNotEmpty()) emitir("\nMemoria: 🧠 Anotado: " + aprendido.joinToString(" · ") + "\n")
+        } catch (_: Exception) {}
         recortarHistorial()
         // Búsqueda en vivo: si la pregunta es de datos o actualidad, se busca en internet mientras arranca el motor
         val previo = history.dropLast(1).lastOrNull { it.first == "user" }?.second
@@ -402,7 +408,10 @@ object Assistant {
     private fun recortarHistorial() {
         fun chars() = history.sumOf { it.second.length }
         if (history.size <= HIST_MAX && chars() <= HIST_MAX_CHARS) return
-        while (history.size > 1 && (history.size > HIST_KEEP || chars() > HIST_KEEP_CHARS)) history.removeAt(0)
+        while (history.size > 1 && (history.size > HIST_KEEP || chars() > HIST_KEEP_CHARS)) {
+            val quitado = history.removeAt(0)
+            if (quitado.first == "user") try { Memory.agregarTema(app, quitado.second) } catch (_: Exception) {}   // queda anotado de qué se habló
+        }
         while (history.size > 1 && history[0].first != "user") history.removeAt(0)
     }
 

@@ -279,7 +279,7 @@ class MainActivity : Activity(), Assistant.Ui {
         var desde = pre.length
         for (m in ETIQUETA.findAll(s)) {
             if (m.range.first > desde) anadir(s.substring(desde, m.range.first))
-            nuevaBurbuja(if (m.groupValues[1] == "Tú") USUARIO else JARVIS)
+            nuevaBurbuja(when (m.groupValues[1]) { "Tú" -> USUARIO; "Memoria" -> SISTEMA; else -> JARVIS })
             desde = m.range.last + 1
         }
         if (desde < s.length) anadir(s.substring(desde))
@@ -451,6 +451,6 @@ class MainActivity : Activity(), Assistant.Ui {
         const val HINT = "Escribe a Jarvis…"
         const val MANOS_OFF = "🎧 Manos libres: OFF"
         const val MANOS_ON = "🎧 Manos libres: ON"
-        val ETIQUETA = Regex("""\n(Tú|Jarvis): ?""")
+        val ETIQUETA = Regex("""\n(Tú|Jarvis|Memoria): ?""")
     }
 }

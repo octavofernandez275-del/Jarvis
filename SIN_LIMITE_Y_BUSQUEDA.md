@@ -4,7 +4,7 @@
 - `Chat.kt`, `Engine.kt`: `max_tokens = -1` (el modelo escribe hasta terminar solo). Antes 3500 / 300; los topes por tarea de `Agente.kt` (120–1500) ya no limitan.
 - `Engine.kt`: contexto `-c 2048` -> `Engine.CONTEXTO = 32768` y `--context-shift`, así una respuesta larguísima nunca se corta al llenar el contexto (descarta lo más viejo y sigue). Si tu llama.cpp rechaza `--context-shift`, el reintento automático arranca sin él.
 - `Chat.kt`, `Assistant.kt`, `Memory.kt`: presupuestos de historial escalados al nuevo contexto (10 -> 24 mensajes).
-- Si el teléfono va justo de RAM, baja `CONTEXTO` a 8192 o 4096 en `Engine.kt`.
+- El contexto ahora se elige solo según la RAM (4096 a 32768) y se puede fijar con `contexto 16384` o volver con `contexto automático` (se aplica al reiniciar la app).
 
 ## Búsqueda
 - +15 fuentes en paralelo: DuckDuckGo (normal y Lite), Bing, Mojeek, Yahoo, Brave, Google Noticias, Stack Overflow, arXiv, Reddit, Hacker News, Open Library, Internet Archive y Wikipedia en 6 idiomas. Si una falla, las demás siguen.
@@ -59,3 +59,14 @@ No se pudo compilar aquí (sin Kotlin/Android SDK). Ejecuta el workflow *Compila
 - `CorreccionVoz.kt`: corrige variantes mal entendidas (llaves, yarvis, charvis, garvis, travis…) al inicio de la frase o tras "oye/hey/hola". "Las llaves del auto" o "busca las llaves" NO se tocan.
 - El reconocedor ahora devuelve hasta 5 hipótesis y se elige la que empieza diciendo Jarvis.
 - Pista de vocabulario (Android 13+) con "Jarvis", "oye Jarvis", "hey Jarvis"; y 1,8 s de silencio antes de cortar, para que no te interrumpa si haces una pausa.
+
+## Contexto adaptable a la RAM
+- Antes el contexto era fijo (32768) y en un teléfono justo de memoria Android podía cerrar la app. Ahora `Engine.calcularContexto` elige 4096 / 8192 / 16384 / 32768 según la RAM total y todos los presupuestos de texto (historial, prompt, fuentes) se ajustan a ese valor.
+- Comandos: `contexto 16384`, `contexto automático`, `qué contexto usas`.
+
+## Memoria que realmente recuerda
+- **Aprende sola** lo que cuentas de ti: "me llamo…", "vivo en…", "tengo 25 años", "trabajo en…", "mi perro se llama…", "mi color favorito es…", "me gusta…/no me gusta…". Los datos de un solo valor (nombre, dónde vives, edad) se actualizan en vez de duplicarse; si cambias de opinión sobre un gusto, se corrige. No aprende de preguntas ni de dudas ("me gusta esa idea"). Cada vez que anota algo lo muestra con 🧠. Se apaga con `no aprendas solo` y se enciende con `aprende solo`.
+- **Capacidad**: 300 datos (antes 30) de hasta 300 caracteres.
+- **Recuerda lo que viene al caso**: al contestar, el modelo recibe los datos más nuevos y además los que tienen que ver con tu pregunta, aunque sean viejos. El tamaño del bloque crece con el contexto (de 900 a 4500 caracteres).
+- **Temas de charlas anteriores**: lo que ya no cabe en el historial deja una lista de qué preguntaste (15 temas) que sobrevive al cerrar la app.
+- Siguen: `recuerda que…`, `qué recuerdas`, `olvida…`, `borra toda mi memoria`.

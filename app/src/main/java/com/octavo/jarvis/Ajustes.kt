@@ -65,6 +65,14 @@ object Ajustes {
     /** Máximo de hilos sin saturar: todos los núcleos menos NUCLEOS_LIBRES (6 en un teléfono de 8 núcleos). */
     fun maxHilos(): Int = maxOf(1, Runtime.getRuntime().availableProcessors() - NUCLEOS_LIBRES)
 
+    /** Aprender solo datos del usuario (nombre, dónde vive, gustos…) de lo que cuenta en la charla. Por defecto sí. */
+    fun memoriaAuto(ctx: Context): Boolean = p(ctx).getBoolean("memoria_auto", true)
+    fun fijarMemoriaAuto(ctx: Context, v: Boolean) { p(ctx).edit().putBoolean("memoria_auto", v).apply() }
+
+    /** Contexto fijado a mano (0 = automático según la RAM). */
+    fun contextoManual(ctx: Context): Int = p(ctx).getInt("contexto_manual", 0)
+    fun fijarContextoManual(ctx: Context, v: Int) { p(ctx).edit().putInt("contexto_manual", v).apply() }
+
     /** Hilos que realmente se usan al generar (nunca más de maxHilos). */
     fun hilosEfectivos(ctx: Context): Int = maxOf(1, minOf(hilos(ctx), maxHilos()) - reduccionTermica(ctx))
 
