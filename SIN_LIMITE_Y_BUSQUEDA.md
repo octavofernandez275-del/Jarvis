@@ -82,3 +82,5 @@ No se pudo compilar aquí (sin Kotlin/Android SDK). Ejecuta el workflow *Compila
 - `boxeo/SCRIPTS/narrator.gd`: narración en tiempo real con las voces TTS del dispositivo; voz/tono/velocidad distintos para presentador, comentaristas A/B y entrenadores rojo/azul.
 - Entre rounds, Jarvis genera el análisis de ambos entrenadores (estadísticas del round + patrón aprendido del jugador).
 - Sin voces en español instaladas, usa cualquiera disponible; si no hay ninguna, no narra.
+- Subtítulos en pantalla para narradores y para el análisis de Jarvis (aunque no haya voz); las voces TTS se reintentan hasta que Android las cargue.
+- Gráficos: tonemap filmic, brillo/bloom, contraste y saturación, sombras en 2 focos, MSAA 2x + FXAA.

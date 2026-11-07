@@ -31,6 +31,7 @@ var a
 var b
 var mgr
 var hud
+var narr_ref
 var touch
 var touch_layer: CanvasLayer
 var replay
@@ -132,6 +133,7 @@ func start_fight(config: Dictionary) -> void:
 	var narr = Narrator.new()
 	world.add_child(narr)
 	narr.setup(mgr, a, b)
+	narr_ref = narr
 
 	vfx = Vfx.new()
 	world.add_child(vfx)
@@ -143,6 +145,8 @@ func start_fight(config: Dictionary) -> void:
 	hud = Hud.new()
 	add_child(hud)
 	hud.setup(mgr, a, b)
+	narr_ref.hud = hud
+	narr_ref.intro()
 	hud.rematch_pressed.connect(_on_rematch)
 	hud.menu_pressed.connect(_on_menu)
 	hud.replay_pressed.connect(_on_replay)

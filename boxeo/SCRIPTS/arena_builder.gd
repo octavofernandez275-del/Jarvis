@@ -49,6 +49,15 @@ static func build(cfg: Dictionary, parent: Node3D) -> Dictionary:
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.ambient_light_color = Color.html(String(cfg["ambient"]))
 	env.ambient_light_energy = float(cfg["ambient_energy"])
+	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	env.tonemap_exposure = 1.1
+	env.glow_enabled = true
+	env.glow_intensity = 0.7
+	env.glow_bloom = 0.08
+	env.glow_hdr_threshold = 0.9
+	env.adjustment_enabled = true
+	env.adjustment_contrast = 1.12
+	env.adjustment_saturation = 1.15
 	var we := WorldEnvironment.new()
 	we.environment = env
 	parent.add_child(we)
@@ -76,6 +85,8 @@ static func build(cfg: Dictionary, parent: Node3D) -> Dictionary:
 		sl.light_energy = float(cfg["spot_energy"]) * 0.35
 		sl.spot_range = h * 2.2
 		sl.spot_angle = 38.0
+		sl.shadow_enabled = (i < 2)   # sombras en 2 focos: buen aspecto sin matar el rendimiento
+		sl.shadow_bias = 0.05
 		sl.look_at_from_position(Vector3(cos(ang) * 3.0, top, sin(ang) * 3.0), Vector3(0, 0, 0), Vector3.UP)
 	var fill := OmniLight3D.new()
 	parent.add_child(fill)

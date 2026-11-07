@@ -136,6 +136,38 @@ func _process(_delta: float) -> void:
 	insight_label.text = b.ai.get_insight() if (show_insight and b.ai != null) else ""
 
 
+## Subtítulos de narradores/entrenadores (abajo, con el nombre de quien habla).
+var caption_panel: PanelContainer
+var caption_label: Label
+var caption_tween: Tween
+
+
+func caption(who: String, text: String, seconds: float = 5.0) -> void:
+	if caption_panel == null:
+		caption_panel = PanelContainer.new()
+		caption_panel.add_theme_stylebox_override("panel", _style(Color(0, 0, 0, 0.62)))
+		caption_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+		caption_panel.anchor_left = 0.1
+		caption_panel.anchor_right = 0.9
+		caption_panel.offset_left = 0
+		caption_panel.offset_right = 0
+		caption_panel.offset_top = -150
+		caption_panel.offset_bottom = -20
+		caption_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		caption_label = _label("", 22)
+		caption_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		caption_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		caption_panel.add_child(caption_label)
+		add_child(caption_panel)
+	caption_label.text = "%s: %s" % [who, text]
+	caption_panel.modulate.a = 1.0
+	if caption_tween:
+		caption_tween.kill()
+	caption_tween = create_tween()
+	caption_tween.tween_interval(maxf(0.5, seconds))
+	caption_tween.tween_property(caption_panel, "modulate:a", 0.0, 0.4)
+
+
 func announce(text: String, seconds: float) -> void:
 	announce_label.text = text
 	announce_label.modulate.a = 1.0

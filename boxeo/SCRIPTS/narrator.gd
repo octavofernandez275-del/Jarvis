@@ -9,6 +9,7 @@ const NOMBRES := {"pres": "Leo Marín", "a": "Paula Rey", "b": "Gonzalo Pardo", 
 const AJUSTE := {"pres": [0.85, 0.95], "a": [1.15, 1.08], "b": [0.8, 1.0], "red": [0.7, 0.95], "blue": [1.3, 1.0], "jarvis": [0.86, 0.94]}
 
 var mgr
+var hud
 var a
 var b
 var voces: Array = []
@@ -24,20 +25,36 @@ func setup(mgr_, a_, b_) -> void:
 	mgr = mgr_
 	a = a_
 	b = b_
-	voces = DisplayServer.tts_get_voices_for_language("es")
-	if voces.is_empty():
-		voces = DisplayServer.tts_get_voices_for_language("")
-	if voces.is_empty():
-		enabled = false
-		return
+	_cargar_voces()
 	mgr.announce.connect(_on_announce)
 	mgr.round_changed.connect(_on_round)
 	mgr.fx.connect(_on_fx)
 	mgr.fight_finished.connect(_on_finished)
-	var rival := String(b.data["name"])
-	var yo := String(a.data["name"])
-	decir("pres", "Damas y caballeros, esta noche, %s contra %s." % [yo, rival])
-	decir("a", "Ojo: el rival lo controla Jarvis, y va aprendiendo cada patrón de %s." % yo)
+
+
+func intro() -> void:
+	decir("pres", "Damas y caballeros, esta noche, %s contra %s." % [String(a.data["name"]), String(b.data["name"])])
+	decir("a", "Ojo: el rival lo controla Jarvis, y va aprendiendo cada patrón de %s." % String(a.data["name"]))
+	if voces.is_empty():
+		_caption("Aviso", "Tu celular no tiene voces de texto a voz disponibles. Instala o activa un motor TTS en Ajustes.", 6.0)
+
+
+## En Android las voces se cargan tarde: se reintenta en cada línea hasta que aparezcan.
+func _cargar_voces() -> void:
+	if not DisplayServer.has_feature(DisplayServer.FEATURE_TEXT_TO_SPEECH):
+		return
+	voces = DisplayServer.tts_get_voices_for_language("es")
+	if voces.is_empty():
+		voces = DisplayServer.tts_get_voices_for_language("")
+	if voces.is_empty():
+		voces = []
+		for v in DisplayServer.tts_get_voices():
+			voces.append(v["id"])
+
+
+func _caption(who: String, texto: String, seg: float) -> void:
+	if hud != null and is_instance_valid(hud):
+		hud.caption(who, texto, seg)
 
 
 func _process(delta: float) -> void:
@@ -50,8 +67,12 @@ func _exit_tree() -> void:
 
 
 ## Voz distinta por rol: reparte las voces disponibles y diferencia con tono y velocidad.
-func decir(rol: String, texto: String, urgente := false) -> void:
-	if not enabled:
+func decir(rol: String, texto: String, urgente := false, subt := true) -> void:
+	if subt:
+		_caption(String(NOMBRES[rol]), texto, 3.0 + texto.length() * 0.05)
+	if voces.is_empty():
+		_cargar_voces()
+	if voces.is_empty():
 		return
 	var roles := AJUSTE.keys()
 	var i := roles.find(rol)
@@ -63,7 +84,7 @@ func decir(rol: String, texto: String, urgente := false) -> void:
 
 
 func _libre() -> bool:
-	return enabled and not DisplayServer.tts_is_speaking() and clock - last_live > 2.5
+	return not DisplayServer.tts_is_speaking() and clock - last_live > 2.5
 
 
 func _on_round(n: int, total: int) -> void:
@@ -76,8 +97,6 @@ func _on_announce(text: String, _s: float) -> void:
 
 
 func _on_fx(kind: String, _pos: Vector3, extra: Dictionary) -> void:
-	if not enabled:
-		return
 	match kind:
 		"knockdown":
 			last_live = clock
@@ -121,7 +140,7 @@ func _analisis_entrenadores() -> void:
 		rojo += " El rival conecta más, cierra la guardia."
 	else:
 		rojo += " Vas bien, mantén el ritmo."
-	decir("red", rojo)
+	decir("red", rojo, false, false)
 
 	# Esquina azul (rival controlado por Jarvis): usa lo aprendido
 	var azul := "Jarvis informa a la esquina azul. %s conecta %d, %d por ciento." % [rival, lb, acc_b]
@@ -134,9 +153,8 @@ func _analisis_entrenadores() -> void:
 			azul += " Se tapa mucho: iré al cuerpo."
 		elif ai.foe_stats["dodges"] > ai.foe_stats["attacks"] * 0.5:
 			azul += " Esquiva bastante: probaré ganchos."
-	decir("blue", azul)
-
-	decir("b", "Interesante, Jarvis está leyendo la pelea round a round.")
+	decir("blue", azul, false, false)
+	_caption("Jarvis · análisis", "ROJA: " + rojo.substr(rojo.find(". ") + 2) + "\nAZUL: " + azul.substr(azul.find(". ") + 2), 9.0)
 
 
 ## Secuencia más repetida del jugador, aprendida por la IA (boxer_ai.trans).
