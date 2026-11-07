@@ -16,6 +16,8 @@ var me                       # boxer.gd propio
 var foe                      # boxer.gd del jugador
 var profile: Dictionary = {}
 var skill := 0.55
+var base_skill := 0.55
+var dyn_skill := 0.0                  # dificultad dinámica: sube si lo estás dominando, baja si va perdiendo mucho
 var rng := RandomNumberGenerator.new()
 
 # --- memoria del jugador ---
@@ -47,6 +49,7 @@ func setup(me_, foe_, profile_: Dictionary, skill_: float) -> void:
 	foe = foe_
 	profile = profile_
 	skill = clampf(skill_, 0.0, 1.0)
+	base_skill = skill
 	rng.randomize()
 	for a in ATTACKS:
 		weights[a] = 1.0
@@ -55,6 +58,11 @@ func setup(me_, foe_, profile_: Dictionary, skill_: float) -> void:
 ## Lo llama fight_manager al iniciar cada round: diff = puntos de la IA - puntos del jugador.
 func set_context(score_diff: float, late_round: bool) -> void:
 	var s := float(profile.get("learning", 0.4))
+	if score_diff < -2.0:
+		dyn_skill = minf(0.12, dyn_skill + 0.04)
+	elif score_diff > 3.0:
+		dyn_skill = maxf(-0.12, dyn_skill - 0.04)
+	skill = clampf(base_skill + dyn_skill, 0.05, 0.98)
 	if score_diff < -0.5:
 		behind_bonus = (0.25 + (0.15 if late_round else 0.0)) * (0.4 + s)
 	elif score_diff > 1.5:
@@ -137,6 +145,62 @@ func notify_got_hit(attack: String) -> void:
 
 
 ## Texto para el HUD/depuración: qué aprendió la IA.
+const HABITS_PATH := "user://jarvis_habits.json"
+
+
+## Jarvis recuerda tus hábitos entre peleas (se atenúan un poco para que pueda adaptarse si cambias).
+func load_habits(key: String) -> void:
+	if not FileAccess.file_exists(HABITS_PATH):
+		return
+	var f := FileAccess.open(HABITS_PATH, FileAccess.READ)
+	var d = JSON.parse_string(f.get_as_text())
+	if typeof(d) != TYPE_DICTIONARY or not d.has(key):
+		return
+	var h: Dictionary = d[key]
+	for ctx in h.get("trans", {}):
+		trans[ctx] = {}
+		for nxt in h["trans"][ctx]:
+			trans[ctx][nxt] = float(h["trans"][ctx][nxt]) * 0.7
+	for k in ["attacks", "blocks", "dodges"]:
+		foe_stats[k] = int(float(h.get("stats", {}).get(k, 0)) * 0.7)
+
+
+func save_habits(key: String) -> void:
+	var d := {}
+	if FileAccess.file_exists(HABITS_PATH):
+		var r := FileAccess.open(HABITS_PATH, FileAccess.READ)
+		var old = JSON.parse_string(r.get_as_text())
+		if typeof(old) == TYPE_DICTIONARY:
+			d = old
+	d[key] = {"trans": trans, "stats": foe_stats}
+	var f := FileAccess.open(HABITS_PATH, FileAccess.WRITE)
+	f.store_string(JSON.stringify(d))
+
+
+## Resumen en lenguaje natural de lo que Jarvis aprendió de ti.
+func resumen() -> String:
+	var mejor := ""
+	var veces := 2.0
+	for ctx in trans:
+		for nxt in trans[ctx]:
+			if float(trans[ctx][nxt]) > veces:
+				veces = float(trans[ctx][nxt])
+				mejor = "%s y luego %s" % [String(ctx).replace(">", " y luego "), String(nxt)]
+	var partes: Array = []
+	if mejor != "":
+		partes.append("sueles encadenar %s" % mejor.replace("_", " "))
+	var tot := maxf(1.0, float(foe_stats["attacks"] + foe_stats["blocks"] + foe_stats["dodges"]))
+	if float(foe_stats["blocks"]) / tot > 0.4:
+		partes.append("te cubres mucho")
+	elif float(foe_stats["dodges"]) / tot > 0.25:
+		partes.append("prefieres esquivar")
+	elif float(foe_stats["attacks"]) / tot > 0.6:
+		partes.append("atacas casi sin parar")
+	if partes.is_empty():
+		return "Todavía no te conozco lo suficiente."
+	return "Aprendí que " + " y que ".join(partes) + "."
+
+
 func get_insight() -> String:
 	var p := predict()
 	if float(p["conf"]) >= 0.4 and String(p["action"]) != "":

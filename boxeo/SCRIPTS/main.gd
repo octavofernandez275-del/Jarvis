@@ -129,6 +129,7 @@ func start_fight(config: Dictionary) -> void:
 	var ai = AI.new()
 	ai.setup(b, a, profiles["profiles"][prof_name], float(config["skill"]))
 	b.ai = ai
+	ai.load_habits(String(a.data["name"]))
 
 	var ref = StaffScript.new()
 	world.add_child(ref)
@@ -163,6 +164,7 @@ func start_fight(config: Dictionary) -> void:
 	hud.rematch_pressed.connect(_on_rematch)
 	hud.menu_pressed.connect(_on_menu)
 	hud.replay_pressed.connect(_on_replay)
+	hud.jarvis_report_pressed.connect(_on_jarvis_report)
 	touch_layer = CanvasLayer.new()
 	touch_layer.layer = 9
 	add_child(touch_layer)
@@ -357,6 +359,7 @@ func _on_fx(kind: String, pos: Vector3, extra: Dictionary) -> void:
 		sfx.play("whoosh", -6.0, randf_range(0.9, 1.15))
 	elif kind == "knockdown":
 		sfx.play("knockdown_thud")
+		cam.fov = maxf(26.0, cam.fov - 9.0)
 		vfx.burst("dust", pos + Vector3(0, 0.1, 0))
 		_shake("knockdown")
 		_excite(1.0, 3.0)
@@ -408,6 +411,8 @@ func _capture_highlight() -> void:
 
 func _on_finished(res: Dictionary) -> void:
 	last_result = res
+	if b.ai != null:
+		b.ai.save_habits(String(a.data["name"]))
 	if res["winner"] == "b":
 		sfx.play("stinger_lose")
 	elif res["winner"] == "a":
@@ -415,6 +420,14 @@ func _on_finished(res: Dictionary) -> void:
 	if last_config.get("career", false):
 		career_summary = menu.career.apply_result(res)
 		res["career"] = true
+
+
+## Envía un resumen de la pelea a la app Jarvis (se guarda en su memoria) con el enlace jarvis://boxeo.
+func _on_jarvis_report() -> void:
+	var r: Dictionary = last_result
+	var res_txt := "gané" if r.get("winner", "") == "a" else ("perdí" if r.get("winner", "") == "b" else "empaté")
+	var txt := "Boxeo: %s contra %s (%s, round %d). %s" % [res_txt, String(b.data["name"]), String(r.get("method", "")), int(r.get("round", 0)), b.ai.resumen() if b.ai != null else ""]
+	OS.shell_open("jarvis://boxeo?r=" + txt.uri_encode())
 
 
 func _on_rematch() -> void:

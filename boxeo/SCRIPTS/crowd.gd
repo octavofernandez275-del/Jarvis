@@ -39,8 +39,8 @@ static func build(parent: Node3D, cfg: Dictionary, floor_y: float) -> ShaderMate
 			var pos := Vector3(cos(ang) * r, y, sin(ang) * r)
 			if absf(pos.x) < 2.4 and absf(pos.z) > 4.5:
 				continue      # deja libres los túneles de entrada
-			var yaw := atan2(-cos(ang), -sin(ang))     # mira al centro del ring
-			var s := rng.randf_range(0.9, 1.1)
+			var yaw := atan2(-cos(ang), -sin(ang)) + rng.randf_range(-0.35, 0.35)     # mira al ring, cada uno a su manera
+			var s := rng.randf_range(0.86, 1.14)
 			var basis := Basis(Vector3.UP, yaw).scaled(Vector3(s, s, s))
 			xf[lod].append(Transform3D(basis, pos))
 			cols[lod].append(Color.html(String(palette[rng.randi() % palette.size()])))

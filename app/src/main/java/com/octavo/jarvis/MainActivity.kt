@@ -49,6 +49,24 @@ class MainActivity : Activity(), Assistant.Ui {
 
     private fun dp(n: Int) = (n * resources.displayMetrics.density).toInt()
 
+    /** El juego de boxeo abre jarvis://boxeo?r=<resumen>: se guarda en la memoria y se muestra en el chat. */
+    private fun recibirEnlace(i: android.content.Intent?) {
+        val d = i?.data ?: return
+        if (d.scheme != "jarvis" || d.host != "boxeo") return
+        val r = d.getQueryParameter("r")?.trim().orEmpty().take(280)
+        if (r.isEmpty()) return
+        Memory.agregar(this, r)
+        nuevaBurbuja(SISTEMA)
+        anadir("🥊 Anotado en mi memoria: $r")
+        i.data = null
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        recibirEnlace(intent)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Assistant.iniciar(this)
@@ -141,6 +159,7 @@ class MainActivity : Activity(), Assistant.Ui {
             addView(fila2)
         }
         setContentView(root)
+        recibirEnlace(intent)
         pintarEstado(Assistant.estadoTexto)
 
         // Con el teclado abierto no queda lugar para el reactor: se oculta hasta que se cierre

@@ -200,6 +200,9 @@ func apply_hit(info: Dictionary) -> void:
 		stun = 1.1
 		play("stagger", 1.0, 0.05)
 	else:
+		var wob := create_tween()          # la cabeza/torso se sacude según el golpe
+		wob.tween_property(visual, "rotation:z", 0.16 if randf() < 0.5 else -0.16, 0.05)
+		wob.tween_property(visual, "rotation:z", 0.0, 0.28)
 		state = S.HIT
 		stun = float(info.get("stun", 0.3))
 		play("hit_head" if info.get("head", true) else "hit_body", 1.0, 0.03)

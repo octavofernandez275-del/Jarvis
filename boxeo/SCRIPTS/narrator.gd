@@ -166,5 +166,7 @@ func _on_finished(res: Dictionary) -> void:
 	elif w == "b":
 		frase = "¡Gana %s por %s! Jarvis se lleva la pelea." % [rival, String(res.get("method", ""))]
 	decir("pres", frase, true)
+	if b.ai != null:
+		decir("jarvis", b.ai.resumen())
 	if w == "b":
 		decir("jarvis", "Gracias por los patrones. Revancha cuando quieras.")

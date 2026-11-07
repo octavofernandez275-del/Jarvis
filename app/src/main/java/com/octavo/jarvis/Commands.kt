@@ -51,6 +51,8 @@ object Commands {
     private val rxHilos = Regex("""^(?:usa |pon |ajusta )?(?:los )?hilos(?: de cpu)?(?: a| en)? (\d{1,2})$|^(?:usa |pon )?(\d{1,2}) hilos(?: de cpu)?$""")
     private val rxHilosLectura = Regex("""^(?:usa |pon |ajusta )?hilos de lectura(?: a| en)? (\d{1,2}|igual)$""")
     private val rxMemoriaAuto = Regex("""^(?:(activa|enciende|prende) (?:el )?aprendizaje(?: automatico| solo)?|(desactiva|apaga) (?:el )?aprendizaje(?: automatico| solo)?|(aprende|no aprendas) (?:cosas )?solo)$""")
+    private val rxRespaldo = Regex("""^(?:respalda|respaldar|exporta|exportar|guarda una copia de|haz (?:un )?respaldo de) (?:la |mi |tu )?memoria$""")
+    private val rxRestaura = Regex("""^(?:restaura|restaurar|importa|importar|recupera) (?:la |mi |tu )?memoria(?: desde el portapapeles)?$""")
     private val rxBoxeo = Regex("""^(?:abre|abrir|inicia|iniciar|pon|juega|jugar|quiero jugar|vamos a jugar)(?: al| el| a| un)?(?: juego de)? (?:boxeo|box|jarvis boxeo|jarvis boxing)$|^(?:boxeo|jarvis boxeo)$""")
     private val rxContexto = Regex("""^(?:usa |pon |ajusta )?(?:el )?contexto(?: a| en| de)? (\d{4,6}|automatico|auto)$|^(?:cuanto|que) contexto (?:usas|tienes)$""")
     private val rxHilosPregunta = Regex("""^(?:cuantos hilos usas|que hilos usas|hilos actuales|cuantos hilos)$""")
@@ -450,6 +452,24 @@ object Commands {
                 else "Aprendizaje desactivado: solo anotaré lo que me pidas con «recuerda que…».")
         }
         if (rxBoxeo.matches(f)) return Boxeo.abrir(ctx)
+        if (rxRespaldo.matches(f)) {
+            val txt = Memory.exportar(ctx)
+            if (txt.isBlank()) return Reply("Todavía no tengo nada en la memoria para respaldar.")
+            val envio = Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_SUBJECT, "Respaldo de la memoria de Jarvis")
+                putExtra(Intent.EXTRA_TEXT, txt)
+            }, "Guardar respaldo de la memoria").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            return Reply("Preparé el respaldo (${txt.lines().size} datos). Elige dónde guardarlo (notas, Drive, mensajes…). Para recuperarlo, copia el texto y dime «restaura la memoria».",
+                despues = { ctx.startActivity(envio) })
+        }
+        if (rxRestaura.matches(f)) {
+            val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+            val txt = cm.primaryClip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(ctx)?.toString().orEmpty()
+            if (txt.isBlank()) return Reply("El portapapeles está vacío. Copia primero el respaldo y vuelve a decírmelo.")
+            val n = Memory.importar(ctx, txt)
+            return Reply("Listo: recuperé $n datos nuevos en mi memoria.")
+        }
         rxContexto.find(f)?.let { m ->
             val v = m.groupValues[1]
             if (v.isEmpty()) return Reply("Uso un contexto de ${Engine.contexto} tokens (${if (Ajustes.contextoManual(ctx) >= 2048) "fijado a mano" else "automático según la RAM"}).")

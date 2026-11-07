@@ -4,6 +4,7 @@ extends CanvasLayer
 signal rematch_pressed
 signal menu_pressed
 signal replay_pressed
+signal jarvis_report_pressed
 
 var mgr
 var a
@@ -286,6 +287,12 @@ func _on_fx_flash(kind: String, _pos: Vector3, extra: Dictionary) -> void:
 		flash("¡PARADA PERFECTA!" if mine else "JARVIS PARA", Color(1.0, 0.85, 0.2) if mine else Color(0.5, 0.75, 1.0))
 	elif kind == "slip":
 		flash("¡ESQUIVA!" if mine else "JARVIS ESQUIVA", Color(0.4, 1.0, 0.6) if mine else Color(0.5, 0.75, 1.0))
+	elif kind == "combo":
+		var cnt: int = int(extra.get("count", 0))
+		if extra.get("owner", null) == a:
+			flash("COMBO x%d" % cnt, Color(1.0, 0.85, 0.2))
+		elif cnt >= 3:
+			flash("JARVIS COMBO x%d" % cnt, Color(0.5, 0.75, 1.0))
 	elif (kind == "hit_heavy" or kind == "hit_light") and extra.get("counter", false):
 		flash("¡CONTRAGOLPE!" if not mine else "TE CONTRAGOLPEAN", Color(0.4, 1.0, 0.6) if not mine else Color(1.0, 0.4, 0.4))
 
@@ -346,6 +353,11 @@ func show_result(res: Dictionary) -> void:
 	bm.custom_minimum_size = Vector2(190, 56)
 	bm.pressed.connect(func(): rematch_pressed.emit())
 	row.add_child(bm)
+	var bj := Button.new()
+	bj.text = "Contarle a Jarvis"
+	bj.custom_minimum_size = Vector2(230, 56)
+	bj.pressed.connect(func(): jarvis_report_pressed.emit())
+	row.add_child(bj)
 	var bx := Button.new()
 	bx.text = "Menú"
 	bx.custom_minimum_size = Vector2(190, 56)

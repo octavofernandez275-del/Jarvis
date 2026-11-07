@@ -24,6 +24,8 @@ var rp := [0.0, 0.0]               # puntos de golpeo del round (a, b)
 var kd_round := [0, 0]             # veces que cayó cada uno en el round
 var cards: Array = [[0, 0], [0, 0], [0, 0]]   # 3 jueces: total a, total b
 var landed := [0, 0]
+var combo_n := [0, 0]              # golpes seguidos conectados (se pierde a los 2,5 s o al recibir un golpe)
+var combo_t := [0.0, 0.0]
 var thrown := [0, 0]
 var downed: Node3D = null
 var other: Node3D = null
@@ -130,6 +132,7 @@ func _start_round() -> void:
 	time_left = round_seconds
 	rp = [0.0, 0.0]
 	kd_round = [0, 0]
+	combo_n = [0, 0]
 	a.knockdowns_round = 0
 	b.knockdowns_round = 0
 	_rest_stand()
@@ -149,6 +152,10 @@ func _start_round() -> void:
 
 func _physics_process(delta: float) -> void:
 	if phase == Phase.ROUND:
+		for i in range(2):
+			combo_t[i] -= delta
+			if combo_t[i] <= 0.0:
+				combo_n[i] = 0
 		time_left -= delta
 		if time_left <= 0.0:
 			_end_round()
@@ -335,6 +342,11 @@ func _on_attack_active(att: Node3D, atk_name: String) -> void:
 	if clean:
 		rp[idx] += (1.0 if head else 0.8) * (1.3 if counter else 1.0)
 	landed[idx] += 1
+	combo_n[idx] += 1
+	combo_t[idx] = 2.5
+	combo_n[1 - idx] = 0
+	if combo_n[idx] >= 2:
+		fx.emit("combo", pos, {"owner": att, "count": combo_n[idx]})
 	if ai_att:
 		ai_att.notify_result(atk_name, "hit")
 	if df.ai:

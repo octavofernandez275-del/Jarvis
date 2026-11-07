@@ -44,7 +44,21 @@ object Memory {
         if (!tmp.renameTo(f)) { f.writeText(tmp.readText()); tmp.delete() }
     }
 
-    private fun guardar(ctx: Context) = guardarArchivo(ctx, ARCHIVO, hechos.orEmpty())
+    private fun guardar(ctx: Context) {
+        guardarArchivo(ctx, ARCHIVO, hechos.orEmpty())
+        // copia de respaldo fuera de la memoria interna (sobrevive a "borrar datos" si no se desinstala la app)
+        try {
+            val dir = ctx.getExternalFilesDir(null) ?: return
+            File(dir, "memoria_respaldo.txt").writeText(hechos.orEmpty().joinToString("\n"))
+        } catch (_: Exception) {}
+    }
+
+    /** Toda la memoria como texto (un hecho por línea), para guardarla o pasarla a otro celular. */
+    @Synchronized fun exportar(ctx: Context): String = cargar(ctx).joinToString("\n")
+
+    /** Importa líneas de un respaldo; devuelve cuántas eran nuevas. */
+    @Synchronized fun importar(ctx: Context, texto: String): Int =
+        texto.lines().map { it.trim() }.filter { it.length >= 3 }.take(MAX_HECHOS).count { agregar(ctx, it) }
 
     @Synchronized fun todos(ctx: Context): List<String> = cargar(ctx).toList()
 

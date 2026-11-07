@@ -242,6 +242,13 @@ func show_hub(msg: String = "") -> void:
 	var fi: Dictionary = s["fighter"]
 	v.add_child(_label("%s · %s · Semana %d" % [fi["name"], career.tier(), int(s["week"])], 34, Color(1.0, 0.82, 0.4)))
 	v.add_child(_label("Dinero $%d   Ranking %d   Fama %d   Fatiga %d/100   Sesiones %d   Récord %d-%d (%d KO)" % [int(s["cash"]), int(s["rank"]), int(s["fame"]), int(s["fatigue"]), int(s["slots"]), int(s["wins"]), int(s["losses"]), int(s["kos"])], 18, Color(0.85, 0.9, 1.0)))
+	var logros: Array = []
+	for bl in s["belts"]:
+		logros.append("Cinturón " + String(bl).to_upper())
+	for tr in s["trophies"]:
+		logros.append(String(tr).replace("_", " "))
+	if not logros.is_empty():
+		v.add_child(_label("Logros: " + " · ".join(logros), 18, Color(1.0, 0.85, 0.4)))
 	if msg != "":
 		v.add_child(_label(msg, 20, Color(0.4, 1.0, 0.6)))
 	var h := HBoxContainer.new()
