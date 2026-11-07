@@ -47,6 +47,10 @@ var buffer_t := 0.0
 const PARRY_WINDOW := 0.18
 
 var visual: Node3D
+var kb_vel := 0.0              # velocidad de retroceso por impactos (inercia)
+var move_cur := 0.0            # avance/retroceso suavizado (aceleración)
+var since_action := 0.0        # tiempo sin atacar ni recibir golpes (recuperación de aliento)
+var since_hit := 0.0
 var anim: AnimationPlayer
 var last_clip := ""
 
@@ -72,6 +76,13 @@ func setup(fighter: Dictionary, table_: Dictionary, model: PackedScene, player: 
 		Data.set_loops(anim, table, "boxer")
 	time_scale = 0.85 + float(stats["speed"]) / 100.0 * 0.35
 	play("idle_guard")
+	# luz de contorno para separar al boxeador del fondo
+	var rim := OmniLight3D.new()
+	rim.light_color = Color(0.72, 0.82, 1.0) if player else Color(1.0, 0.78, 0.62)
+	rim.light_energy = 0.55
+	rim.omni_range = 2.8
+	rim.position = Vector3(0.9, 1.8, -0.7)
+	add_child(rim)
 
 
 func set_facing(dir: float) -> void:
@@ -156,6 +167,7 @@ func cmd_attack(name: String) -> bool:
 	attack_hit_done = false
 	attack_id += 1
 	state = S.ATTACK
+	since_action = 0.0
 	stamina = maxf(0.0, stamina - float(a["stamina"]))
 	play(name, time_scale * atk_speed_mul, 0.05)
 	action_started.emit(self, name)
@@ -191,7 +203,8 @@ func apply_hit(info: Dictionary) -> void:
 		state = S.HIT
 		stun = float(info.get("stun", 0.3))
 		play("hit_head" if info.get("head", true) else "hit_body", 1.0, 0.03)
-	_move_z(-facing * float(info.get("push", 0.12)))
+	kb_vel = -facing * sqrt(14.0 * float(info.get("push", 0.12)))     # el golpe empuja con inercia, no teletransporta
+	since_hit = 0.0
 
 ## Parada perfecta: el atacante queda aturdido y el defensor gana ventana de contraataque.
 func get_parried() -> void:
@@ -256,6 +269,14 @@ func _physics_process(delta: float) -> void:
 		ai.think(delta)
 	_regen(delta)
 	counter_window = maxf(0.0, counter_window - delta)
+	move_cur = move_toward(move_cur, move_dir, 7.0 * delta)
+	if absf(kb_vel) > 0.02:
+		var before := position.z
+		_move_z(kb_vel * delta)
+		var lim: float = float(table["movement"]["ring_half"])
+		if absf(position.z) >= lim - 0.01 and signf(kb_vel) == signf(position.z):
+			kb_vel *= -0.35                 # rebote en las cuerdas
+		kb_vel = move_toward(kb_vel, 0.0, 7.0 * delta)
 	if buffered != "":
 		buffer_t -= delta
 		if buffer_t <= 0.0:
@@ -283,6 +304,8 @@ func _physics_process(delta: float) -> void:
 
 
 func _regen(delta: float) -> void:
+	since_action += delta
+	since_hit += delta
 	var regen := 2.0
 	if state == S.IDLE:
 		regen = 14.0
@@ -292,7 +315,14 @@ func _regen(delta: float) -> void:
 		regen = 6.0
 	elif state == S.DOWN or state == S.WIN or state == S.LOSE:
 		regen = 0.0
+	# "segundo aire": tras 1,5 s sin pelear el aliento vuelve más rápido
+	if since_action > 1.5 and regen > 0.0:
+		regen *= 1.6
 	stamina = minf(100.0, stamina + regen * delta * (0.6 + float(stats["stamina"]) / 150.0))
+	# la vida se recupera muy despacio si llevas un rato sin recibir golpes (tope menor con cada caída)
+	var cap := 100.0 - 10.0 * float(knockdowns)
+	if since_hit > 4.0 and health < cap and regen > 0.0:
+		health = minf(cap, health + 0.5 * delta * (0.6 + float(stats["chin"]) / 150.0))
 
 
 func _foot_speed() -> float:
@@ -317,7 +347,7 @@ func _update_free(delta: float) -> void:
 	if longitudinal:
 		state = S.MOVE
 		var v: float = float(table["movement"]["forward"]) if move_dir > 0.0 else -float(table["movement"]["back"])
-		_move_z(facing * v * foot * delta)
+		_move_z(facing * v * foot * delta * clampf(absf(move_cur) * 1.4, 0.35, 1.0))
 		# Si combina avance/retroceso con paso lateral, prioriza el clip longitudinal.
 		play("walk_forward" if move_dir > 0.0 else "walk_back", foot)
 	elif lateral:
@@ -327,6 +357,8 @@ func _update_free(delta: float) -> void:
 	else:
 		state = S.IDLE
 		play("idle_guard")
+		if absf(move_cur) > 0.2:      # desliza un poco al soltar (inercia)
+			_move_z(facing * move_cur * 1.2 * foot * delta * 0.5)
 
 
 func _update_block(delta: float) -> void:

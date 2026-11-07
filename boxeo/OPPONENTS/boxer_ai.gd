@@ -10,7 +10,7 @@ extends RefCounted
 ##  - Gestiona su aguante (descansa si está cansado) y cambia de agresividad según el marcador.
 ## Uso: ai.setup(boxer_ia, boxer_jugador, perfil, dificultad 0..1)   y   boxer_ia.ai = ai
 
-const ATTACKS := ["jab", "cross", "lead_hook", "rear_uppercut", "body_hook"]
+const ATTACKS := ["jab", "cross", "lead_hook", "rear_uppercut", "body_hook", "overhand", "lead_uppercut"]
 
 var me                       # boxer.gd propio
 var foe                      # boxer.gd del jugador

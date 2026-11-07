@@ -189,8 +189,9 @@ func _intro(arena_cfg: Dictionary) -> void:
 	b.frozen = true
 	var walk := String(arena_cfg["kind"]) in ["arena", "stadium"]
 	var fy: float = ArenaBuilder.FLOOR_Y
+	# Entrada completa: caminan hasta el ring (desde el túnel, o desde su esquina en gimnasios) y saludan al llegar.
 	for bx in [a, b]:
-		bx.play("entrance_taunt")
+		bx.play("walk_forward")
 	if walk:
 		a.position = Vector3(0, fy, -6.0)
 		b.position = Vector3(0, fy, 6.0)
@@ -198,9 +199,14 @@ func _intro(arena_cfg: Dictionary) -> void:
 			var tw := create_tween()
 			tw.tween_property(pair[0], "position", Vector3(0, fy, pair[1]), 2.4)
 			tw.tween_property(pair[0], "position", Vector3(0, 0, pair[2]), 1.4)
+			tw.tween_callback(pair[0].play.bind("entrance_taunt"))       # saludo con los brazos en alto ya en el ring
 	else:
-		a.position = Vector3(0, 0, -1.0)
-		b.position = Vector3(0, 0, 1.0)
+		a.position = Vector3(0, 0, -2.5)
+		b.position = Vector3(0, 0, 2.5)
+		for pair in [[a, -1.0], [b, 1.0]]:
+			var tw2 := create_tween()
+			tw2.tween_property(pair[0], "position", Vector3(0, 0, pair[1]), 1.6)
+			tw2.tween_callback(pair[0].play.bind("entrance_taunt"))
 	var ra: Dictionary = a.data["record"]
 	var rb: Dictionary = b.data["record"]
 	hud.announce("%s\n%d-%d (%d KO)" % [a.data["name"], ra["w"], ra["l"], ra["ko"]], 2.0)

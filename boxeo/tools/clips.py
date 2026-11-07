@@ -10,6 +10,8 @@ ATTACKS = {
     "cross":         dict(hand="R", target="head", damage=11, stamina=8,  startup=0.20, active=0.08, recovery=0.30, range=1.50, stun=0.35, kind="straight"),
     "lead_hook":     dict(hand="L", target="head", damage=10, stamina=7,  startup=0.22, active=0.08, recovery=0.32, range=1.20, stun=0.34, kind="hook"),
     "rear_uppercut": dict(hand="R", target="head", damage=12, stamina=9,  startup=0.24, active=0.08, recovery=0.36, range=1.05, stun=0.40, kind="uppercut"),
+    "overhand":      dict(hand="R", target="head", damage=13, stamina=9,  startup=0.28, active=0.08, recovery=0.38, range=0.80, stun=0.42, kind="hook"),
+    "lead_uppercut": dict(hand="L", target="head", damage=8,  stamina=6,  startup=0.18, active=0.08, recovery=0.28, range=0.66, stun=0.30, kind="uppercut"),
     "body_hook":     dict(hand="L", target="body", damage=8,  stamina=6,  startup=0.22, active=0.08, recovery=0.30, range=1.20, stun=0.30, kind="hook"),
 }
 
@@ -94,7 +96,17 @@ BODY_HIT = with_(GUARD, _t=(0, -0.14, 0.04), Hips=(0, -6, 0), Spine=(20, 8, 0), 
                  Thigh_L=(-26, 0, 0), Shin_L=(44, 0, 0), Foot_L=(-18, 0, 0))
 BODY_WIND = with_(blend(GUARD, BODY_HIT, 0.6), _t=(0, -0.08, 0), Hips=(0, -44, 0), Spine=(16, -12, 0), Chest=(6, -6, 0))
 
-ATTACK_POSES = {"jab": (JAB_WIND, JAB_HIT), "cross": (CROSS_WIND, CROSS_HIT), "lead_hook": (HOOK_WIND, HOOK_HIT),
+# gancho por encima (mano R, arco alto, el cuerpo se inclina) y uppercut de mano adelantada
+OVER_HIT = with_(GUARD, _t=(0, -0.04, 0.09), Hips=(0, -2, 0), Spine=(16, 8, 0), Chest=(6, 4, 0),
+                 UpperArm_R=(-6, 60, -125), Forearm_R=(-80, 0, 0), UpperArm_L=(-38, 0, -8), Forearm_L=(-125, 0, 0),
+                 Neck=(-6, 2, 0), Head=(8, 4, 0), Thigh_R=(22, 0, 0), Shin_R=(28, 0, 0), Foot_R=(-46, 0, 0))
+OVER_WIND = with_(blend(GUARD, OVER_HIT, 0.6), _t=(0, -0.06, 0), Hips=(0, -46, 0), Spine=(10, -14, 0), UpperArm_R=(-30, 50, -60), Forearm_R=(-120, 0, 0))
+LUP_WIND = with_(GUARD, _t=(0, -0.10, 0), Hips=(0, -32, 0), Spine=(12, -8, 0), UpperArm_L=(8, 0, -8), Forearm_L=(-70, 0, 0),
+                 Thigh_L=(-26, 0, 0), Shin_L=(40, 0, 0), Foot_L=(-14, 0, 0))
+LUP_HIT = with_(GUARD, _t=(0, 0.02, 0.07), Hips=(0, -20, 0), Spine=(-2, -2, 0), UpperArm_L=(-62, 0, -4), Forearm_L=(-130, 0, 0),
+                Thigh_L=(-20, 0, 0), Shin_L=(24, 0, 0), Foot_L=(-10, 0, 0))
+
+ATTACK_POSES = {"overhand": (OVER_WIND, OVER_HIT), "lead_uppercut": (LUP_WIND, LUP_HIT), "jab": (JAB_WIND, JAB_HIT), "cross": (CROSS_WIND, CROSS_HIT), "lead_hook": (HOOK_WIND, HOOK_HIT),
                 "rear_uppercut": (UPPER_WIND, UPPER_HIT), "body_hook": (BODY_WIND, BODY_HIT)}
 
 CLIPS = []   # cada clip: dict(name, loop, cat, ground, keys=[(t, pose)], note)

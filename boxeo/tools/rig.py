@@ -171,6 +171,12 @@ def build_parts(kind="boxer"):
     if boxer:
         for sx in (1, -1):
             add("skin", ell((sx * 0.075, 1.455, 0.082), (0.078, 0.058, 0.042), 14, 8), "Chest")   # pectorales
+        for row, yy in enumerate((1.24, 1.17, 1.10)):
+            for sx in (1, -1):
+                add("skin", ell((sx * 0.036, yy, 0.098), (0.036, 0.030, 0.014), 10, 6), "Spine")     # abdominales
+        for sx in (1, -1):
+            add("skin", ell((sx * 0.150, 1.40, -0.02), (0.048, 0.105, 0.070), 12, 8), "Chest")      # dorsales
+            add("skin", ell((sx * 0.060, 1.545, -0.01), (0.075, 0.032, 0.06), 12, 6), "Chest")      # trapecios
         add("trim", tube([(1.085, 0.158, 0.106), (1.125, 0.156, 0.104), (1.145, 0.150, 0.100)], 20), "Hips")  # cintura blanca
     for s, sx in (("L", 1), ("R", -1)):
         # hombro (deltoides) y brazo con bíceps

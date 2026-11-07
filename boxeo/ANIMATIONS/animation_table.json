@@ -1,344 +1,386 @@
 {
-  "note": "Fuente única: los tiempos de los golpes salen de tools/clips.py y las duraciones de los clips coinciden con startup+active+recovery. range = distancia centro a centro (m) a la que el golpe conecta.",
-  "model_height_m": 1.82,
-  "stance_note": "Zurdos: se espeja el nodo visual (scale.x = -1); la lógica no cambia.",
-  "attacks": {
-    "jab": {
-      "hand": "L",
-      "target": "head",
-      "damage": 6,
-      "stamina": 4,
-      "startup": 0.12,
-      "active": 0.08,
-      "recovery": 0.2,
-      "range": 1.06,
-      "stun": 0.22,
-      "kind": "straight",
-      "reach_m": 0.77
-    },
-    "cross": {
-      "hand": "R",
-      "target": "head",
-      "damage": 11,
-      "stamina": 8,
-      "startup": 0.2,
-      "active": 0.08,
-      "recovery": 0.3,
-      "range": 1.0,
-      "stun": 0.35,
-      "kind": "straight",
-      "reach_m": 0.71
-    },
-    "lead_hook": {
-      "hand": "L",
-      "target": "head",
-      "damage": 10,
-      "stamina": 7,
-      "startup": 0.22,
-      "active": 0.08,
-      "recovery": 0.32,
-      "range": 0.72,
-      "stun": 0.34,
-      "kind": "hook",
-      "reach_m": 0.43
-    },
-    "rear_uppercut": {
-      "hand": "R",
-      "target": "head",
-      "damage": 12,
-      "stamina": 9,
-      "startup": 0.24,
-      "active": 0.08,
-      "recovery": 0.36,
-      "range": 0.61,
-      "stun": 0.4,
-      "kind": "uppercut",
-      "reach_m": 0.32
-    },
-    "body_hook": {
-      "hand": "L",
-      "target": "body",
-      "damage": 8,
-      "stamina": 6,
-      "startup": 0.22,
-      "active": 0.08,
-      "recovery": 0.3,
-      "range": 0.71,
-      "stun": 0.3,
-      "kind": "hook",
-      "reach_m": 0.42
-    }
+ "note": "Fuente única: los tiempos de los golpes salen de tools/clips.py y las duraciones de los clips coinciden con startup+active+recovery. range = distancia centro a centro (m) a la que el golpe conecta.",
+ "model_height_m": 1.82,
+ "stance_note": "Zurdos: se espeja el nodo visual (scale.x = -1); la lógica no cambia.",
+ "attacks": {
+  "jab": {
+   "hand": "L",
+   "target": "head",
+   "damage": 6,
+   "stamina": 4,
+   "startup": 0.12,
+   "active": 0.08,
+   "recovery": 0.2,
+   "range": 1.06,
+   "stun": 0.22,
+   "kind": "straight",
+   "reach_m": 0.77
   },
-  "clips": [
-    {
-      "name": "jab",
-      "file": "CHARACTERS/boxer_base.glb",
-      "loop": false,
-      "duration": 0.4,
-      "category": "boxer",
-      "note": "Golpe straight con mano L; impacto entre 0.12s y 0.20s"
-    },
-    {
-      "name": "cross",
-      "file": "CHARACTERS/boxer_base.glb",
-      "loop": false,
-      "duration": 0.58,
-      "category": "boxer",
-      "note": "Golpe straight con mano R; impacto entre 0.20s y 0.28s"
-    },
-    {
-      "name": "lead_hook",
-      "file": "CHARACTERS/boxer_base.glb",
-      "loop": false,
-      "duration": 0.62,
-      "category": "boxer",
-      "note": "Golpe hook con mano L; impacto entre 0.22s y 0.30s"
-    },
-    {
-      "name": "rear_uppercut",
-      "file": "CHARACTERS/boxer_base.glb",
-      "loop": false,
-      "duration": 0.68,
-      "category": "boxer",
-      "note": "Golpe uppercut con mano R; impacto entre 0.24s y 0.32s"
-    },
-    {
-      "name": "body_hook",
-      "file": "CHARACTERS/boxer_base.glb",
-      "loop": false,
-      "duration": 0.6,
-      "category": "boxer",
-      "note": "Golpe hook con mano L; impacto entre 0.22s y 0.30s"
-    },
-    {
-      "name": "idle_guard",
-      "file": "CHARACTERS/boxer_base.glb",
-      "loop": true,
-      "duration": 1.2,
-      "category": "boxer",
-      "note": "Guardia ortodoxa con respiración y rebote leve"
-    },
-    {
-      "name": "walk_forward",
-      "file": "CHARACTERS/boxer_base.glb",
-      "loop": true,
-      "duration": 0.7,
-      "category": "boxer",
-      "note": "Desplazamiento hacia el rival en guardia (sin root motion)"
-    },
-    {
-      "name": "walk_back",
-      "file": "CHARACTERS/boxer_base.glb",
-      "loop": true,
-      "duration": 0.7,
-      "category": "boxer",
-      "note": "Retroceso en guardia (sin root motion)"
-    },
-    {
-      "name": "step_left",
-      "file": "CHARACTERS/boxer_base.glb",
-      "loop": true,
-      "duration": 0.8,
-      "category": "boxer",
-      "note": "Paso lateral a la izquierda"
-    },
-    {
-      "name": "step_right",
-      "file": "CHARACTERS/boxer_base.glb",
-      "loop": true,
-      "duration": 0.8,
-      "category": "boxer",
-      "note": "Paso lateral a la derecha"
-    },
-    {
-      "name": "block_high",
-      "file": "CHARACTERS/boxer_base.glb",
-      "loop": false,
-      "duration": 0.3,
-      "category": "boxer",
-      "note": "Bloqueo alto; se queda en la última pose mientras se mantiene"
-    },
-    {
-      "name": "dodge_left",
-      "file": "CHARACTERS/boxer_base.glb",
-      "loop": false,
-      "duration": 0.36,
-      "category": "boxer",
-      "note": "Esquiva lateral; ventana de invulnerabilidad 0.06s-0.26s"
-    },
-    {
-      "name": "dodge_right",
-      "file": "CHARACTERS/boxer_base.glb",
-      "loop": false,
-      "duration": 0.36,
-      "category": "boxer",
-      "note": "Esquiva lateral; ventana de invulnerabilidad 0.06s-0.26s"
-    },
-    {
-      "name": "hit_head",
-      "file": "CHARACTERS/boxer_base.glb",
-      "loop": false,
-      "duration": 0.36,
-      "category": "boxer",
-      "note": "Impacto en la cabeza"
-    },
-    {
-      "name": "hit_body",
-      "file": "CHARACTERS/boxer_base.glb",
-      "loop": false,
-      "duration": 0.36,
-      "category": "boxer",
-      "note": "Impacto al cuerpo"
-    },
-    {
-      "name": "stagger",
-      "file": "CHARACTERS/boxer_base.glb",
-      "loop": false,
-      "duration": 1.1,
-      "category": "boxer",
-      "note": "Tambaleo tras un golpe fuerte"
-    },
-    {
-      "name": "knockdown",
-      "file": "CHARACTERS/boxer_base.glb",
-      "loop": false,
-      "duration": 1.1,
-      "category": "boxer",
-      "note": "Caída de espaldas; termina en el suelo"
-    },
-    {
-      "name": "getup",
-      "file": "CHARACTERS/boxer_base.glb",
-      "loop": false,
-      "duration": 1.6,
-      "category": "boxer",
-      "note": "Levantarse tras la cuenta"
-    },
-    {
-      "name": "victory",
-      "file": "CHARACTERS/boxer_base.glb",
-      "loop": true,
-      "duration": 1.0,
-      "category": "boxer",
-      "note": "Brazos en alto celebrando"
-    },
-    {
-      "name": "defeat",
-      "file": "CHARACTERS/boxer_base.glb",
-      "loop": false,
-      "duration": 1.4,
-      "category": "boxer",
-      "note": "Hombros caídos tras perder"
-    },
-    {
-      "name": "warmup_shadow",
-      "file": "CHARACTERS/boxer_base.glb",
-      "loop": true,
-      "duration": 2.0,
-      "category": "boxer",
-      "note": "Sombra: jab-directo con rebote (calentamiento/entrenamiento)"
-    },
-    {
-      "name": "rest_breathe",
-      "file": "CHARACTERS/boxer_base.glb",
-      "loop": true,
-      "duration": 2.4,
-      "category": "boxer",
-      "note": "Descanso entre rounds: manos en rodillas respirando"
-    },
-    {
-      "name": "entrance_taunt",
-      "file": "CHARACTERS/boxer_base.glb",
-      "loop": true,
-      "duration": 1.6,
-      "category": "boxer",
-      "note": "Entrada al ring con los guantes en alto"
-    },
-    {
-      "name": "idle_staff",
-      "file": "CHARACTERS/staff_base.glb",
-      "loop": true,
-      "duration": 3.0,
-      "category": "staff",
-      "note": "Postura relajada con respiración"
-    },
-    {
-      "name": "walk_staff",
-      "file": "CHARACTERS/staff_base.glb",
-      "loop": true,
-      "duration": 1.0,
-      "category": "staff",
-      "note": "Caminata normal"
-    },
-    {
-      "name": "ref_count",
-      "file": "CHARACTERS/staff_base.glb",
-      "loop": true,
-      "duration": 1.0,
-      "category": "staff",
-      "note": "Árbitro cuenta: un golpe de brazo por segundo"
-    },
-    {
-      "name": "ref_break",
-      "file": "CHARACTERS/staff_base.glb",
-      "loop": false,
-      "duration": 1.3,
-      "category": "staff",
-      "note": "Árbitro corta el combate"
-    },
-    {
-      "name": "ref_raise_winner",
-      "file": "CHARACTERS/staff_base.glb",
-      "loop": false,
-      "duration": 1.5,
-      "category": "staff",
-      "note": "Árbitro levanta el brazo del ganador"
-    },
-    {
-      "name": "coach_cheer",
-      "file": "CHARACTERS/staff_base.glb",
-      "loop": true,
-      "duration": 1.0,
-      "category": "staff",
-      "note": "Entrenador celebrando"
-    },
-    {
-      "name": "coach_instruct",
-      "file": "CHARACTERS/staff_base.glb",
-      "loop": true,
-      "duration": 2.0,
-      "category": "staff",
-      "note": "Entrenador dando instrucciones con las manos"
-    }
-  ],
-  "defense": {
-    "dodge_iframes": [
-      0.06,
-      0.26
-    ],
-    "dodge_duration": 0.36,
-    "dodge_stamina": 6,
-    "block_damage_mult": 0.2,
-    "block_body_mult": 0.6,
-    "block_stamina_mult": 0.45
+  "cross": {
+   "hand": "R",
+   "target": "head",
+   "damage": 11,
+   "stamina": 8,
+   "startup": 0.2,
+   "active": 0.08,
+   "recovery": 0.3,
+   "range": 1.0,
+   "stun": 0.35,
+   "kind": "straight",
+   "reach_m": 0.71
   },
-  "movement": {
-    "forward": 1.7,
-    "back": 1.4,
-    "block": 0.6,
-    "min_separation": 0.55,
-    "ring_half": 2.8,
-    "lateral": 1.25,
-    "lateral_block": 0.72,
-    "lateral_half": 1.75,
-    "lateral_separation": 0.42
+  "lead_hook": {
+   "hand": "L",
+   "target": "head",
+   "damage": 10,
+   "stamina": 7,
+   "startup": 0.22,
+   "active": 0.08,
+   "recovery": 0.32,
+   "range": 0.72,
+   "stun": 0.34,
+   "kind": "hook",
+   "reach_m": 0.43
   },
-  "knockdown": {
-    "count_seconds": 10,
-    "count_step": 1.0,
-    "getup_time": 1.6,
-    "health_after_getup": 28,
-    "max_per_round": 3,
-    "max_per_fight": 4
+  "rear_uppercut": {
+   "hand": "R",
+   "target": "head",
+   "damage": 12,
+   "stamina": 9,
+   "startup": 0.24,
+   "active": 0.08,
+   "recovery": 0.36,
+   "range": 0.61,
+   "stun": 0.4,
+   "kind": "uppercut",
+   "reach_m": 0.32
+  },
+  "body_hook": {
+   "hand": "L",
+   "target": "body",
+   "damage": 8,
+   "stamina": 6,
+   "startup": 0.22,
+   "active": 0.08,
+   "recovery": 0.3,
+   "range": 0.71,
+   "stun": 0.3,
+   "kind": "hook",
+   "reach_m": 0.42
+  },
+  "overhand": {
+   "hand": "R",
+   "target": "head",
+   "damage": 13,
+   "stamina": 9,
+   "startup": 0.28,
+   "active": 0.08,
+   "recovery": 0.38,
+   "range": 0.8,
+   "stun": 0.42,
+   "kind": "hook",
+   "reach_m": 0.48
+  },
+  "lead_uppercut": {
+   "hand": "L",
+   "target": "head",
+   "damage": 8,
+   "stamina": 6,
+   "startup": 0.18,
+   "active": 0.08,
+   "recovery": 0.28,
+   "range": 0.66,
+   "stun": 0.3,
+   "kind": "uppercut",
+   "reach_m": 0.34
   }
+ },
+ "clips": [
+  {
+   "name": "jab",
+   "file": "CHARACTERS/boxer_base.glb",
+   "loop": false,
+   "duration": 0.4,
+   "category": "boxer",
+   "note": "Golpe straight con mano L; impacto entre 0.12s y 0.20s"
+  },
+  {
+   "name": "cross",
+   "file": "CHARACTERS/boxer_base.glb",
+   "loop": false,
+   "duration": 0.58,
+   "category": "boxer",
+   "note": "Golpe straight con mano R; impacto entre 0.20s y 0.28s"
+  },
+  {
+   "name": "lead_hook",
+   "file": "CHARACTERS/boxer_base.glb",
+   "loop": false,
+   "duration": 0.62,
+   "category": "boxer",
+   "note": "Golpe hook con mano L; impacto entre 0.22s y 0.30s"
+  },
+  {
+   "name": "rear_uppercut",
+   "file": "CHARACTERS/boxer_base.glb",
+   "loop": false,
+   "duration": 0.68,
+   "category": "boxer",
+   "note": "Golpe uppercut con mano R; impacto entre 0.24s y 0.32s"
+  },
+  {
+   "name": "body_hook",
+   "file": "CHARACTERS/boxer_base.glb",
+   "loop": false,
+   "duration": 0.6,
+   "category": "boxer",
+   "note": "Golpe hook con mano L; impacto entre 0.22s y 0.30s"
+  },
+  {
+   "name": "lead_uppercut",
+   "file": "CHARACTERS/boxer_base.glb",
+   "loop": false,
+   "duration": 0.54,
+   "category": "boxer",
+   "note": "Golpe uppercut con mano L; impacto entre 0.18s y 0.26s"
+  },
+  {
+   "name": "overhand",
+   "file": "CHARACTERS/boxer_base.glb",
+   "loop": false,
+   "duration": 0.74,
+   "category": "boxer",
+   "note": "Golpe hook con mano R; impacto entre 0.28s y 0.36s"
+  },
+  {
+   "name": "idle_guard",
+   "file": "CHARACTERS/boxer_base.glb",
+   "loop": true,
+   "duration": 1.2,
+   "category": "boxer",
+   "note": "Guardia ortodoxa con respiración y rebote leve"
+  },
+  {
+   "name": "walk_forward",
+   "file": "CHARACTERS/boxer_base.glb",
+   "loop": true,
+   "duration": 0.7,
+   "category": "boxer",
+   "note": "Desplazamiento hacia el rival en guardia (sin root motion)"
+  },
+  {
+   "name": "walk_back",
+   "file": "CHARACTERS/boxer_base.glb",
+   "loop": true,
+   "duration": 0.7,
+   "category": "boxer",
+   "note": "Retroceso en guardia (sin root motion)"
+  },
+  {
+   "name": "step_left",
+   "file": "CHARACTERS/boxer_base.glb",
+   "loop": true,
+   "duration": 0.8,
+   "category": "boxer",
+   "note": "Paso lateral a la izquierda"
+  },
+  {
+   "name": "step_right",
+   "file": "CHARACTERS/boxer_base.glb",
+   "loop": true,
+   "duration": 0.8,
+   "category": "boxer",
+   "note": "Paso lateral a la derecha"
+  },
+  {
+   "name": "block_high",
+   "file": "CHARACTERS/boxer_base.glb",
+   "loop": false,
+   "duration": 0.3,
+   "category": "boxer",
+   "note": "Bloqueo alto; se queda en la última pose mientras se mantiene"
+  },
+  {
+   "name": "dodge_left",
+   "file": "CHARACTERS/boxer_base.glb",
+   "loop": false,
+   "duration": 0.36,
+   "category": "boxer",
+   "note": "Esquiva lateral; ventana de invulnerabilidad 0.06s-0.26s"
+  },
+  {
+   "name": "dodge_right",
+   "file": "CHARACTERS/boxer_base.glb",
+   "loop": false,
+   "duration": 0.36,
+   "category": "boxer",
+   "note": "Esquiva lateral; ventana de invulnerabilidad 0.06s-0.26s"
+  },
+  {
+   "name": "hit_head",
+   "file": "CHARACTERS/boxer_base.glb",
+   "loop": false,
+   "duration": 0.36,
+   "category": "boxer",
+   "note": "Impacto en la cabeza"
+  },
+  {
+   "name": "hit_body",
+   "file": "CHARACTERS/boxer_base.glb",
+   "loop": false,
+   "duration": 0.36,
+   "category": "boxer",
+   "note": "Impacto al cuerpo"
+  },
+  {
+   "name": "stagger",
+   "file": "CHARACTERS/boxer_base.glb",
+   "loop": false,
+   "duration": 1.1,
+   "category": "boxer",
+   "note": "Tambaleo tras un golpe fuerte"
+  },
+  {
+   "name": "knockdown",
+   "file": "CHARACTERS/boxer_base.glb",
+   "loop": false,
+   "duration": 1.1,
+   "category": "boxer",
+   "note": "Caída de espaldas; termina en el suelo"
+  },
+  {
+   "name": "getup",
+   "file": "CHARACTERS/boxer_base.glb",
+   "loop": false,
+   "duration": 1.6,
+   "category": "boxer",
+   "note": "Levantarse tras la cuenta"
+  },
+  {
+   "name": "victory",
+   "file": "CHARACTERS/boxer_base.glb",
+   "loop": true,
+   "duration": 1.0,
+   "category": "boxer",
+   "note": "Brazos en alto celebrando"
+  },
+  {
+   "name": "defeat",
+   "file": "CHARACTERS/boxer_base.glb",
+   "loop": false,
+   "duration": 1.4,
+   "category": "boxer",
+   "note": "Hombros caídos tras perder"
+  },
+  {
+   "name": "warmup_shadow",
+   "file": "CHARACTERS/boxer_base.glb",
+   "loop": true,
+   "duration": 2.0,
+   "category": "boxer",
+   "note": "Sombra: jab-directo con rebote (calentamiento/entrenamiento)"
+  },
+  {
+   "name": "rest_breathe",
+   "file": "CHARACTERS/boxer_base.glb",
+   "loop": true,
+   "duration": 2.4,
+   "category": "boxer",
+   "note": "Descanso entre rounds: manos en rodillas respirando"
+  },
+  {
+   "name": "entrance_taunt",
+   "file": "CHARACTERS/boxer_base.glb",
+   "loop": true,
+   "duration": 1.6,
+   "category": "boxer",
+   "note": "Entrada al ring con los guantes en alto"
+  },
+  {
+   "name": "idle_staff",
+   "file": "CHARACTERS/staff_base.glb",
+   "loop": true,
+   "duration": 3.0,
+   "category": "staff",
+   "note": "Postura relajada con respiración"
+  },
+  {
+   "name": "walk_staff",
+   "file": "CHARACTERS/staff_base.glb",
+   "loop": true,
+   "duration": 1.0,
+   "category": "staff",
+   "note": "Caminata normal"
+  },
+  {
+   "name": "ref_count",
+   "file": "CHARACTERS/staff_base.glb",
+   "loop": true,
+   "duration": 1.0,
+   "category": "staff",
+   "note": "Árbitro cuenta: un golpe de brazo por segundo"
+  },
+  {
+   "name": "ref_break",
+   "file": "CHARACTERS/staff_base.glb",
+   "loop": false,
+   "duration": 1.3,
+   "category": "staff",
+   "note": "Árbitro corta el combate"
+  },
+  {
+   "name": "ref_raise_winner",
+   "file": "CHARACTERS/staff_base.glb",
+   "loop": false,
+   "duration": 1.5,
+   "category": "staff",
+   "note": "Árbitro levanta el brazo del ganador"
+  },
+  {
+   "name": "coach_cheer",
+   "file": "CHARACTERS/staff_base.glb",
+   "loop": true,
+   "duration": 1.0,
+   "category": "staff",
+   "note": "Entrenador celebrando"
+  },
+  {
+   "name": "coach_instruct",
+   "file": "CHARACTERS/staff_base.glb",
+   "loop": true,
+   "duration": 2.0,
+   "category": "staff",
+   "note": "Entrenador dando instrucciones con las manos"
+  }
+ ],
+ "defense": {
+  "dodge_iframes": [
+   0.06,
+   0.26
+  ],
+  "dodge_duration": 0.36,
+  "dodge_stamina": 6,
+  "block_damage_mult": 0.2,
+  "block_body_mult": 0.6,
+  "block_stamina_mult": 0.45
+ },
+ "movement": {
+  "forward": 1.7,
+  "back": 1.4,
+  "block": 0.6,
+  "min_separation": 0.55,
+  "ring_half": 2.8,
+  "lateral": 1.25,
+  "lateral_block": 0.72,
+  "lateral_half": 1.75,
+  "lateral_separation": 0.42
+ },
+ "knockdown": {
+  "count_seconds": 10,
+  "count_step": 1.0,
+  "getup_time": 1.6,
+  "health_after_getup": 28,
+  "max_per_round": 3,
+  "max_per_fight": 4
+ }
 }

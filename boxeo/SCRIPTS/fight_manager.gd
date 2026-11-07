@@ -171,8 +171,10 @@ func _end_round() -> void:
 	for bx in [a, b]:
 		bx.to_neutral()
 		bx.frozen = true
-		bx.health = minf(100.0, bx.health + 8.0)
-		bx.stamina = minf(100.0, bx.stamina + 40.0)
+		bx.health = minf(100.0 - 10.0 * float(bx.knockdowns), bx.health + 14.0 + float(bx.stats["chin"]) / 20.0)
+		bx.stamina = minf(100.0, bx.stamina + 55.0)
+		bx.kb_vel = 0.0
+		bx.move_cur = 0.0
 		bx.play("rest_breathe")
 	_rest_sit()
 	announce.emit("Fin del round %d" % round_n, 2.0)

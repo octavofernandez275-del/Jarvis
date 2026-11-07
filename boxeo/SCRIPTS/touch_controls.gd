@@ -65,7 +65,7 @@ func _input(event: InputEvent) -> void:
 
 const COLORES := {
 	"jab": Color(0.25, 0.6, 1.0), "cross": Color(0.95, 0.25, 0.3), "hook": Color(1.0, 0.6, 0.15),
-	"upper": Color(0.7, 0.4, 1.0), "body": Color(0.3, 0.85, 0.5), "block": Color(0.2, 0.75, 0.9),
+	"upper": Color(0.7, 0.4, 1.0), "overhand": Color(1.0, 0.45, 0.6), "lead_upper": Color(0.55, 0.5, 1.0), "body": Color(0.3, 0.85, 0.5), "block": Color(0.2, 0.75, 0.9),
 }
 
 

@@ -104,6 +104,22 @@
    "y": 0.92,
    "r": 0.065,
    "action": "hold:strafe_right"
+  },
+  {
+   "id": "overhand",
+   "label": "OVER",
+   "x": 0.685,
+   "y": 0.82,
+   "r": 0.062,
+   "action": "attack:overhand"
+  },
+  {
+   "id": "lead_upper",
+   "label": "UP-I",
+   "x": 0.7,
+   "y": 0.56,
+   "r": 0.058,
+   "action": "attack:lead_uppercut"
   }
  ],
  "difficulty_options": [
