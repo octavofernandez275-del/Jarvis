@@ -76,3 +76,9 @@ No se pudo compilar aquí (sin Kotlin/Android SDK). Ejecuta el workflow *Compila
 - Se compila como una **segunda app** (`com.octavo.jarvisboxeo`) con el workflow «Compilar Jarvis Boxeo» (`.github/workflows/boxeo.yml`, se lanza a mano o al cambiar `boxeo/`). Resultado: artefacto `jarvis-boxeo-apk`. Usa el mismo `debug.keystore` que Jarvis.
 - En Jarvis: botón **🥊 Boxeo** abajo del chat y el comando `abre boxeo` (o `juega boxeo`). Si el juego no está instalado, lo avisa.
 - Aviso honesto: los scripts de Godot nunca se ejecutaron (el paquete original lo dice) y aquí tampoco hay Godot. Es probable que el primer arranque muestre algún error menor; pásame el texto del error y lo corrijo. La exportación de Android en CI tampoco está probada.
+
+## Boxeo: Jarvis rival + narración con voces
+- El rival lo controla Jarvis (boxer_ai.gd): aprende tus secuencias de golpes y las anticipa.
+- `boxeo/SCRIPTS/narrator.gd`: narración en tiempo real con las voces TTS del dispositivo; voz/tono/velocidad distintos para presentador, comentaristas A/B y entrenadores rojo/azul.
+- Entre rounds, Jarvis genera el análisis de ambos entrenadores (estadísticas del round + patrón aprendido del jugador).
+- Sin voces en español instaladas, usa cualquiera disponible; si no hay ninguna, no narra.
