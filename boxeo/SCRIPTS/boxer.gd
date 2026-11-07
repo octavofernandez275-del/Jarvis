@@ -269,19 +269,26 @@ func _foot_speed() -> float:
 
 
 func _update_free(delta: float) -> void:
-	if absf(side_dir) > 0.1:
-		_move_x(side_dir * float(table["movement"].get("lateral", 1.25)) * _foot_speed() * delta)
+	var foot := _foot_speed()
+	var lateral := absf(side_dir) > 0.1
+	var longitudinal := absf(move_dir) > 0.1
+	if lateral:
+		_move_x(side_dir * float(table["movement"].get("lateral", 1.25)) * foot * delta)
 	if want_block:
 		state = S.BLOCK
 		play("block_high", 1.0, 0.05)
 		action_started.emit(self, "block")
 		return
-	var foot := _foot_speed()
-	if absf(move_dir) > 0.1:
+	if longitudinal:
 		state = S.MOVE
 		var v: float = float(table["movement"]["forward"]) if move_dir > 0.0 else -float(table["movement"]["back"])
 		_move_z(facing * v * foot * delta)
+		# Si combina avance/retroceso con paso lateral, prioriza el clip longitudinal.
 		play("walk_forward" if move_dir > 0.0 else "walk_back", foot)
+	elif lateral:
+		state = S.MOVE
+		var side_clip := "step_left" if side_dir < 0.0 else "step_right"
+		play(side_clip, foot, 0.08)
 	else:
 		state = S.IDLE
 		play("idle_guard")
@@ -297,6 +304,7 @@ func _update_block(delta: float) -> void:
 		_move_z(facing * v * _foot_speed() * delta)
 	if absf(side_dir) > 0.1:
 		_move_x(side_dir * float(table["movement"].get("lateral_block", 0.72)) * _foot_speed() * delta)
+		play("step_left" if side_dir < 0.0 else "step_right", _foot_speed() * 0.82, 0.08)
 
 
 func _update_attack(delta: float) -> void:
