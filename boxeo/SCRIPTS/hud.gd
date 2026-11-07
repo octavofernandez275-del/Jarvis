@@ -21,6 +21,9 @@ var announce_label: Label
 var announce_tween: Tween
 var result_panel: Control
 var show_insight := true
+var voz = null                 # voz.gd (para el indicador VOZ)
+var voz_label: Label
+var _voz_estado := ""
 
 
 func _style(color: Color) -> StyleBoxFlat:
@@ -168,9 +171,12 @@ func setup(mgr_, a_, b_) -> void:
 	announce_label.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	announce_label.grow_vertical = Control.GROW_DIRECTION_BOTH
 	announce_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	announce_label.offset_top = -140
+	announce_label.offset_top = -95
 	announce_label.modulate.a = 0.0
 	ui.add_child(announce_label)
+	voz_label = _label("VOZ ...", 15, Color(0.7, 0.75, 0.85))
+	voz_label.position = Vector2(26, 106)
+	ui.add_child(voz_label)
 	mgr.announce.connect(announce)
 	mgr.round_changed.connect(func(n, t): round_label.text = "R%d/%d" % [n, t])
 	mgr.score_updated.connect(func(t): score_label.text = t)
@@ -189,9 +195,29 @@ func _process(_delta: float) -> void:
 	var t := maxf(0.0, float(mgr.time_left))
 	time_label.text = "%d:%02d" % [floori(t / 60.0), int(t) % 60]
 	insight_label.text = b.ai.get_insight() if (show_insight and b.ai != null) else ""
+	_update_voz()
 
 
-## Subtítulos de narradores/entrenadores (abajo, con el nombre de quien habla).
+## Indicador pequeño: VOZ OK (verde), VOZ ... (gris, aún no habló) o SIN VOZ (rojo, con pista).
+func _update_voz() -> void:
+	if voz == null or voz_label == null:
+		return
+	var e: String = voz.estado()
+	if e == _voz_estado:
+		return
+	_voz_estado = e
+	if e == "ok":
+		voz_label.text = "VOZ OK"
+		voz_label.add_theme_color_override("font_color", Color(0.45, 0.95, 0.6))
+	elif e == "error":
+		voz_label.text = "SIN VOZ  (Menú > Probar voces)"
+		voz_label.add_theme_color_override("font_color", Color(1.0, 0.45, 0.45))
+	else:
+		voz_label.text = "VOZ ..."
+		voz_label.add_theme_color_override("font_color", Color(0.7, 0.75, 0.85))
+
+
+## Subtítulos de narradores/entrenadores (arriba, bajo el marcador, para no tapar los botones táctiles).
 var caption_panel: PanelContainer
 var caption_label: Label
 var caption_tween: Tween
@@ -201,15 +227,17 @@ func caption(who: String, text: String, seconds: float = 5.0) -> void:
 	if caption_panel == null:
 		caption_panel = PanelContainer.new()
 		caption_panel.add_theme_stylebox_override("panel", _style(Color(0, 0, 0, 0.62)))
-		caption_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
-		caption_panel.anchor_left = 0.1
-		caption_panel.anchor_right = 0.9
+		caption_panel.anchor_left = 0.2
+		caption_panel.anchor_right = 0.8
+		caption_panel.anchor_top = 0.0
+		caption_panel.anchor_bottom = 0.0
 		caption_panel.offset_left = 0
 		caption_panel.offset_right = 0
-		caption_panel.offset_top = -150
-		caption_panel.offset_bottom = -20
+		caption_panel.offset_top = 164
+		caption_panel.offset_bottom = 164
+		caption_panel.grow_vertical = Control.GROW_DIRECTION_END
 		caption_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		caption_label = _label("", 22)
+		caption_label = _label("", 20)
 		caption_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		caption_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		caption_panel.add_child(caption_label)

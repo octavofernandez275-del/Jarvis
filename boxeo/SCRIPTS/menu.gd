@@ -16,6 +16,7 @@ var profiles: Dictionary = {}
 var difficulty: Dictionary = {}
 var root: Control
 var career = null
+var voz = null                 # voz.gd (lo pone main.gd)
 
 
 func _ready() -> void:
@@ -104,10 +105,44 @@ func show_main() -> void:
 			_pick_fighter("Elige a tu rival", opp_cb, String(f["id"]))
 		_pick_fighter("Elige tu boxeador", choose_opp)
 	var career_cb := func(): _career_entry()
-	for item in [["Combate rápido", quick], ["Modo carrera", career_cb]]:
+	var voz_cb := func(): show_voz()
+	for item in [["Combate rápido", quick], ["Modo carrera", career_cb], ["Probar voces", voz_cb]]:
 		var b := _btn(item[0], item[1], 420, 64)
 		b.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		v.add_child(b)
+
+
+## Pantalla de diagnóstico y prueba de las voces (narradores, entrenadores, árbitro y Jarvis).
+func show_voz() -> void:
+	var v := _reset()
+	v.add_child(_label("Prueba de voces", 44, Color(1.0, 0.82, 0.4)))
+	var info := _label("", 20, Color(0.85, 0.9, 1.0))
+	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	info.custom_minimum_size = Vector2(900, 0)
+	v.add_child(info)
+	var refresh := func():
+		info.text = voz.info() if voz != null else "Voz no disponible."
+	refresh.call()
+	var tm := Timer.new()
+	tm.wait_time = 1.0
+	tm.autostart = true
+	tm.timeout.connect(refresh)
+	root.add_child(tm)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 14)
+	v.add_child(row)
+	var probar := func():
+		if voz != null:
+			voz.probar()
+	row.add_child(_btn("Probar voces", probar, 260, 60))
+	var defecto := func():
+		if voz != null:
+			voz.usar_defecto = true
+			voz.parar()
+			voz.hablar("pres", "Probando la voz por defecto del sistema.", true)
+	row.add_child(_btn("Voz del sistema", defecto, 260, 60))
+	var volver := func(): show_main()
+	row.add_child(_btn("Volver", volver, 200, 60))
 
 
 func _pick_fighter(title: String, on_done: Callable, exclude_id: String = "") -> void:

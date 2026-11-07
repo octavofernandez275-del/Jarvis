@@ -85,3 +85,21 @@ No se pudo compilar aquí (sin Kotlin/Android SDK). Ejecuta el workflow *Compila
 - Subtítulos en pantalla para narradores y para el análisis de Jarvis (aunque no haya voz); las voces TTS se reintentan hasta que Android las cargue.
 - Gráficos: tonemap filmic, brillo/bloom, contraste y saturación, sombras en 2 focos, MSAA 2x + FXAA.
 - Boxeo: entre rounds los boxeadores van a su esquina y se sientan en una banqueta; HUD rediseñado (franja y viñeta, barras redondeadas con color según vida, etiqueta JARVIS en el rival); botones táctiles nuevos con color por golpe, sombra y brillo; niebla y luz principal con sombras en la arena.
+
+## Boxeo V4: voces arregladas + gráficos
+**Voces (`boxeo/SCRIPTS/voz.gd`, nuevo)**
+- Causa probable de que no sonaran: el motor de voz de Android arranca de forma asíncrona (las primeras frases se perdían) y Android nombra el idioma «spa_ESP», no «es», así que el filtro anterior no hallaba voces en español y repartía voces de cualquier idioma.
+- Ahora: el motor se calienta al abrir el juego, las frases esperan en cola hasta que haya voces, se eligen voces en español (las locales primero), si una voz falla se reintenta con la voz por defecto del sistema, y un vigilante desatasca el motor si se cuelga.
+- Roles: presentador, comentaristas A/B, entrenadores rojo/azul, Jarvis y ahora también el árbitro (cuenta de caídas, «¡Box!», «¡Arriba!»).
+- Diagnóstico: indicador VOZ OK / VOZ ... / SIN VOZ en el HUD y pantalla **Menú > Probar voces** (voces vistas, en español, avisos del motor, último error y botón de prueba).
+- Si aun así dice SIN VOZ: Ajustes > Sistema > Idioma > Salida de texto a voz, instala «Servicios de voz de Google» y descarga el español; luego Probar voces.
+
+**Gráficos (`boxeo/SCRIPTS/polish.gd`, nuevo, y `data.gd`)**
+- Iluminación con más contraste: ACES, foco principal cálido, luz de contorno fría desde atrás, focos del ring más fuertes, ambiente más oscuro.
+- Ring: lona con trama y logo central (aros y rayos), postes metálicos, cuerdas y esquinas con brillo.
+- Haces de luz visibles de cada foco (mezcla aditiva).
+- Flashes de cámaras del público en golpes fuertes, caídas y victoria (arenas con público).
+- Materiales de los boxeadores: piel con luz de contorno y brillo, guantes de cuero barnizado, tela mate. Destello rojo/naranja al recibir un golpe, sudor y enrojecimiento que aumentan con los rounds y el daño.
+- Cámara: golpe de FOV en impactos fuertes y balanceo mínimo de cámara en mano.
+- HUD: los subtítulos pasaron arriba (antes tapaban los botones JAB, <<, >>).
+- Aviso: no hay Godot aquí; el código no se ejecutó. Si al abrir sale un error en rojo, mándame el texto.
