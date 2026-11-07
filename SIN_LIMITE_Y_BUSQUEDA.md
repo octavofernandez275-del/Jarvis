@@ -84,3 +84,4 @@ No se pudo compilar aquí (sin Kotlin/Android SDK). Ejecuta el workflow *Compila
 - Sin voces en español instaladas, usa cualquiera disponible; si no hay ninguna, no narra.
 - Subtítulos en pantalla para narradores y para el análisis de Jarvis (aunque no haya voz); las voces TTS se reintentan hasta que Android las cargue.
 - Gráficos: tonemap filmic, brillo/bloom, contraste y saturación, sombras en 2 focos, MSAA 2x + FXAA.
+- Boxeo: entre rounds los boxeadores van a su esquina y se sientan en una banqueta; HUD rediseñado (franja y viñeta, barras redondeadas con color según vida, etiqueta JARVIS en el rival); botones táctiles nuevos con color por golpe, sombra y brillo; niebla y luz principal con sombras en la arena.

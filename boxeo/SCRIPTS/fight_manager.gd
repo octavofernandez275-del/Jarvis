@@ -76,6 +76,47 @@ func score_text() -> String:
 
 # ---------------- rounds ----------------
 
+## Esquinas y banquetas para el descanso entre rounds (los boxeadores se sientan).
+const STOOL_POS := [Vector3(-2.0, 0, -2.2), Vector3(-2.0, 0, 2.2)]
+var stools: Array = []
+
+
+func _rest_sit() -> void:
+	if stools.is_empty():
+		for p in STOOL_POS:
+			var m := MeshInstance3D.new()
+			var c := CylinderMesh.new()
+			c.top_radius = 0.2
+			c.bottom_radius = 0.25
+			c.height = 0.5
+			m.mesh = c
+			var mat := StandardMaterial3D.new()
+			mat.albedo_color = Color(0.45, 0.28, 0.14)
+			mat.roughness = 0.7
+			m.material_override = mat
+			m.position = p + Vector3(0, 0.25, 0)
+			add_child(m)
+			stools.append(m)
+	for st in stools:
+		st.visible = true
+	var boxers := [a, b]
+	for i in range(2):
+		var bx = boxers[i]
+		var tw := create_tween().set_parallel(true)
+		tw.tween_property(bx, "position", STOOL_POS[i], 0.9)
+		tw.tween_property(bx, "rotation:y", PI / 2.0, 0.9)          # mira al centro del ring
+		tw.tween_property(bx.visual, "position:y", -0.42, 0.9)      # baja la cadera hasta la banqueta
+		tw.tween_property(bx.visual, "rotation:x", -0.18, 0.9)      # se recuesta un poco
+
+
+func _rest_stand() -> void:
+	for st in stools:
+		st.visible = false
+	for bx in [a, b]:
+		bx.visual.position = Vector3.ZERO
+		bx.visual.rotation.x = 0.0
+
+
 func _reset_positions() -> void:
 	a.position = Vector3(0, 0, -1.0)
 	b.position = Vector3(0, 0, 1.0)
@@ -91,6 +132,7 @@ func _start_round() -> void:
 	kd_round = [0, 0]
 	a.knockdowns_round = 0
 	b.knockdowns_round = 0
+	_rest_stand()
 	_reset_positions()
 	for bx in [a, b]:
 		bx.frozen = false
@@ -132,6 +174,7 @@ func _end_round() -> void:
 		bx.health = minf(100.0, bx.health + 8.0)
 		bx.stamina = minf(100.0, bx.stamina + 40.0)
 		bx.play("rest_breathe")
+	_rest_sit()
 	announce.emit("Fin del round %d" % round_n, 2.0)
 
 

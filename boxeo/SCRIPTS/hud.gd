@@ -26,8 +26,26 @@ var show_insight := true
 func _style(color: Color) -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()
 	s.bg_color = color
-	s.set_corner_radius_all(6)
+	s.set_corner_radius_all(10)
 	return s
+
+
+func _bar_style(color: Color, border: bool) -> StyleBoxFlat:
+	var s := StyleBoxFlat.new()
+	s.bg_color = color
+	s.set_corner_radius_all(9)
+	if border:
+		s.set_border_width_all(2)
+		s.border_color = Color(1, 1, 1, 0.35)
+	return s
+
+
+## Color de la barra de vida según lo que queda: verde → rojo.
+func _tint(p: ProgressBar) -> void:
+	var sb := p.get_theme_stylebox("fill") as StyleBoxFlat
+	if sb:
+		var t := clampf((float(p.value) / 100.0 - 0.2) / 0.5, 0.0, 1.0)
+		sb.bg_color = Color(0.92, 0.25, 0.25).lerp(Color(0.27, 0.85, 0.5), t)
 
 
 func _bar(fill: Color, h: float) -> ProgressBar:
@@ -37,8 +55,8 @@ func _bar(fill: Color, h: float) -> ProgressBar:
 	p.value = 100.0
 	p.show_percentage = false
 	p.custom_minimum_size = Vector2(0, h)
-	p.add_theme_stylebox_override("background", _style(Color(0.04, 0.06, 0.12, 0.85)))
-	p.add_theme_stylebox_override("fill", _style(fill))
+	p.add_theme_stylebox_override("background", _bar_style(Color(0.03, 0.04, 0.09, 0.85), true))
+	p.add_theme_stylebox_override("fill", _bar_style(fill, false))
 	return p
 
 
@@ -78,14 +96,38 @@ func setup(mgr_, a_, b_) -> void:
 	ui.set_anchors_preset(Control.PRESET_FULL_RECT)
 	ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(ui)
+	# viñeta + franja superior para que todo se lea sobre la escena
+	var vig := TextureRect.new()
+	var gt := GradientTexture2D.new()
+	var g := Gradient.new()
+	g.colors = PackedColorArray([Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0.6)])
+	g.offsets = PackedFloat32Array([0.0, 0.55, 1.0])
+	gt.gradient = g
+	gt.fill = GradientTexture2D.FILL_RADIAL
+	gt.fill_from = Vector2(0.5, 0.5)
+	gt.fill_to = Vector2(1.0, 0.5)
+	gt.width = 256
+	gt.height = 128
+	vig.texture = gt
+	vig.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	vig.stretch_mode = TextureRect.STRETCH_SCALE
+	vig.set_anchors_preset(Control.PRESET_FULL_RECT)
+	vig.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ui.add_child(vig)
+	var band := ColorRect.new()
+	band.color = Color(0, 0, 0, 0.5)
+	band.anchor_right = 1.0
+	band.offset_bottom = 104
+	band.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ui.add_child(band)
 	var left := _corner(true)
 	var right := _corner(false)
-	left.add_child(_label(String(a.data["name"]).to_upper(), 24))
+	left.add_child(_label(String(a.data["name"]).to_upper(), 24, Color(1.0, 0.45, 0.45)))
 	hp_a = _bar(Color(0.27, 0.82, 0.48), 24)
 	st_a = _bar(Color(1.0, 0.82, 0.4), 10)
 	left.add_child(hp_a)
 	left.add_child(st_a)
-	var rn := _label(String(b.data["name"]).to_upper(), 24)
+	var rn := _label(String(b.data["name"]).to_upper() + "  ·  JARVIS", 24, Color(0.45, 0.7, 1.0))
 	rn.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	right.add_child(rn)
 	hp_b = _bar(Color(0.27, 0.82, 0.48), 24)
@@ -102,6 +144,17 @@ func setup(mgr_, a_, b_) -> void:
 	mid.offset_right = 110
 	mid.offset_top = 8
 	ui.add_child(mid)
+	var mid_bg := Panel.new()
+	mid_bg.add_theme_stylebox_override("panel", _style(Color(0.02, 0.03, 0.08, 0.75)))
+	mid_bg.anchor_left = 0.5
+	mid_bg.anchor_right = 0.5
+	mid_bg.offset_left = -120
+	mid_bg.offset_right = 120
+	mid_bg.offset_top = 4
+	mid_bg.offset_bottom = 118
+	mid_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ui.add_child(mid_bg)
+	ui.move_child(mid_bg, band.get_index() + 1)
 	round_label = _label("R1", 26, Color(0.15, 0.82, 1.0))
 	time_label = _label("1:00", 38)
 	score_label = _label("", 18, Color(0.85, 0.88, 1.0))
@@ -128,6 +181,8 @@ func _process(_delta: float) -> void:
 	if mgr == null:
 		return
 	hp_a.value = a.health
+	_tint(hp_a)
+	_tint(hp_b)
 	hp_b.value = b.health
 	st_a.value = a.stamina
 	st_b.value = b.stamina

@@ -58,6 +58,16 @@ static func build(cfg: Dictionary, parent: Node3D) -> Dictionary:
 	env.adjustment_enabled = true
 	env.adjustment_contrast = 1.12
 	env.adjustment_saturation = 1.15
+	env.fog_enabled = true
+	env.fog_light_color = Color.html(String(cfg["wall"])).darkened(0.7)
+	env.fog_density = 0.012
+	var key := DirectionalLight3D.new()
+	parent.add_child(key)
+	key.rotation_degrees = Vector3(-62, 35, 0)
+	key.light_energy = 0.55
+	key.light_color = Color(1.0, 0.96, 0.9)
+	key.shadow_enabled = true
+	key.directional_shadow_max_distance = 22.0
 	var we := WorldEnvironment.new()
 	we.environment = env
 	parent.add_child(we)

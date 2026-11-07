@@ -57,16 +57,28 @@ func _input(event: InputEvent) -> void:
 				queue_redraw()
 
 
+const COLORES := {
+	"jab": Color(0.25, 0.6, 1.0), "cross": Color(0.95, 0.25, 0.3), "hook": Color(1.0, 0.6, 0.15),
+	"upper": Color(0.7, 0.4, 1.0), "body": Color(0.3, 0.85, 0.5), "block": Color(0.2, 0.75, 0.9),
+}
+
+
 func _draw() -> void:
 	var font := ThemeDB.fallback_font
 	for b in buttons:
 		var c := _center(b)
-		var r := _radius(b)
 		var on: bool = active.has(b["id"])
+		var r := _radius(b) * (0.92 if on else 1.0)
 		var kind: String = _split(b)[0]
-		var base := Color(0.9, 0.22, 0.27) if kind == "attack" else Color(0.2, 0.28, 0.48)
-		draw_circle(c, r, Color(base.r, base.g, base.b, 0.85 if on else 0.55))
-		draw_arc(c, r, 0.0, TAU, 32, Color(1, 1, 1, 0.8), 3.0)
-		var fs := int(r * 0.42)
-		var tw := font.get_string_size(String(b["label"]), HORIZONTAL_ALIGNMENT_CENTER, -1, fs).x
-		draw_string(font, c + Vector2(-tw * 0.5, fs * 0.35), String(b["label"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
+		var col: Color = COLORES.get(String(b["id"]), Color(0.75, 0.8, 0.95) if kind != "attack" else Color(0.95, 0.3, 0.3))
+		draw_circle(c + Vector2(0, r * 0.08), r, Color(0, 0, 0, 0.35))                       # sombra
+		draw_circle(c, r, Color(0.04, 0.05, 0.1, 0.55))                                      # base oscura
+		draw_circle(c, r * 0.86, Color(col.r, col.g, col.b, 0.8 if on else 0.35))            # relleno de color
+		draw_arc(c, r * 0.97, 0.0, TAU, 40, Color(col.r, col.g, col.b, 0.95), 4.0, true)     # aro
+		draw_arc(c, r * 0.72, PI * 1.1, PI * 1.9, 14, Color(1, 1, 1, 0.35), 3.0, true)       # brillo
+		var fs := int(r * 0.36)
+		var txt := String(b["label"])
+		var tw := font.get_string_size(txt, HORIZONTAL_ALIGNMENT_CENTER, -1, fs).x
+		var pos := c + Vector2(-tw * 0.5, fs * 0.35)
+		draw_string_outline(font, pos, txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 5, Color(0, 0, 0, 0.9))
+		draw_string(font, pos, txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
