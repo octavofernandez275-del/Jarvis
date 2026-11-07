@@ -35,8 +35,7 @@ func setup(mgr_, a_, b_) -> void:
 func intro() -> void:
 	decir("pres", "Damas y caballeros, esta noche, %s contra %s." % [String(a.data["name"]), String(b.data["name"])])
 	decir("a", "Ojo: el rival lo controla Jarvis, y va aprendiendo cada patrón de %s." % String(a.data["name"]))
-	if voces.is_empty():
-		_caption("Aviso", "Tu celular no tiene voces de texto a voz disponibles. Instala o activa un motor TTS en Ajustes.", 6.0)
+	_caption("Diagnóstico voz", "TTS soportado: %s · voces vistas: %d · hablando: %s" % [str(DisplayServer.has_feature(DisplayServer.FEATURE_TEXT_TO_SPEECH)), voces.size(), str(DisplayServer.tts_is_speaking())], 7.0)
 
 
 ## En Android las voces se cargan tarde: se reintenta en cada línea hasta que aparezcan.
@@ -72,11 +71,10 @@ func decir(rol: String, texto: String, urgente := false, subt := true) -> void:
 		_caption(String(NOMBRES[rol]), texto, 3.0 + texto.length() * 0.05)
 	if voces.is_empty():
 		_cargar_voces()
-	if voces.is_empty():
-		return
 	var roles := AJUSTE.keys()
 	var i := roles.find(rol)
-	var voz: String = String(voces[i % voces.size()])
+	# sin lista de voces: se intenta igual con la voz por defecto del motor
+	var voz: String = "" if voces.is_empty() else String(voces[i % voces.size()])
 	var aj: Array = AJUSTE[rol]
 	if urgente:
 		DisplayServer.tts_stop()
