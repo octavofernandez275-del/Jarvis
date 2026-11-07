@@ -1,0 +1,143 @@
+{
+ "note": "Ligas y cinturones FICTICIOS.",
+ "organizations": [
+  {
+   "id": "lmbj",
+   "name": "Liga Mundial de Boxeo Jarvis",
+   "belt_color": "#d4af37"
+  },
+  {
+   "id": "cab",
+   "name": "Confederación Atlántica de Boxeo",
+   "belt_color": "#c0c0c0"
+  }
+ ],
+ "belts": [
+  {
+   "id": "lmbj_pluma",
+   "org": "lmbj",
+   "weight_class": "pluma",
+   "name": "Campeón pluma LMBJ"
+  },
+  {
+   "id": "lmbj_ligero",
+   "org": "lmbj",
+   "weight_class": "ligero",
+   "name": "Campeón ligero LMBJ"
+  },
+  {
+   "id": "lmbj_welter",
+   "org": "lmbj",
+   "weight_class": "welter",
+   "name": "Campeón welter LMBJ"
+  },
+  {
+   "id": "lmbj_medio",
+   "org": "lmbj",
+   "weight_class": "medio",
+   "name": "Campeón medio LMBJ"
+  },
+  {
+   "id": "lmbj_pesado",
+   "org": "lmbj",
+   "weight_class": "pesado",
+   "name": "Campeón pesado LMBJ"
+  },
+  {
+   "id": "cab_pluma",
+   "org": "cab",
+   "weight_class": "pluma",
+   "name": "Campeón pluma CAB"
+  },
+  {
+   "id": "cab_ligero",
+   "org": "cab",
+   "weight_class": "ligero",
+   "name": "Campeón ligero CAB"
+  },
+  {
+   "id": "cab_welter",
+   "org": "cab",
+   "weight_class": "welter",
+   "name": "Campeón welter CAB"
+  },
+  {
+   "id": "cab_medio",
+   "org": "cab",
+   "weight_class": "medio",
+   "name": "Campeón medio CAB"
+  },
+  {
+   "id": "cab_pesado",
+   "org": "cab",
+   "weight_class": "pesado",
+   "name": "Campeón pesado CAB"
+  }
+ ],
+ "tournaments": [
+  {
+   "id": "copa_barrio",
+   "name": "Copa del Barrio",
+   "fighters": 4,
+   "rounds": 3,
+   "venue": "gym_local",
+   "prize": 800,
+   "belt": null
+  },
+  {
+   "id": "torneo_ascenso",
+   "name": "Torneo de Ascenso",
+   "fighters": 8,
+   "rounds": 4,
+   "venue": "arena_city",
+   "prize": 5000,
+   "belt": null
+  },
+  {
+   "id": "eliminatoria",
+   "name": "Eliminatoria Mundial",
+   "fighters": 8,
+   "rounds": 8,
+   "venue": "arena_city",
+   "prize": 25000,
+   "belt": "cab"
+  },
+  {
+   "id": "mundial",
+   "name": "Campeonato Mundial",
+   "fighters": 2,
+   "rounds": 12,
+   "venue": "arena_international",
+   "prize": 120000,
+   "belt": "lmbj"
+  },
+  {
+   "id": "gala_estadio",
+   "name": "Gala de Estadio",
+   "fighters": 2,
+   "rounds": 12,
+   "venue": "stadium",
+   "prize": 400000,
+   "belt": "lmbj"
+  }
+ ],
+ "ceremony_sequence": [
+  "entry_tunnel",
+  "ring_walk_challenger",
+  "ring_walk_champion",
+  "ring_announcer_intro",
+  "referee_instructions",
+  "bell_round_start",
+  "fight",
+  "bell_round_end",
+  "decision_announcement",
+  "belt_ceremony",
+  "post_fight_interview"
+ ],
+ "scoring": {
+  "system": "10-point-must",
+  "judges": 3,
+  "knockdown_penalty": 1,
+  "close_round_noise": 0.8
+ }
+}

@@ -115,17 +115,21 @@ class MainActivity : Activity(), Assistant.Ui {
         handsBtn = Button(this).apply { text = MANOS_OFF; isEnabled = false }
         batBtn = Button(this).apply { text = "🔋 Batería" }
         val tareasBtn = Button(this).apply { text = "📋 Tareas" }
-        listOf(handsBtn, tareasBtn, batBtn).forEach { it.textSize = 12f }
+        val boxeoBtn = Button(this).apply { text = "🥊 Boxeo" }
+        listOf(handsBtn, tareasBtn, boxeoBtn, batBtn).forEach { it.textSize = 12f }
         val fila2 = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             setPadding(dp(10), dp(8), dp(10), dp(10))
             addView(handsBtn, LinearLayout.LayoutParams(0, dp(40), 1.5f).apply { rightMargin = dp(6) })
             addView(tareasBtn, LinearLayout.LayoutParams(0, dp(40), 1f).apply { rightMargin = dp(6) })
+            addView(boxeoBtn, LinearLayout.LayoutParams(0, dp(40), 1f).apply { rightMargin = dp(6) })
             addView(batBtn, LinearLayout.LayoutParams(0, dp(40), 1f))
         }
         estilo(handsBtn, ReactorView.AZUL)
         estilo(batBtn, ReactorView.AZUL)
         estilo(tareasBtn, ReactorView.AZUL)
+        estilo(boxeoBtn, ReactorView.ROJO)
+        boxeoBtn.setOnClickListener { val r = Boxeo.abrir(this); r.despues?.invoke() ?: Toast.makeText(this, r.texto, Toast.LENGTH_LONG).show() }
 
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -449,8 +453,8 @@ class MainActivity : Activity(), Assistant.Ui {
         const val MIC = "🎤"
         const val STOP = "⏹"
         const val HINT = "Escribe a Jarvis…"
-        const val MANOS_OFF = "🎧 Manos libres: OFF"
-        const val MANOS_ON = "🎧 Manos libres: ON"
+        const val MANOS_OFF = "🎧 Manos: OFF"
+        const val MANOS_ON = "🎧 Manos: ON"
         val ETIQUETA = Regex("""\n(Tú|Jarvis|Memoria): ?""")
     }
 }

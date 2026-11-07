@@ -1,0 +1,286 @@
+{
+ "note": "Modo carrera: el tiempo avanza por semanas. Datos ficticios (patrocinadores, ligas y cinturones inventados).",
+ "start": {
+  "cash": 1500,
+  "week": 1,
+  "fame": 0,
+  "fatigue": 0,
+  "gym": "gym_local",
+  "rank": 50,
+  "weight_class": "welter"
+ },
+ "week": {
+  "training_slots": 3,
+  "fight_every_weeks": 6,
+  "fatigue_max": 100,
+  "fatigue_per_session": 18,
+  "rest_recovery": 35
+ },
+ "weight_classes": [
+  "gallo",
+  "pluma",
+  "ligero",
+  "superwelter",
+  "welter",
+  "medio",
+  "supermedio",
+  "semipesado",
+  "crucero",
+  "pesado"
+ ],
+ "rank_tiers": [
+  {
+   "name": "Debutante",
+   "rank_max": 100
+  },
+  {
+   "name": "Prospecto",
+   "rank_max": 50
+  },
+  {
+   "name": "Contendiente",
+   "rank_max": 20
+  },
+  {
+   "name": "Retador oficial",
+   "rank_max": 5
+  },
+  {
+   "name": "Campeón",
+   "rank_max": 1
+  }
+ ],
+ "gyms": [
+  {
+   "id": "gym_local",
+   "name": "Gimnasio de barrio",
+   "cost_per_week": 0,
+   "training_mult": 1.0,
+   "unlock_rank": 100
+  },
+  {
+   "id": "gym_pro",
+   "name": "Gimnasio profesional",
+   "cost_per_week": 250,
+   "training_mult": 1.35,
+   "unlock_rank": 35
+  }
+ ],
+ "training": [
+  {
+   "id": "heavy_bag",
+   "name": "Saco pesado",
+   "prop": "GYMS/heavy_bag.glb",
+   "clip": "warmup_shadow",
+   "gains": {
+    "power": 2.0,
+    "stamina": 0.5
+   },
+   "cost": 0
+  },
+  {
+   "id": "speed_bag",
+   "name": "Pera loca",
+   "prop": "GYMS/speed_bag.glb",
+   "clip": "warmup_shadow",
+   "gains": {
+    "speed": 1.5,
+    "accuracy": 1.0
+   },
+   "cost": 0
+  },
+  {
+   "id": "weights",
+   "name": "Pesas",
+   "prop": "GYMS/barbell.glb",
+   "clip": "rest_breathe",
+   "gains": {
+    "power": 1.0,
+    "chin": 1.5
+   },
+   "cost": 0
+  },
+  {
+   "id": "roadwork",
+   "name": "Carrera / cuerda",
+   "prop": null,
+   "clip": "walk_forward",
+   "gains": {
+    "stamina": 2.5,
+    "footwork": 0.5
+   },
+   "cost": 0
+  },
+  {
+   "id": "sparring",
+   "name": "Sparring",
+   "prop": "RINGS/ring_pro.glb",
+   "clip": "idle_guard",
+   "gains": {
+    "defense": 1.5,
+    "ring_iq": 1.5,
+    "accuracy": 0.5
+   },
+   "cost": 100
+  },
+  {
+   "id": "shadow",
+   "name": "Sombra",
+   "prop": null,
+   "clip": "warmup_shadow",
+   "gains": {
+    "footwork": 1.5,
+    "accuracy": 1.0
+   },
+   "cost": 0
+  },
+  {
+   "id": "rest",
+   "name": "Descanso",
+   "prop": null,
+   "clip": "rest_breathe",
+   "gains": {},
+   "cost": 0,
+   "recovers_fatigue": true
+  }
+ ],
+ "equipment": [
+  {
+   "id": "gloves_pro",
+   "name": "Guantes Titanio",
+   "price": 400,
+   "bonus": {
+    "power": 2
+   }
+  },
+  {
+   "id": "wraps_gel",
+   "name": "Vendas de gel",
+   "price": 150,
+   "bonus": {
+    "chin": 2
+   }
+  },
+  {
+   "id": "shoes_light",
+   "name": "Botas ligeras",
+   "price": 300,
+   "bonus": {
+    "footwork": 3,
+    "speed": 1
+   }
+  },
+  {
+   "id": "rope_pro",
+   "name": "Cuerda de velocidad",
+   "price": 80,
+   "bonus": {
+    "stamina": 2
+   }
+  },
+  {
+   "id": "mouth_guard",
+   "name": "Protector bucal a medida",
+   "price": 200,
+   "bonus": {
+    "chin": 3
+   }
+  }
+ ],
+ "sponsors": [
+  {
+   "id": "voltedge",
+   "name": "VoltEdge Energía",
+   "pay_per_fight": 300,
+   "requires": {
+    "fame": 10
+   },
+   "clause": "Ganar por KO da +200"
+  },
+  {
+   "id": "titanio_gear",
+   "name": "Titanio Equipamiento",
+   "pay_per_fight": 500,
+   "requires": {
+    "fame": 30
+   },
+   "clause": "Subir 3 puestos en el ranking"
+  },
+  {
+   "id": "andes_motors",
+   "name": "Andes Motors",
+   "pay_per_fight": 900,
+   "requires": {
+    "fame": 60
+   },
+   "clause": "Defender el título"
+  },
+  {
+   "id": "nova_foods",
+   "name": "Nova Alimentos",
+   "pay_per_fight": 1500,
+   "requires": {
+    "fame": 85
+   },
+   "clause": "Pelear en arena internacional"
+  }
+ ],
+ "contract": {
+  "base_purse_by_tier": {
+   "Debutante": 500,
+   "Prospecto": 1500,
+   "Contendiente": 6000,
+   "Retador oficial": 20000,
+   "Campeón": 80000
+  },
+  "win_bonus": 0.25,
+  "ko_bonus": 0.15,
+  "rounds_by_tier": {
+   "Debutante": 3,
+   "Prospecto": 4,
+   "Contendiente": 6,
+   "Retador oficial": 10,
+   "Campeón": 12
+  },
+  "opponent_ranks_window": [
+   -8,
+   3
+  ]
+ },
+ "progression": {
+  "rank_gain_win": [
+   2,
+   6
+  ],
+  "rank_loss_defeat": [
+   1,
+   4
+  ],
+  "fame_win": 3,
+  "fame_ko": 2,
+  "fame_loss": -2,
+  "stat_cap": 99
+ },
+ "trophies": [
+  {
+   "id": "first_win",
+   "name": "Primera victoria"
+  },
+  {
+   "id": "ko_artist",
+   "name": "10 KOs"
+  },
+  {
+   "id": "top10",
+   "name": "Top 10 mundial"
+  },
+  {
+   "id": "champion",
+   "name": "Campeón mundial"
+  },
+  {
+   "id": "undefeated",
+   "name": "Invicto en 10 peleas"
+  }
+ ]
+}

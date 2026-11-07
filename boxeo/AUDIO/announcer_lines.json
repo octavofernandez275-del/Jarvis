@@ -1,0 +1,79 @@
+{
+ "note": "NO hay voces incluidas. Estas líneas sirven para grabar con voces autorizadas o para un TTS con licencia. Archivo de voz esperado: AUDIO/voices/<id>.ogg",
+ "ring_announcer": [
+  {
+   "id": "ra_intro",
+   "text": "Damas y caballeros, bienvenidos a una noche de boxeo profesional."
+  },
+  {
+   "id": "ra_red",
+   "text": "En la esquina roja, {fighter_a}, con un récord de {record_a}."
+  },
+  {
+   "id": "ra_blue",
+   "text": "En la esquina azul, {fighter_b}, con un récord de {record_b}."
+  },
+  {
+   "id": "ra_round",
+   "text": "Round {n}."
+  },
+  {
+   "id": "ra_winner_decision",
+   "text": "Y el ganador, por decisión, {winner}."
+  },
+  {
+   "id": "ra_winner_ko",
+   "text": "Ganador por nocaut, {winner}."
+  }
+ ],
+ "referee": [
+  {
+   "id": "rf_box",
+   "text": "¡Box!"
+  },
+  {
+   "id": "rf_break",
+   "text": "¡Separados!"
+  },
+  {
+   "id": "rf_count",
+   "text": "{n}"
+  },
+  {
+   "id": "rf_stop",
+   "text": "¡Basta! Se acabó la pelea."
+  }
+ ],
+ "commentators": [
+  {
+   "id": "cm_a_knockdown",
+   "speaker": "A",
+   "text": "¡Al suelo! ¡Qué golpe tan limpio!"
+  },
+  {
+   "id": "cm_b_adapt",
+   "speaker": "B",
+   "text": "Fíjate cómo el rival ya leyó la combinación y se está adaptando."
+  },
+  {
+   "id": "cm_a_round_end",
+   "speaker": "A",
+   "text": "Termina el round, un intercambio muy parejo."
+  },
+  {
+   "id": "cm_b_stamina",
+   "speaker": "B",
+   "text": "Está llegando al límite de su resistencia."
+  },
+  {
+   "id": "cm_a_counter",
+   "speaker": "A",
+   "text": "¡Contraataque perfecto!"
+  },
+  {
+   "id": "cm_b_finish",
+   "speaker": "B",
+   "text": "Esto se acaba, no puede defenderse."
+  }
+ ]
+}

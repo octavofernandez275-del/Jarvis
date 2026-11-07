@@ -1,0 +1,51 @@
+{
+ "note": "Entrenadores y asistentes de esquina. Modelo: CHARACTERS/staff_base.glb (mismo rig, otros colores). No hay rostro animado: ver DOCUMENTATION/LIMITATIONS.md",
+ "model": "CHARACTERS/staff_base.glb",
+ "animations": [
+  "idle_staff",
+  "walk_staff",
+  "coach_cheer",
+  "coach_instruct"
+ ],
+ "coaches": [
+  {
+   "id": "coach_ramon",
+   "name": "Ramón Ibarra",
+   "role": "Entrenador principal",
+   "look": {
+    "skin": "#b07a55",
+    "hair": "#8a8a8a",
+    "shirt": "#1d3f8f",
+    "pants": "#222222",
+    "shoes": "#111111"
+   },
+   "voice": "AUDIO/voices/coach_ramon (pendiente, licenciar)"
+  },
+  {
+   "id": "coach_ines",
+   "name": "Inés Valdés",
+   "role": "Preparadora física",
+   "look": {
+    "skin": "#d09a78",
+    "hair": "#2a1a10",
+    "shirt": "#e53935",
+    "pants": "#222222",
+    "shoes": "#ffffff"
+   },
+   "voice": "AUDIO/voices/coach_ines (pendiente, licenciar)"
+  },
+  {
+   "id": "coach_walt",
+   "name": "Walt Brenner",
+   "role": "Cutman",
+   "look": {
+    "skin": "#e0b89c",
+    "hair": "#c8c8c8",
+    "shirt": "#2e7d32",
+    "pants": "#333333",
+    "shoes": "#111111"
+   },
+   "voice": "AUDIO/voices/coach_walt (pendiente, licenciar)"
+  }
+ ]
+}

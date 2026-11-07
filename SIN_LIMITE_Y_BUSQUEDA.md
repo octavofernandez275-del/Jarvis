@@ -70,3 +70,9 @@ No se pudo compilar aquí (sin Kotlin/Android SDK). Ejecuta el workflow *Compila
 - **Recuerda lo que viene al caso**: al contestar, el modelo recibe los datos más nuevos y además los que tienen que ver con tu pregunta, aunque sean viejos. El tamaño del bloque crece con el contexto (de 900 a 4500 caracteres).
 - **Temas de charlas anteriores**: lo que ya no cabe en el historial deja una lista de qué preguntaste (15 temas) que sobrevive al cerrar la app.
 - Siguen: `recuerda que…`, `qué recuerdas`, `olvida…`, `borra toda mi memoria`.
+
+## Jarvis Boxeo (juego de boxeo, solo táctil)
+- La carpeta `boxeo/` es el proyecto Godot 4.3 de `JARVIS_BOXING_ASSETS`, adaptado a **solo controles táctiles**: se quitó todo el teclado (J/K/L/I/U, espacio, A/D, flechas, C) y la emulación de toque con ratón; se añadió un botón táctil `CAM` para cambiar de cámara. Los botones (golpes, bloqueo, esquivas, avanzar/retroceder) ya eran multitoque.
+- Se compila como una **segunda app** (`com.octavo.jarvisboxeo`) con el workflow «Compilar Jarvis Boxeo» (`.github/workflows/boxeo.yml`, se lanza a mano o al cambiar `boxeo/`). Resultado: artefacto `jarvis-boxeo-apk`. Usa el mismo `debug.keystore` que Jarvis.
+- En Jarvis: botón **🥊 Boxeo** abajo del chat y el comando `abre boxeo` (o `juega boxeo`). Si el juego no está instalado, lo avisa.
+- Aviso honesto: los scripts de Godot nunca se ejecutaron (el paquete original lo dice) y aquí tampoco hay Godot. Es probable que el primer arranque muestre algún error menor; pásame el texto del error y lo corrijo. La exportación de Android en CI tampoco está probada.

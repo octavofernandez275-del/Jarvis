@@ -1,0 +1,422 @@
+{
+ "note": "Cada arena se construye en tiempo de ejecución con SCRIPTS/arena_builder.gd (sin escenas pesadas). Colores en hex.",
+ "camera_presets": {
+  "broadcast": {
+   "mode": "side",
+   "distance": 5.2,
+   "height": 1.55,
+   "fov": 48
+  },
+  "behind": {
+   "mode": "behind",
+   "distance": 2.6,
+   "height": 1.9,
+   "fov": 55
+  },
+  "corner": {
+   "mode": "corner",
+   "distance": 5.5,
+   "height": 2.4,
+   "fov": 50
+  },
+  "ringside": {
+   "mode": "side",
+   "distance": 3.4,
+   "height": 1.2,
+   "fov": 60
+  },
+  "overhead": {
+   "mode": "top",
+   "distance": 0,
+   "height": 8.0,
+   "fov": 45
+  }
+ },
+ "arenas": [
+  {
+   "id": "gym_local",
+   "name": "Gimnasio de barrio",
+   "kind": "gym",
+   "size": [
+    16,
+    14,
+    5
+   ],
+   "floor": "#5b4636",
+   "wall": "#8a7f73",
+   "ambient": "#c9c2b8",
+   "ambient_energy": 0.9,
+   "light_color": "#fff1d6",
+   "spot_count": 2,
+   "spot_energy": 2.0,
+   "crowd": {
+    "tiers": 0,
+    "density": 0.0,
+    "palette": [
+     "#c62828",
+     "#1565c0",
+     "#f9a825",
+     "#2e7d32",
+     "#eeeeee",
+     "#6a1b9a"
+    ],
+    "excitement": 0.5
+   },
+   "props": {
+    "heavy_bags": [
+     [
+      -6,
+      0,
+      -3
+     ],
+     [
+      -6,
+      0,
+      0
+     ],
+     [
+      -6,
+      0,
+      3
+     ]
+    ],
+    "speed_bags": [
+     [
+      6,
+      0,
+      -4
+     ]
+    ],
+    "barbells": [
+     [
+      6,
+      0,
+      3
+     ]
+    ],
+    "benches": [
+     [
+      5,
+      0,
+      5
+     ]
+    ]
+   },
+   "ambience": "AUDIO/gym_ambience_loop.wav",
+   "cameras": [
+    "broadcast",
+    "behind",
+    "corner"
+   ],
+   "notes": "Combates de debut y sparring."
+  },
+  {
+   "id": "gym_pro",
+   "name": "Gimnasio profesional",
+   "kind": "gym",
+   "size": [
+    24,
+    20,
+    7
+   ],
+   "floor": "#2f3a42",
+   "wall": "#47535c",
+   "ambient": "#d4e2f2",
+   "ambient_energy": 1.0,
+   "light_color": "#ffffff",
+   "spot_count": 4,
+   "spot_energy": 2.5,
+   "crowd": {
+    "tiers": 0,
+    "density": 0.0,
+    "palette": [
+     "#c62828",
+     "#1565c0",
+     "#f9a825",
+     "#2e7d32",
+     "#eeeeee",
+     "#6a1b9a"
+    ],
+    "excitement": 0.5
+   },
+   "props": {
+    "heavy_bags": [
+     [
+      -9,
+      0,
+      -6
+     ],
+     [
+      -9,
+      0,
+      -3
+     ],
+     [
+      -9,
+      0,
+      0
+     ],
+     [
+      -9,
+      0,
+      3
+     ]
+    ],
+    "speed_bags": [
+     [
+      9,
+      0,
+      -6
+     ],
+     [
+      9,
+      0,
+      -3
+     ]
+    ],
+    "barbells": [
+     [
+      8,
+      0,
+      4
+     ],
+     [
+      8,
+      0,
+      6
+     ]
+    ],
+    "benches": [
+     [
+      6,
+      0,
+      6
+     ],
+     [
+      10,
+      0,
+      6
+     ]
+    ]
+   },
+   "ambience": "AUDIO/gym_ambience_loop.wav",
+   "cameras": [
+    "broadcast",
+    "behind",
+    "corner"
+   ],
+   "notes": "Zona de entrenamiento del modo carrera."
+  },
+  {
+   "id": "arena_city",
+   "name": "Arena de la ciudad",
+   "kind": "arena",
+   "size": [
+    40,
+    36,
+    14
+   ],
+   "floor": "#15171c",
+   "wall": "#1c1f28",
+   "ambient": "#4c5a80",
+   "ambient_energy": 0.55,
+   "light_color": "#ffffff",
+   "spot_count": 6,
+   "spot_energy": 5.0,
+   "crowd": {
+    "tiers": 3,
+    "density": 0.75,
+    "palette": [
+     "#c62828",
+     "#1565c0",
+     "#f9a825",
+     "#2e7d32",
+     "#eeeeee",
+     "#6a1b9a"
+    ],
+    "excitement": 0.6
+   },
+   "props": {
+    "truss": true,
+    "scoreboard": true
+   },
+   "ambience": "AUDIO/crowd_loop.wav",
+   "cameras": [
+    "broadcast",
+    "behind",
+    "corner",
+    "ringside"
+   ],
+   "notes": "Peleas regionales y eliminatorias."
+  },
+  {
+   "id": "arena_international",
+   "name": "Arena internacional",
+   "kind": "arena",
+   "size": [
+    60,
+    52,
+    20
+   ],
+   "floor": "#0d0e12",
+   "wall": "#12141a",
+   "ambient": "#3b4a78",
+   "ambient_energy": 0.5,
+   "light_color": "#fff6e0",
+   "spot_count": 8,
+   "spot_energy": 7.0,
+   "crowd": {
+    "tiers": 5,
+    "density": 0.9,
+    "palette": [
+     "#c62828",
+     "#1565c0",
+     "#f9a825",
+     "#2e7d32",
+     "#eeeeee",
+     "#6a1b9a"
+    ],
+    "excitement": 0.8
+   },
+   "props": {
+    "truss": true,
+    "scoreboard": true
+   },
+   "ambience": "AUDIO/crowd_loop.wav",
+   "cameras": [
+    "broadcast",
+    "behind",
+    "corner",
+    "ringside",
+    "overhead"
+   ],
+   "notes": "Peleas de título mundial."
+  },
+  {
+   "id": "stadium",
+   "name": "Estadio al aire libre",
+   "kind": "stadium",
+   "size": [
+    110,
+    90,
+    30
+   ],
+   "floor": "#1b2b1b",
+   "wall": "#222222",
+   "ambient": "#6f86b3",
+   "ambient_energy": 0.7,
+   "light_color": "#fff3d1",
+   "spot_count": 8,
+   "spot_energy": 9.0,
+   "crowd": {
+    "tiers": 8,
+    "density": 1.0,
+    "palette": [
+     "#c62828",
+     "#1565c0",
+     "#f9a825",
+     "#2e7d32",
+     "#eeeeee",
+     "#6a1b9a"
+    ],
+    "excitement": 1.0
+   },
+   "props": {
+    "truss": true,
+    "scoreboard": true,
+    "night": true
+   },
+   "ambience": "AUDIO/crowd_loop.wav",
+   "cameras": [
+    "broadcast",
+    "behind",
+    "corner",
+    "ringside",
+    "overhead"
+   ],
+   "notes": "Evento especial de campeonato (máximo público)."
+  },
+  {
+   "id": "locker_room",
+   "name": "Vestuario",
+   "kind": "room",
+   "size": [
+    10,
+    6,
+    3.2
+   ],
+   "floor": "#3a3a3f",
+   "wall": "#4a5568",
+   "ambient": "#d0d8e8",
+   "ambient_energy": 1.0,
+   "light_color": "#ffffff",
+   "spot_count": 1,
+   "spot_energy": 2.0,
+   "crowd": {
+    "tiers": 0,
+    "density": 0,
+    "palette": [
+     "#c62828",
+     "#1565c0",
+     "#f9a825",
+     "#2e7d32",
+     "#eeeeee",
+     "#6a1b9a"
+    ],
+    "excitement": 0.5
+   },
+   "props": {
+    "lockers": [
+     [
+      0,
+      0,
+      -2.6
+     ]
+    ]
+   },
+   "ambience": "AUDIO/gym_ambience_loop.wav",
+   "cameras": [
+    "behind"
+   ],
+   "notes": "Previa del combate y vendaje."
+  },
+  {
+   "id": "entry_tunnel",
+   "name": "Túnel de entrada",
+   "kind": "tunnel",
+   "size": [
+    3.3,
+    12,
+    3.1
+   ],
+   "floor": "#14141a",
+   "wall": "#2d2d38",
+   "ambient": "#8090c0",
+   "ambient_energy": 0.6,
+   "light_color": "#e8ecff",
+   "spot_count": 0,
+   "spot_energy": 0,
+   "crowd": {
+    "tiers": 0,
+    "density": 0,
+    "palette": [
+     "#c62828",
+     "#1565c0",
+     "#f9a825",
+     "#2e7d32",
+     "#eeeeee",
+     "#6a1b9a"
+    ],
+    "excitement": 0.5
+   },
+   "props": {
+    "tunnel": true
+   },
+   "ambience": "AUDIO/crowd_loop.wav",
+   "cameras": [
+    "behind"
+   ],
+   "notes": "Caminata de entrada al ring."
+  }
+ ]
+}

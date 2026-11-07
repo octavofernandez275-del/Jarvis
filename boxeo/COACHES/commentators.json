@@ -1,0 +1,42 @@
+{
+ "note": "Comentaristas y presentador: solo voz + avatar de cabina (staff_base.glb, animación idle_staff). Voces NO incluidas.",
+ "model": "CHARACTERS/staff_base.glb",
+ "people": [
+  {
+   "id": "presenter",
+   "name": "Leo Marín",
+   "role": "Presentador del ring",
+   "look": {
+    "skin": "#c08c64",
+    "hair": "#1a1008",
+    "shirt": "#8b0000",
+    "pants": "#111111",
+    "shoes": "#111111"
+   }
+  },
+  {
+   "id": "comm_a",
+   "name": "Paula Rey",
+   "role": "Comentarista principal",
+   "look": {
+    "skin": "#d9ad8a",
+    "hair": "#3a2410",
+    "shirt": "#1d3f8f",
+    "pants": "#111111",
+    "shoes": "#111111"
+   }
+  },
+  {
+   "id": "comm_b",
+   "name": "Gonzalo Pardo",
+   "role": "Comentarista técnico",
+   "look": {
+    "skin": "#a77455",
+    "hair": "#0f0a06",
+    "shirt": "#2e7d32",
+    "pants": "#111111",
+    "shoes": "#111111"
+   }
+  }
+ ]
+}

@@ -1,0 +1,437 @@
+{
+ "note": "Boxeadores FICTICIOS originales. No representan a ninguna persona real.",
+ "fighters": [
+  {
+   "id": "tito_vargas",
+   "name": "Tito Vargas",
+   "nickname": "El Trueno",
+   "country": "México",
+   "weight_class": "welter",
+   "height_cm": 172,
+   "weight_kg": 66,
+   "reach_cm": 174,
+   "age": 27,
+   "stance": "orthodox",
+   "ai_profile": "aggressive",
+   "stats": {
+    "power": 78,
+    "speed": 70,
+    "stamina": 74,
+    "chin": 68,
+    "defense": 52,
+    "accuracy": 66,
+    "footwork": 62,
+    "ring_iq": 55
+   },
+   "look": {
+    "skin": "#b07a55",
+    "hair": "#14100c",
+    "shorts": "#1f8a3c",
+    "gloves": "#c62828",
+    "shoes": "#111111"
+   },
+   "record": {
+    "w": 24,
+    "l": 2,
+    "ko": 19
+   },
+   "bio": "Peleador de ataque constante que busca el nocaut desde el primer round."
+  },
+  {
+   "id": "kai_morrow",
+   "name": "Kai Morrow",
+   "nickname": "Metrónomo",
+   "country": "Estados Unidos",
+   "weight_class": "medio",
+   "height_cm": 183,
+   "weight_kg": 72,
+   "reach_cm": 188,
+   "age": 29,
+   "stance": "orthodox",
+   "ai_profile": "technical",
+   "stats": {
+    "power": 62,
+    "speed": 78,
+    "stamina": 72,
+    "chin": 66,
+    "defense": 74,
+    "accuracy": 82,
+    "footwork": 76,
+    "ring_iq": 80
+   },
+   "look": {
+    "skin": "#6b4630",
+    "hair": "#0d0d0d",
+    "shorts": "#1d3f8f",
+    "gloves": "#e0e0e0",
+    "shoes": "#111111"
+   },
+   "record": {
+    "w": 31,
+    "l": 1,
+    "ko": 14
+   },
+   "bio": "Boxeador de manual: jab, distancia y precisión quirúrgica."
+  },
+  {
+   "id": "domingo_reyes",
+   "name": "Domingo Reyes",
+   "nickname": "La Sombra",
+   "country": "Argentina",
+   "weight_class": "ligero",
+   "height_cm": 168,
+   "weight_kg": 61,
+   "reach_cm": 171,
+   "age": 31,
+   "stance": "southpaw",
+   "ai_profile": "counterpuncher",
+   "stats": {
+    "power": 64,
+    "speed": 80,
+    "stamina": 70,
+    "chin": 64,
+    "defense": 80,
+    "accuracy": 78,
+    "footwork": 82,
+    "ring_iq": 84
+   },
+   "look": {
+    "skin": "#c08c64",
+    "hair": "#2a1a10",
+    "shorts": "#6fb7e8",
+    "gloves": "#ffffff",
+    "shoes": "#111111"
+   },
+   "record": {
+    "w": 38,
+    "l": 4,
+    "ko": 17
+   },
+   "bio": "Zurdo escurridizo que castiga cada error del rival."
+  },
+  {
+   "id": "lev_zorin",
+   "name": "Lev Zorin",
+   "nickname": "El Ajedrecista",
+   "country": "Ucrania",
+   "weight_class": "pesado",
+   "height_cm": 195,
+   "weight_kg": 102,
+   "reach_cm": 201,
+   "age": 33,
+   "stance": "southpaw",
+   "ai_profile": "strategic",
+   "stats": {
+    "power": 76,
+    "speed": 62,
+    "stamina": 80,
+    "chin": 78,
+    "defense": 72,
+    "accuracy": 74,
+    "footwork": 60,
+    "ring_iq": 92
+   },
+   "look": {
+    "skin": "#d6a98a",
+    "hair": "#4a3a20",
+    "shorts": "#f2c200",
+    "gloves": "#1f1f1f",
+    "shoes": "#111111"
+   },
+   "record": {
+    "w": 22,
+    "l": 0,
+    "ko": 15
+   },
+   "bio": "Lee el combate como una partida y cambia de plan según el marcador."
+  },
+  {
+   "id": "abel_okonkwo",
+   "name": "Abel Okonkwo",
+   "nickname": "Roca",
+   "country": "Nigeria",
+   "weight_class": "supermedio",
+   "height_cm": 185,
+   "weight_kg": 76,
+   "reach_cm": 190,
+   "age": 28,
+   "stance": "orthodox",
+   "ai_profile": "durable",
+   "stats": {
+    "power": 80,
+    "speed": 58,
+    "stamina": 88,
+    "chin": 92,
+    "defense": 60,
+    "accuracy": 62,
+    "footwork": 55,
+    "ring_iq": 60
+   },
+   "look": {
+    "skin": "#3f2a1e",
+    "hair": "#000000",
+    "shorts": "#7a1fa2",
+    "gloves": "#f5f5f5",
+    "shoes": "#111111"
+   },
+   "record": {
+    "w": 27,
+    "l": 3,
+    "ko": 21
+   },
+   "bio": "Aguanta lo imposible y responde con golpes de poder."
+  },
+  {
+   "id": "sora_tanaka",
+   "name": "Sora Tanaka",
+   "nickname": "Destello",
+   "country": "Japón",
+   "weight_class": "pluma",
+   "height_cm": 165,
+   "weight_kg": 57,
+   "reach_cm": 168,
+   "age": 24,
+   "stance": "southpaw",
+   "ai_profile": "fast",
+   "stats": {
+    "power": 48,
+    "speed": 95,
+    "stamina": 78,
+    "chin": 52,
+    "defense": 70,
+    "accuracy": 76,
+    "footwork": 90,
+    "ring_iq": 70
+   },
+   "look": {
+    "skin": "#d9ad8a",
+    "hair": "#0a0a0a",
+    "shorts": "#e53935",
+    "gloves": "#ffffff",
+    "shoes": "#111111"
+   },
+   "record": {
+    "w": 19,
+    "l": 2,
+    "ko": 6
+   },
+   "bio": "Velocidad de manos y piernas fuera de serie."
+  },
+  {
+   "id": "mateo_brandt",
+   "name": "Mateo Brandt",
+   "nickname": "El Muro",
+   "country": "Alemania",
+   "weight_class": "semipesado",
+   "height_cm": 188,
+   "weight_kg": 79,
+   "reach_cm": 191,
+   "age": 30,
+   "stance": "orthodox",
+   "ai_profile": "defensive",
+   "stats": {
+    "power": 58,
+    "speed": 60,
+    "stamina": 76,
+    "chin": 80,
+    "defense": 90,
+    "accuracy": 70,
+    "footwork": 64,
+    "ring_iq": 78
+   },
+   "look": {
+    "skin": "#e0b89c",
+    "hair": "#7a5a2a",
+    "shorts": "#222222",
+    "gloves": "#d4af37",
+    "shoes": "#111111"
+   },
+   "record": {
+    "w": 26,
+    "l": 2,
+    "ko": 9
+   },
+   "bio": "Guardia cerrada y paciencia: gana por puntos sin recibir."
+  },
+  {
+   "id": "rafa_cortez",
+   "name": "Rafa Cortez",
+   "nickname": "Tornado",
+   "country": "Colombia",
+   "weight_class": "superwelter",
+   "height_cm": 175,
+   "weight_kg": 69,
+   "reach_cm": 177,
+   "age": 26,
+   "stance": "orthodox",
+   "ai_profile": "pressure",
+   "stats": {
+    "power": 72,
+    "speed": 72,
+    "stamina": 90,
+    "chin": 70,
+    "defense": 50,
+    "accuracy": 64,
+    "footwork": 66,
+    "ring_iq": 52
+   },
+   "look": {
+    "skin": "#9a6a48",
+    "hair": "#1a0f08",
+    "shorts": "#f57c00",
+    "gloves": "#212121",
+    "shoes": "#111111"
+   },
+   "record": {
+    "w": 21,
+    "l": 3,
+    "ko": 13
+   },
+   "bio": "Presiona sin descanso hasta ahogar al rival."
+  },
+  {
+   "id": "nico_haddad",
+   "name": "Nico Haddad",
+   "nickname": "Pistón",
+   "country": "Líbano",
+   "weight_class": "ligero",
+   "height_cm": 172,
+   "weight_kg": 61,
+   "reach_cm": 173,
+   "age": 25,
+   "stance": "orthodox",
+   "ai_profile": "pressure",
+   "stats": {
+    "power": 66,
+    "speed": 74,
+    "stamina": 92,
+    "chin": 74,
+    "defense": 56,
+    "accuracy": 60,
+    "footwork": 68,
+    "ring_iq": 58
+   },
+   "look": {
+    "skin": "#b98c68",
+    "hair": "#120c08",
+    "shorts": "#00897b",
+    "gloves": "#fafafa",
+    "shoes": "#111111"
+   },
+   "record": {
+    "w": 17,
+    "l": 1,
+    "ko": 9
+   },
+   "bio": "Motor inagotable: combina golpes al cuerpo y cabeza."
+  },
+  {
+   "id": "jonas_lindqvist",
+   "name": "Jonas Lindqvist",
+   "nickname": "Hielo",
+   "country": "Suecia",
+   "weight_class": "crucero",
+   "height_cm": 191,
+   "weight_kg": 89,
+   "reach_cm": 196,
+   "age": 32,
+   "stance": "orthodox",
+   "ai_profile": "technical",
+   "stats": {
+    "power": 70,
+    "speed": 66,
+    "stamina": 74,
+    "chin": 72,
+    "defense": 76,
+    "accuracy": 80,
+    "footwork": 68,
+    "ring_iq": 82
+   },
+   "look": {
+    "skin": "#e8c4a8",
+    "hair": "#c8a860",
+    "shorts": "#0d47a1",
+    "gloves": "#ffffff",
+    "shoes": "#111111"
+   },
+   "record": {
+    "w": 25,
+    "l": 2,
+    "ko": 16
+   },
+   "bio": "Alcance largo y combinaciones limpias."
+  },
+  {
+   "id": "diego_salinas",
+   "name": "Diego Salinas",
+   "nickname": "Chispa",
+   "country": "Perú",
+   "weight_class": "gallo",
+   "height_cm": 162,
+   "weight_kg": 53,
+   "reach_cm": 165,
+   "age": 23,
+   "stance": "orthodox",
+   "ai_profile": "counterpuncher",
+   "stats": {
+    "power": 52,
+    "speed": 86,
+    "stamina": 72,
+    "chin": 56,
+    "defense": 76,
+    "accuracy": 72,
+    "footwork": 84,
+    "ring_iq": 74
+   },
+   "look": {
+    "skin": "#a77455",
+    "hair": "#0f0a06",
+    "shorts": "#c62828",
+    "gloves": "#ffd600",
+    "shoes": "#111111"
+   },
+   "record": {
+    "w": 14,
+    "l": 1,
+    "ko": 5
+   },
+   "bio": "Pequeño y ágil, siempre espera el error para contraatacar."
+  },
+  {
+   "id": "bruno_kessler",
+   "name": "Bruno Kessler",
+   "nickname": "El Yunque",
+   "country": "Austria",
+   "weight_class": "pesado",
+   "height_cm": 193,
+   "weight_kg": 108,
+   "reach_cm": 198,
+   "age": 34,
+   "stance": "orthodox",
+   "ai_profile": "durable",
+   "stats": {
+    "power": 88,
+    "speed": 48,
+    "stamina": 70,
+    "chin": 94,
+    "defense": 48,
+    "accuracy": 56,
+    "footwork": 42,
+    "ring_iq": 54
+   },
+   "look": {
+    "skin": "#dcb496",
+    "hair": "#6b4a2a",
+    "shorts": "#37474f",
+    "gloves": "#b71c1c",
+    "shoes": "#111111"
+   },
+   "record": {
+    "w": 29,
+    "l": 5,
+    "ko": 26
+   },
+   "bio": "Pegada devastadora y mandíbula de hierro, pero lento."
+  }
+ ]
+}

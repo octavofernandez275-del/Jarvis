@@ -1,0 +1,124 @@
+{
+ "note": "Los efectos usan CPUParticles3D (ligeros, sin shaders propios). Ver SCRIPTS/vfx.gd.",
+ "presets": {
+  "hit_spark": {
+   "amount": 10,
+   "lifetime": 0.25,
+   "speed": [
+    2.0,
+    4.0
+   ],
+   "size": [
+    0.03,
+    0.06
+   ],
+   "color": "#fff2b0",
+   "spread": 60,
+   "gravity": -6
+  },
+  "hit_heavy": {
+   "amount": 22,
+   "lifetime": 0.4,
+   "speed": [
+    3.0,
+    6.5
+   ],
+   "size": [
+    0.04,
+    0.09
+   ],
+   "color": "#ffb347",
+   "spread": 80,
+   "gravity": -8
+  },
+  "sweat": {
+   "amount": 14,
+   "lifetime": 0.55,
+   "speed": [
+    1.0,
+    3.0
+   ],
+   "size": [
+    0.015,
+    0.03
+   ],
+   "color": "#d8f3ff",
+   "spread": 100,
+   "gravity": -9
+  },
+  "block_puff": {
+   "amount": 8,
+   "lifetime": 0.3,
+   "speed": [
+    0.8,
+    1.8
+   ],
+   "size": [
+    0.05,
+    0.09
+   ],
+   "color": "#cfd8dc",
+   "spread": 120,
+   "gravity": -1
+  },
+  "dust": {
+   "amount": 18,
+   "lifetime": 0.9,
+   "speed": [
+    0.4,
+    1.4
+   ],
+   "size": [
+    0.08,
+    0.16
+   ],
+   "color": "#8d8a84",
+   "spread": 180,
+   "gravity": -0.5
+  },
+  "confetti": {
+   "amount": 90,
+   "lifetime": 3.2,
+   "speed": [
+    2.0,
+    6.0
+   ],
+   "size": [
+    0.05,
+    0.09
+   ],
+   "color": "#ffd166",
+   "spread": 60,
+   "gravity": -3
+  }
+ },
+ "camera_shake": {
+  "light": {
+   "strength": 0.015,
+   "time": 0.12
+  },
+  "heavy": {
+   "strength": 0.05,
+   "time": 0.22
+  },
+  "knockdown": {
+   "strength": 0.1,
+   "time": 0.45
+  }
+ },
+ "slow_motion": {
+  "knockdown": {
+   "scale": 0.25,
+   "time": 0.7
+  },
+  "final_blow": {
+   "scale": 0.2,
+   "time": 1.0
+  }
+ },
+ "replay": {
+  "buffer_seconds": 5.0,
+  "sample_hz": 30,
+  "speed": 0.4
+ }
+}

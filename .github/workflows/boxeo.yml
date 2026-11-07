@@ -1,0 +1,39 @@
+name: Compilar Jarvis Boxeo
+# El juego (carpeta boxeo/, Godot 4.3) se compila aparte de Jarvis y se instala como una segunda app.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'boxeo/**'
+      - '.github/workflows/boxeo.yml'
+jobs:
+  boxeo:
+    runs-on: ubuntu-latest
+    container: barichello/godot-ci:4.3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Preparar Godot (plantillas y SDK de Android)
+        run: |
+          mkdir -p ~/.local/share/godot/export_templates ~/.config/godot
+          mv /root/.local/share/godot/export_templates/4.3.stable ~/.local/share/godot/export_templates/4.3.stable
+          cat > ~/.config/godot/editor_settings-4.3.tres <<'EOT'
+          [gd_resource type="EditorSettings" format=3]
+          [resource]
+          export/android/android_sdk_path = "/usr/lib/android-sdk"
+          export/android/java_sdk_path = "/usr/lib/jvm/java-17-openjdk-amd64"
+          EOT
+      - name: "Exportar APK con la misma firma que Jarvis (debug.keystore)"
+        env:
+          GODOT_ANDROID_KEYSTORE_DEBUG_PATH: "${{ github.workspace }}/debug.keystore"
+          GODOT_ANDROID_KEYSTORE_DEBUG_USER: androiddebugkey
+          GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD: android
+        run: |
+          mkdir -p build
+          cd boxeo
+          godot --headless --import || true
+          godot --headless --export-debug "Android" ../build/jarvis-boxeo.apk
+          ls -la ../build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jarvis-boxeo-apk
+          path: build/jarvis-boxeo.apk

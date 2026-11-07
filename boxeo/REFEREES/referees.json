@@ -1,0 +1,35 @@
+{
+ "note": "Árbitros. Modelo: CHARACTERS/staff_base.glb.",
+ "model": "CHARACTERS/staff_base.glb",
+ "animations": [
+  "idle_staff",
+  "walk_staff",
+  "ref_count",
+  "ref_break",
+  "ref_raise_winner"
+ ],
+ "referees": [
+  {
+   "id": "ref_alvarez",
+   "name": "Hugo Álvarez",
+   "look": {
+    "skin": "#b98c68",
+    "hair": "#1a1a1a",
+    "shirt": "#f2f2f2",
+    "pants": "#0b0b0b",
+    "shoes": "#0b0b0b"
+   }
+  },
+  {
+   "id": "ref_stone",
+   "name": "Marcus Stone",
+   "look": {
+    "skin": "#6b4630",
+    "hair": "#0d0d0d",
+    "shirt": "#f2f2f2",
+    "pants": "#0b0b0b",
+    "shoes": "#0b0b0b"
+   }
+  }
+ ]
+}

@@ -51,6 +51,7 @@ object Commands {
     private val rxHilos = Regex("""^(?:usa |pon |ajusta )?(?:los )?hilos(?: de cpu)?(?: a| en)? (\d{1,2})$|^(?:usa |pon )?(\d{1,2}) hilos(?: de cpu)?$""")
     private val rxHilosLectura = Regex("""^(?:usa |pon |ajusta )?hilos de lectura(?: a| en)? (\d{1,2}|igual)$""")
     private val rxMemoriaAuto = Regex("""^(?:(activa|enciende|prende) (?:el )?aprendizaje(?: automatico| solo)?|(desactiva|apaga) (?:el )?aprendizaje(?: automatico| solo)?|(aprende|no aprendas) (?:cosas )?solo)$""")
+    private val rxBoxeo = Regex("""^(?:abre|abrir|inicia|iniciar|pon|juega|jugar|quiero jugar|vamos a jugar)(?: al| el| a| un)?(?: juego de)? (?:boxeo|box|jarvis boxeo|jarvis boxing)$|^(?:boxeo|jarvis boxeo)$""")
     private val rxContexto = Regex("""^(?:usa |pon |ajusta )?(?:el )?contexto(?: a| en| de)? (\d{4,6}|automatico|auto)$|^(?:cuanto|que) contexto (?:usas|tienes)$""")
     private val rxHilosPregunta = Regex("""^(?:cuantos hilos usas|que hilos usas|hilos actuales|cuantos hilos)$""")
 
@@ -448,6 +449,7 @@ object Commands {
             return Reply(if (on) "Aprendizaje activado: anotaré solo lo que me cuentes de ti, como tu nombre, dónde vives o tus gustos."
                 else "Aprendizaje desactivado: solo anotaré lo que me pidas con «recuerda que…».")
         }
+        if (rxBoxeo.matches(f)) return Boxeo.abrir(ctx)
         rxContexto.find(f)?.let { m ->
             val v = m.groupValues[1]
             if (v.isEmpty()) return Reply("Uso un contexto de ${Engine.contexto} tokens (${if (Ajustes.contextoManual(ctx) >= 2048) "fijado a mano" else "automático según la RAM"}).")

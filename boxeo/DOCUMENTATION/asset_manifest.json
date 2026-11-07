@@ -1,0 +1,485 @@
+[
+ {
+  "path": "AUDIO/announcer_lines.json",
+  "size_kb": 1.6,
+  "format": "JSON; claves: note, ring_announcer, referee, commentators",
+  "use": "Textos para locutor, árbitro y comentaristas (SIN voces).",
+  "integration": "Grabar con voces autorizadas o usar un TTS con licencia."
+ },
+ {
+  "path": "AUDIO/bell_ding.wav",
+  "size_kb": 77.6,
+  "format": "WAV PCM 16 bit mono 22050 Hz, 1.8 s",
+  "use": "Efecto/ambiente/música sintetizado por código (sin derechos de autor).",
+  "integration": "SCRIPTS/sfx.gd lo carga por nombre; para ambientes en bucle sfx.ambience(ruta)."
+ },
+ {
+  "path": "AUDIO/bell_round_end.wav",
+  "size_kb": 94.8,
+  "format": "WAV PCM 16 bit mono 22050 Hz, 2.2 s",
+  "use": "Efecto/ambiente/música sintetizado por código (sin derechos de autor).",
+  "integration": "SCRIPTS/sfx.gd lo carga por nombre; para ambientes en bucle sfx.ambience(ruta)."
+ },
+ {
+  "path": "AUDIO/bell_round_start.wav",
+  "size_kb": 68.9,
+  "format": "WAV PCM 16 bit mono 22050 Hz, 1.6 s",
+  "use": "Efecto/ambiente/música sintetizado por código (sin derechos de autor).",
+  "integration": "SCRIPTS/sfx.gd lo carga por nombre; para ambientes en bucle sfx.ambience(ruta)."
+ },
+ {
+  "path": "AUDIO/block_hit.wav",
+  "size_kb": 6.9,
+  "format": "WAV PCM 16 bit mono 22050 Hz, 0.2 s",
+  "use": "Efecto/ambiente/música sintetizado por código (sin derechos de autor).",
+  "integration": "SCRIPTS/sfx.gd lo carga por nombre; para ambientes en bucle sfx.ambience(ruta)."
+ },
+ {
+  "path": "AUDIO/count_tick.wav",
+  "size_kb": 5.2,
+  "format": "WAV PCM 16 bit mono 22050 Hz, 0.1 s",
+  "use": "Efecto/ambiente/música sintetizado por código (sin derechos de autor).",
+  "integration": "SCRIPTS/sfx.gd lo carga por nombre; para ambientes en bucle sfx.ambience(ruta)."
+ },
+ {
+  "path": "AUDIO/crowd_cheer.wav",
+  "size_kb": 137.9,
+  "format": "WAV PCM 16 bit mono 22050 Hz, 3.2 s",
+  "use": "Efecto/ambiente/música sintetizado por código (sin derechos de autor).",
+  "integration": "SCRIPTS/sfx.gd lo carga por nombre; para ambientes en bucle sfx.ambience(ruta)."
+ },
+ {
+  "path": "AUDIO/crowd_loop.wav",
+  "size_kb": 370.4,
+  "format": "WAV PCM 16 bit mono 22050 Hz, 8.6 s",
+  "use": "Efecto/ambiente/música sintetizado por código (sin derechos de autor).",
+  "integration": "SCRIPTS/sfx.gd lo carga por nombre; para ambientes en bucle sfx.ambience(ruta)."
+ },
+ {
+  "path": "AUDIO/gym_ambience_loop.wav",
+  "size_kb": 327.3,
+  "format": "WAV PCM 16 bit mono 22050 Hz, 7.6 s",
+  "use": "Efecto/ambiente/música sintetizado por código (sin derechos de autor).",
+  "integration": "SCRIPTS/sfx.gd lo carga por nombre; para ambientes en bucle sfx.ambience(ruta)."
+ },
+ {
+  "path": "AUDIO/knockdown_thud.wav",
+  "size_kb": 38.8,
+  "format": "WAV PCM 16 bit mono 22050 Hz, 0.9 s",
+  "use": "Efecto/ambiente/música sintetizado por código (sin derechos de autor).",
+  "integration": "SCRIPTS/sfx.gd lo carga por nombre; para ambientes en bucle sfx.ambience(ruta)."
+ },
+ {
+  "path": "AUDIO/menu_theme_loop.wav",
+  "size_kb": 826.9,
+  "format": "WAV PCM 16 bit mono 22050 Hz, 19.2 s",
+  "use": "Efecto/ambiente/música sintetizado por código (sin derechos de autor).",
+  "integration": "SCRIPTS/sfx.gd lo carga por nombre; para ambientes en bucle sfx.ambience(ruta)."
+ },
+ {
+  "path": "AUDIO/punch_body.wav",
+  "size_kb": 13.0,
+  "format": "WAV PCM 16 bit mono 22050 Hz, 0.3 s",
+  "use": "Efecto/ambiente/música sintetizado por código (sin derechos de autor).",
+  "integration": "SCRIPTS/sfx.gd lo carga por nombre; para ambientes en bucle sfx.ambience(ruta)."
+ },
+ {
+  "path": "AUDIO/punch_heavy.wav",
+  "size_kb": 17.3,
+  "format": "WAV PCM 16 bit mono 22050 Hz, 0.4 s",
+  "use": "Efecto/ambiente/música sintetizado por código (sin derechos de autor).",
+  "integration": "SCRIPTS/sfx.gd lo carga por nombre; para ambientes en bucle sfx.ambience(ruta)."
+ },
+ {
+  "path": "AUDIO/punch_light.wav",
+  "size_kb": 9.5,
+  "format": "WAV PCM 16 bit mono 22050 Hz, 0.2 s",
+  "use": "Efecto/ambiente/música sintetizado por código (sin derechos de autor).",
+  "integration": "SCRIPTS/sfx.gd lo carga por nombre; para ambientes en bucle sfx.ambience(ruta)."
+ },
+ {
+  "path": "AUDIO/stinger_lose.wav",
+  "size_kb": 103.4,
+  "format": "WAV PCM 16 bit mono 22050 Hz, 2.4 s",
+  "use": "Efecto/ambiente/música sintetizado por código (sin derechos de autor).",
+  "integration": "SCRIPTS/sfx.gd lo carga por nombre; para ambientes en bucle sfx.ambience(ruta)."
+ },
+ {
+  "path": "AUDIO/stinger_win.wav",
+  "size_kb": 81.9,
+  "format": "WAV PCM 16 bit mono 22050 Hz, 1.9 s",
+  "use": "Efecto/ambiente/música sintetizado por código (sin derechos de autor).",
+  "integration": "SCRIPTS/sfx.gd lo carga por nombre; para ambientes en bucle sfx.ambience(ruta)."
+ },
+ {
+  "path": "AUDIO/ui_click.wav",
+  "size_kb": 2.2,
+  "format": "WAV PCM 16 bit mono 22050 Hz, 0.0 s",
+  "use": "Efecto/ambiente/música sintetizado por código (sin derechos de autor).",
+  "integration": "SCRIPTS/sfx.gd lo carga por nombre; para ambientes en bucle sfx.ambience(ruta)."
+ },
+ {
+  "path": "AUDIO/ui_confirm.wav",
+  "size_kb": 13.0,
+  "format": "WAV PCM 16 bit mono 22050 Hz, 0.3 s",
+  "use": "Efecto/ambiente/música sintetizado por código (sin derechos de autor).",
+  "integration": "SCRIPTS/sfx.gd lo carga por nombre; para ambientes en bucle sfx.ambience(ruta)."
+ },
+ {
+  "path": "AUDIO/whoosh.wav",
+  "size_kb": 12.1,
+  "format": "WAV PCM 16 bit mono 22050 Hz, 0.3 s",
+  "use": "Efecto/ambiente/música sintetizado por código (sin derechos de autor).",
+  "integration": "SCRIPTS/sfx.gd lo carga por nombre; para ambientes en bucle sfx.ambience(ruta)."
+ },
+ {
+  "path": "LOGOS/app_icon.svg",
+  "size_kb": 5.1,
+  "format": "SVG vectorial (sin elementos de texto)",
+  "use": "Icono de la app (vectorial).",
+  "integration": "Origen del PNG."
+ },
+ {
+  "path": "LOGOS/app_icon_512.png",
+  "size_kb": 3.9,
+  "format": "PNG 512x512",
+  "use": "Icono 512x512 para Android.",
+  "integration": "project.godot -> config/icon; en exportación usar como icono principal."
+ },
+ {
+  "path": "LOGOS/jarvis_boxing_ai_logo.png",
+  "size_kb": 7.1,
+  "format": "PNG 1600x560",
+  "use": "Logo raster 1600x560 con transparencia.",
+  "integration": "TextureRect."
+ },
+ {
+  "path": "LOGOS/jarvis_boxing_ai_logo.svg",
+  "size_kb": 15.8,
+  "format": "SVG vectorial (sin elementos de texto)",
+  "use": "Logo vectorial sin texto (letras como rectángulos).",
+  "integration": "Importar como textura (Godot rasteriza SVG); escala de importación 1.0-2.0."
+ },
+ {
+  "path": "SCRIPTS/arena_builder.gd",
+  "size_kb": 4.5,
+  "format": "GDScript (Godot 4), 116 líneas",
+  "use": "Código del juego.",
+  "integration": "Se carga desde SCRIPTS/main.gd."
+ },
+ {
+  "path": "SCRIPTS/boxer.gd",
+  "size_kb": 9.0,
+  "format": "GDScript (Godot 4), 315 líneas",
+  "use": "Código del juego.",
+  "integration": "Se carga desde SCRIPTS/main.gd."
+ },
+ {
+  "path": "SCRIPTS/career.gd",
+  "size_kb": 7.6,
+  "format": "GDScript (Godot 4), 212 líneas",
+  "use": "Código del juego.",
+  "integration": "Se carga desde SCRIPTS/main.gd."
+ },
+ {
+  "path": "SCRIPTS/crowd.gd",
+  "size_kb": 2.4,
+  "format": "GDScript (Godot 4), 62 líneas",
+  "use": "Código del juego.",
+  "integration": "Se carga desde SCRIPTS/main.gd."
+ },
+ {
+  "path": "SCRIPTS/data.gd",
+  "size_kb": 2.1,
+  "format": "GDScript (Godot 4), 58 líneas",
+  "use": "Código del juego.",
+  "integration": "Se carga desde SCRIPTS/main.gd."
+ },
+ {
+  "path": "SCRIPTS/fight_manager.gd",
+  "size_kb": 10.0,
+  "format": "GDScript (Godot 4), 346 líneas",
+  "use": "Código del juego.",
+  "integration": "Se carga desde SCRIPTS/main.gd."
+ },
+ {
+  "path": "SCRIPTS/hud.gd",
+  "size_kb": 6.4,
+  "format": "GDScript (Godot 4), 207 líneas",
+  "use": "Código del juego.",
+  "integration": "Se carga desde SCRIPTS/main.gd."
+ },
+ {
+  "path": "SCRIPTS/main.gd",
+  "size_kb": 11.3,
+  "format": "GDScript (Godot 4), 388 líneas",
+  "use": "Código del juego.",
+  "integration": "Se carga desde SCRIPTS/main.gd."
+ },
+ {
+  "path": "SCRIPTS/menu.gd",
+  "size_kb": 9.6,
+  "format": "GDScript (Godot 4), 249 líneas",
+  "use": "Código del juego.",
+  "integration": "Se carga desde SCRIPTS/main.gd."
+ },
+ {
+  "path": "SCRIPTS/replay.gd",
+  "size_kb": 2.4,
+  "format": "GDScript (Godot 4), 93 líneas",
+  "use": "Código del juego.",
+  "integration": "Se carga desde SCRIPTS/main.gd."
+ },
+ {
+  "path": "SCRIPTS/sfx.gd",
+  "size_kb": 1.3,
+  "format": "GDScript (Godot 4), 55 líneas",
+  "use": "Código del juego.",
+  "integration": "Se carga desde SCRIPTS/main.gd."
+ },
+ {
+  "path": "SCRIPTS/staff.gd",
+  "size_kb": 0.7,
+  "format": "GDScript (Godot 4), 25 líneas",
+  "use": "Código del juego.",
+  "integration": "Se carga desde SCRIPTS/main.gd."
+ },
+ {
+  "path": "SCRIPTS/touch_controls.gd",
+  "size_kb": 2.3,
+  "format": "GDScript (Godot 4), 72 líneas",
+  "use": "Código del juego.",
+  "integration": "Se carga desde SCRIPTS/main.gd."
+ },
+ {
+  "path": "SCRIPTS/vfx.gd",
+  "size_kb": 1.4,
+  "format": "GDScript (Godot 4), 51 líneas",
+  "use": "Código del juego.",
+  "integration": "Se carga desde SCRIPTS/main.gd."
+ },
+ {
+  "path": "ANIMATIONS/animation_table.json",
+  "size_kb": 7.4,
+  "format": "JSON; claves: note, model_height_m, stance_note, attacks, clips, defense",
+  "use": "Tabla de golpes (tiempos, daño, alcance medido del modelo), defensa, movimiento, knockdown y lista de clips.",
+  "integration": "Fuente única para boxer.gd y fight_manager.gd."
+ },
+ {
+  "path": "GYMS/barbell.glb",
+  "size_kb": 12.8,
+  "format": "glTF 2.0 binario; 358 vértices, 344 triángulos; materiales: steel, plate, plate_red; sin texturas (colores PBR); validado: sí",
+  "use": "Barra con discos (pesas).",
+  "integration": "arena_builder.gd (props.barbells)."
+ },
+ {
+  "path": "GYMS/heavy_bag.glb",
+  "size_kb": 6.5,
+  "format": "glTF 2.0 binario; 144 vértices, 136 triángulos; materiales: leather, chain, strap; sin texturas (colores PBR); validado: sí",
+  "use": "Saco pesado (entrenamiento del modo carrera).",
+  "integration": "Colocar con arena_builder.gd (props.heavy_bags)."
+ },
+ {
+  "path": "GYMS/speed_bag.glb",
+  "size_kb": 6.8,
+  "format": "glTF 2.0 binario; 146 vértices, 180 triángulos; materiales: wood, leather, steel; sin texturas (colores PBR); validado: sí",
+  "use": "Pera loca con soporte.",
+  "integration": "arena_builder.gd (props.speed_bags)."
+ },
+ {
+  "path": "GYMS/weight_bench.glb",
+  "size_kb": 5.9,
+  "format": "glTF 2.0 binario; 152 vértices, 120 triángulos; materiales: pad, steel; sin texturas (colores PBR); validado: sí",
+  "use": "Banco de pesas.",
+  "integration": "arena_builder.gd (props.benches)."
+ },
+ {
+  "path": "RINGS/ring_pro.glb",
+  "size_kb": 28.8,
+  "format": "glTF 2.0 binario; 768 vértices, 612 triángulos; materiales: canvas, apron, post, rope_red, rope_white, rope_blue, pad_red, pad_blue, pad_white, stool; sin texturas (colores PBR); validado: sí",
+  "use": "Ring profesional: lona 7.1 m, cuerdas de 4 alturas, postes, esquineros rojo/azul/blanco, escalones y 2 taburetes. Lona en y=0.",
+  "integration": "Se instancia en el origen; los boxeadores pelean en z=±1 dentro de ±2.8 (ring_half)."
+ },
+ {
+  "path": "UI/mockup_combat_hud.png",
+  "size_kb": 11.6,
+  "format": "PNG 1280x720",
+  "use": "",
+  "integration": ""
+ },
+ {
+  "path": "UI/mockup_fighter_select.png",
+  "size_kb": 12.2,
+  "format": "PNG 1280x720",
+  "use": "",
+  "integration": ""
+ },
+ {
+  "path": "UI/mockup_main_menu.png",
+  "size_kb": 11.0,
+  "format": "PNG 1280x720",
+  "use": "",
+  "integration": ""
+ },
+ {
+  "path": "UI/mockup_results.png",
+  "size_kb": 7.8,
+  "format": "PNG 1280x720",
+  "use": "",
+  "integration": ""
+ },
+ {
+  "path": "UI/ui_layout.json",
+  "size_kb": 1.8,
+  "format": "JSON; claves: note, touch_buttons, keyboard, difficulty_options, screens",
+  "use": "Posición de los botones táctiles, teclas de PC, opciones de dificultad y lista de pantallas.",
+  "integration": "touch_controls.gd."
+ },
+ {
+  "path": "ENVIRONMENTS/crowd_spectator_lod0.glb",
+  "size_kb": 4.8,
+  "format": "glTF 2.0 binario; 126 vértices, 152 triángulos; materiales: cloth; sin texturas (colores PBR); validado: sí",
+  "use": "Espectador LOD0 con brazos arriba (primeras 2 filas).",
+  "integration": "crowd.gd lo usa en MultiMesh con color por instancia y shader VFX/crowd_cheer.gdshader."
+ },
+ {
+  "path": "ENVIRONMENTS/crowd_spectator_lod1.glb",
+  "size_kb": 2.3,
+  "format": "glTF 2.0 binario; 48 vértices, 24 triángulos; materiales: cloth; sin texturas (colores PBR); validado: sí",
+  "use": "Espectador LOD1 (filas 3-5).",
+  "integration": "Ídem."
+ },
+ {
+  "path": "ENVIRONMENTS/crowd_spectator_lod2.glb",
+  "size_kb": 1.6,
+  "format": "glTF 2.0 binario; 24 vértices, 12 triángulos; materiales: cloth; sin texturas (colores PBR); validado: sí",
+  "use": "Espectador LOD2 (filas altas), 1 caja.",
+  "integration": "Ídem."
+ },
+ {
+  "path": "ENVIRONMENTS/entry_tunnel.glb",
+  "size_kb": 9.9,
+  "format": "glTF 2.0 binario; 288 vértices, 144 triángulos; materiales: wall, floor, strip; sin texturas (colores PBR); validado: sí",
+  "use": "Túnel de entrada con tiras de luz.",
+  "integration": "arena_builder.gd lo coloca en arenas/estadio; main.gd hace entrar a los boxeadores desde ahí."
+ },
+ {
+  "path": "ENVIRONMENTS/locker_bank.glb",
+  "size_kb": 10.5,
+  "format": "glTF 2.0 binario; 312 vértices, 156 triángulos; materiales: locker, door, bench; sin texturas (colores PBR); validado: sí",
+  "use": "Fila de 6 casilleros y banco (vestuario).",
+  "integration": "arena_builder.gd (props.lockers)."
+ },
+ {
+  "path": "OPPONENTS/ai_profiles.json",
+  "size_kb": 5.9,
+  "format": "JSON; claves: note, difficulty, profiles",
+  "use": "8 personalidades de IA + 4 dificultades.",
+  "integration": "boxer_ai.gd.setup(me, foe, profile, skill)."
+ },
+ {
+  "path": "OPPONENTS/boxer_ai.gd",
+  "size_kb": 10.7,
+  "format": "GDScript (Godot 4), 323 líneas",
+  "use": "IA: reconoce ataques, defiende, esquiva, contraataca, combina y aprende patrones del jugador.",
+  "integration": "boxer.ai = ai; fight_manager avisa con observe()/notify_*()."
+ },
+ {
+  "path": "CHARACTERS/boxer_base.glb",
+  "size_kb": 276.5,
+  "format": "glTF 2.0 binario; 1198 vértices, 1512 triángulos; rig: 17 huesos (humanoide), skin rígido; 23 animaciones embebidas; materiales: skin, shorts, gloves, shoes, hair; sin texturas (colores PBR); validado: sí",
+  "use": "Boxeador jugable (todos los luchadores comparten este modelo y rig; cambian color, altura y estadísticas).",
+  "integration": "Instanciar como PackedScene; el importador de Godot crea Skeleton3D + AnimationPlayer. Colores por nombre de material (Data.apply_look). Ver SCRIPTS/boxer.gd."
+ },
+ {
+  "path": "CHARACTERS/fighters.json",
+  "size_kb": 8.3,
+  "format": "JSON; claves: note, fighters",
+  "use": "12 boxeadores FICTICIOS: altura, peso, alcance, guardia, estadísticas, estilo, colores, récord.",
+  "integration": "Data.load_json('res://CHARACTERS/fighters.json')['fighters']"
+ },
+ {
+  "path": "CHARACTERS/staff_base.glb",
+  "size_kb": 126.0,
+  "format": "glTF 2.0 binario; 1018 vértices, 1304 triángulos; rig: 17 huesos (humanoide), skin rígido; 7 animaciones embebidas; materiales: skin, shirt, pants, shoes, hair; sin texturas (colores PBR); validado: sí",
+  "use": "Árbitros, entrenadores, presentador y comentaristas (mismo esqueleto, ropa en vez de guantes).",
+  "integration": "Igual que el boxeador; clips de categoría 'staff'. Ver SCRIPTS/staff.gd."
+ },
+ {
+  "path": "COACHES/coaches.json",
+  "size_kb": 1.1,
+  "format": "JSON; claves: note, model, animations, coaches",
+  "use": "3 entrenadores (modelo staff_base.glb, colores propios, voz pendiente).",
+  "integration": "staff.gd.setup(model, look, table)."
+ },
+ {
+  "path": "COACHES/commentators.json",
+  "size_kb": 0.8,
+  "format": "JSON; claves: note, model, people",
+  "use": "Presentador y 2 comentaristas (avatar de cabina + voz pendiente).",
+  "integration": "staff.gd."
+ },
+ {
+  "path": "REFEREES/referees.json",
+  "size_kb": 0.6,
+  "format": "JSON; claves: note, model, animations, referees",
+  "use": "2 árbitros con animaciones de cuenta, corte y brazo del ganador.",
+  "integration": "main.gd elige uno al azar."
+ },
+ {
+  "path": "ARENAS/arenas.json",
+  "size_kb": 6.3,
+  "format": "JSON; claves: note, camera_presets, arenas",
+  "use": "7 recintos: gimnasio de barrio, gimnasio pro, arena de ciudad, arena internacional, estadio, vestuario, túnel. Iluminación, materiales, público, cámaras y ambiente propios.",
+  "integration": "arena_builder.gd.build(cfg, parent)."
+ },
+ {
+  "path": "ARENAS/bleacher_tier.glb",
+  "size_kb": 9.3,
+  "format": "glTF 2.0 binario; 288 vértices, 144 triángulos; materiales: concrete, seat; sin texturas (colores PBR); validado: sí",
+  "use": "Grada escalonada de 10 m (disponible para diseñar arenas propias).",
+  "integration": "Instanciar y repetir; el público actual se genera por código en crowd.gd."
+ },
+ {
+  "path": "ARENAS/light_truss.glb",
+  "size_kb": 14.8,
+  "format": "glTF 2.0 binario; 480 vértices, 320 triángulos; materiales: truss, lamp; sin texturas (colores PBR); validado: sí",
+  "use": "Estructura de focos sobre el ring (luces emisivas).",
+  "integration": "arena_builder.gd (props.truss); las luces reales son SpotLight3D creadas por código."
+ },
+ {
+  "path": "ARENAS/scoreboard_cube.glb",
+  "size_kb": 7.6,
+  "format": "glTF 2.0 binario; 192 vértices, 124 triángulos; materiales: frame, screen, cable; sin texturas (colores PBR); validado: sí",
+  "use": "Marcador colgante de 4 pantallas (material emisivo).",
+  "integration": "arena_builder.gd (props.scoreboard)."
+ },
+ {
+  "path": "VFX/crowd_cheer.gdshader",
+  "size_kb": 0.6,
+  "format": "Shader de Godot 4 (spatial)",
+  "use": "Shader del público: salto con fase distinta por instancia.",
+  "integration": "ShaderMaterial en el MultiMesh (crowd.gd)."
+ },
+ {
+  "path": "VFX/vfx_presets.json",
+  "size_kb": 1.6,
+  "format": "JSON; claves: note, presets, camera_shake, slow_motion, replay",
+  "use": "Partículas de impacto, sudor, bloqueo, polvo, confeti; temblor de cámara, cámara lenta y parámetros de repetición.",
+  "integration": "SCRIPTS/vfx.gd y main.gd."
+ },
+ {
+  "path": "CAREER_MODE/career.json",
+  "size_kb": 4.4,
+  "format": "JSON; claves: note, start, week, weight_classes, rank_tiers, gyms",
+  "use": "Modo carrera: semanas, entrenamientos, equipamiento, gimnasios, patrocinadores ficticios, contratos, ranking, trofeos.",
+  "integration": "SCRIPTS/career.gd."
+ },
+ {
+  "path": "CHAMPIONSHIPS/championships.json",
+  "size_kb": 2.6,
+  "format": "JSON; claves: note, organizations, belts, tournaments, ceremony_sequence, scoring",
+  "use": "Ligas y cinturones ficticios, torneos, secuencia de ceremonia y sistema de puntuación.",
+  "integration": "Datos para ampliar el modo carrera; la puntuación 10-point-must ya está en fight_manager.gd."
+ }
+]
