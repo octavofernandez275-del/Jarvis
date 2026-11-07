@@ -94,3 +94,4 @@ No se pudo compilar aquí (sin Kotlin/Android SDK). Ejecuta el workflow *Compila
 - Jarvis <-> Boxeo: el botón "Contarle a Jarvis" del resultado abre jarvis://boxeo?r=... y la app guarda el resumen de la pelea en su memoria (MainActivity.recibirEnlace).
 - Memoria: respaldo automático (getExternalFilesDir/memoria_respaldo.txt); comandos «respalda la memoria» (comparte el texto) y «restaura la memoria» (desde el portapapeles).
 - Boxeo: cuerdas del ring como nodos animados: vibran cuando un empujón lanza a un boxeador contra ellas o en las caídas cerca de las cuerdas.
+- Modelo de lenguaje elegible: «usa modelo pequeno/mediano/grande» (Qwen3.5 2B / Qwen3 4B / Qwen3 8B) o «usa modelo https://…gguf»; «qué modelos hay» lista tamaños y RAM; si la descarga falla vuelve al pequeño; el contexto se limita con modelos grandes.

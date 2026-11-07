@@ -53,6 +53,8 @@ object Commands {
     private val rxMemoriaAuto = Regex("""^(?:(activa|enciende|prende) (?:el )?aprendizaje(?: automatico| solo)?|(desactiva|apaga) (?:el )?aprendizaje(?: automatico| solo)?|(aprende|no aprendas) (?:cosas )?solo)$""")
     private val rxRespaldo = Regex("""^(?:respalda|respaldar|exporta|exportar|guarda una copia de|haz (?:un )?respaldo de) (?:la |mi |tu )?memoria$""")
     private val rxRestaura = Regex("""^(?:restaura|restaurar|importa|importar|recupera) (?:la |mi |tu )?memoria(?: desde el portapapeles)?$""")
+    private val rxModeloCambiar = Regex("""^(?:usa|pon|cambia a|cambia al|activa|quiero)(?: el)? modelo (pequeno|mediano|grande|actual|https?://\S+)$""")
+    private val rxModeloInfo = Regex("""^(?:que|cual) modelo (?:usas|tienes|estas usando)$|^(?:lista|dime|muestra)(?: los| mis)? modelos$|^que modelos (?:hay|tienes|puedo usar)$""")
     private val rxBoxeo = Regex("""^(?:abre|abrir|inicia|iniciar|pon|juega|jugar|quiero jugar|vamos a jugar)(?: al| el| a| un)?(?: juego de)? (?:boxeo|box|jarvis boxeo|jarvis boxing)$|^(?:boxeo|jarvis boxeo)$""")
     private val rxContexto = Regex("""^(?:usa |pon |ajusta )?(?:el )?contexto(?: a| en| de)? (\d{4,6}|automatico|auto)$|^(?:cuanto|que) contexto (?:usas|tienes)$""")
     private val rxHilosPregunta = Regex("""^(?:cuantos hilos usas|que hilos usas|hilos actuales|cuantos hilos)$""")
@@ -452,6 +454,26 @@ object Commands {
                 else "Aprendizaje desactivado: solo anotaré lo que me pidas con «recuerda que…».")
         }
         if (rxBoxeo.matches(f)) return Boxeo.abrir(ctx)
+        if (rxModeloInfo.matches(f)) {
+            val act = Engine.modeloActual(ctx)
+            val ram = "%.1f".format(Engine.ramGb(ctx))
+            return Reply("Uso: ${act.nombre}. Tu teléfono tiene $ram GB de RAM.\n" +
+                Engine.CATALOGO.joinToString("\n") { "• «usa modelo ${it.id}»: ${it.nombre}, ~${it.gb} GB de descarga, pide ${it.ramMinGb} GB de RAM" } +
+                "\nTambién puedes decir «usa modelo https://…archivo.gguf» con cualquier modelo GGUF.")
+        }
+        rxModeloCambiar.find(f)?.let { m ->
+            var clave = m.groupValues[1]
+            if (clave.startsWith("http")) clave = orig.substring(m.groups[1]!!.range.first, m.groups[1]!!.range.last + 1)
+            if (clave == "actual") return Reply("Uso ${Engine.modeloActual(ctx).nombre}.")
+            val nuevo = Engine.resolver(clave)
+            if (Engine.modeloActual(ctx).let { it.id == nuevo.id && it.url == nuevo.url }) return Reply("Ya uso ${nuevo.nombre}.")
+            Ajustes.fijarModelo(ctx, clave)
+            val ram = Engine.ramGb(ctx)
+            val aviso = if (nuevo.ramMinGb > 0 && ram < nuevo.ramMinGb)
+                "\n⚠️ Tu teléfono tiene %.1f GB de RAM y este modelo pide ${nuevo.ramMinGb}: puede ir muy lento o cerrarse. Si pasa, di «usa modelo pequeno».".format(ram) else ""
+            val peso = if (nuevo.gb > 0) " Se descargan ~${nuevo.gb} GB, mejor con Wi-Fi." else ""
+            return Reply("Listo: cambio a ${nuevo.nombre}.$peso Cierra y vuelve a abrir la app para que lo descargue y lo cargue. Si falla la descarga, vuelvo solo al modelo pequeño.$aviso")
+        }
         if (rxRespaldo.matches(f)) {
             val txt = Memory.exportar(ctx)
             if (txt.isBlank()) return Reply("Todavía no tengo nada en la memoria para respaldar.")

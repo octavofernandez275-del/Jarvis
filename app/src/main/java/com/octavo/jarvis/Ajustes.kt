@@ -70,6 +70,9 @@ object Ajustes {
     fun fijarMemoriaAuto(ctx: Context, v: Boolean) { p(ctx).edit().putBoolean("memoria_auto", v).apply() }
 
     /** Contexto fijado a mano (0 = automático según la RAM). */
+    /** Modelo de lenguaje elegido: id del catálogo ("pequeno", "mediano", "grande") o una dirección de descarga. */
+    fun modeloElegido(ctx: Context): String = p(ctx).getString("modelo", "pequeno") ?: "pequeno"
+    fun fijarModelo(ctx: Context, v: String) { p(ctx).edit().putString("modelo", v).apply() }
     fun contextoManual(ctx: Context): Int = p(ctx).getInt("contexto_manual", 0)
     fun fijarContextoManual(ctx: Context, v: Int) { p(ctx).edit().putInt("contexto_manual", v).apply() }
 

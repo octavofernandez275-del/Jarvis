@@ -154,7 +154,12 @@ object Assistant {
             EngineManager.retener()   // que no se apague mientras carga
             try {
                 estado("Revisando el modelo…")
-                val ok = Engine.download(app) { estado("Descargando modelo… $it %") }
+                var ok = try { Engine.download(app) { estado("Descargando ${Engine.modeloActual(app).nombre}… $it %") } } catch (e: Exception) { false }
+                if (!ok && Engine.modeloActual(app).id != "pequeno") {      // el modelo grande falló: se vuelve al de siempre
+                    Ajustes.fijarModelo(app, "pequeno")
+                    estado("No pude bajar el modelo elegido. Vuelvo al modelo pequeño…")
+                    ok = Engine.download(app) { estado("Descargando modelo… $it %") }
+                }
                 if (!ok) {
                     estado("No se pudo descargar el modelo. Revisa tu internet y reabre la app.")
                     return@Thread

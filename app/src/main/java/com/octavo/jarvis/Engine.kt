@@ -31,11 +31,38 @@ object Engine {
                 else -> 4096
             }
         }
+        if (manual < 2048) {      // con un modelo más grande queda menos RAM para el contexto
+            val g = modeloActual(ctx).gb
+            if (g >= 4.5) contexto = minOf(contexto, 8192) else if (g >= 2.2) contexto = minOf(contexto, 16384)
+        }
         return contexto
     }
     const val MODEL_URL =
         "https://huggingface.co/Repasar-Labs/qwen3.5-2b-gguf/resolve/main/Qwen3.5-2B-Q4_K_M.gguf"
     private const val MODEL_NAME = "modelo.gguf"
+
+    /** Modelos que se pueden elegir. El pequeño es el de siempre; los grandes responden mejor pero piden más RAM y tardan más. */
+    class Modelo(val id: String, val nombre: String, val url: String, val archivo: String, val gb: Double, val ramMinGb: Double)
+
+    val CATALOGO = listOf(
+        Modelo("pequeno", "Qwen3.5 2B (el de siempre, rápido)", MODEL_URL, MODEL_NAME, 1.3, 3.0),
+        Modelo("mediano", "Qwen3 4B (más listo)", "https://huggingface.co/unsloth/Qwen3-4B-GGUF/resolve/main/Qwen3-4B-Q4_K_M.gguf", "modelo_4b.gguf", 2.5, 5.5),
+        Modelo("grande", "Qwen3 8B (el más listo, más lento)", "https://huggingface.co/unsloth/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q4_K_M.gguf", "modelo_8b.gguf", 5.0, 7.5),
+    )
+
+    /** clave = id del catálogo o una dirección https://….gguf (cada una tiene su propio archivo, nunca se mezclan). */
+    fun resolver(clave: String): Modelo =
+        CATALOGO.firstOrNull { it.id == clave }
+            ?: if (clave.startsWith("http")) Modelo("custom", "Modelo personalizado", clave, "modelo_" + Integer.toHexString(clave.hashCode()) + ".gguf", 0.0, 0.0)
+            else CATALOGO[0]
+
+    fun modeloActual(ctx: Context): Modelo = resolver(Ajustes.modeloElegido(ctx))
+
+    fun ramGb(ctx: Context): Double {
+        val mi = android.app.ActivityManager.MemoryInfo()
+        (ctx.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager).getMemoryInfo(mi)
+        return mi.totalMem / 1_073_741_824.0
+    }
     private const val MIN_MODEL_BYTES = 100_000_000L
 
     private var proc: Process? = null
@@ -55,7 +82,7 @@ object Engine {
         }
     }
 
-    fun modelFile(ctx: Context) = File(ctx.getExternalFilesDir("models") ?: ctx.filesDir, MODEL_NAME)
+    fun modelFile(ctx: Context) = File(ctx.getExternalFilesDir("models") ?: ctx.filesDir, modeloActual(ctx).archivo)
 
     fun lastLog(): String = synchronized(tail) { tail.joinToString("\n") }
 
@@ -90,7 +117,7 @@ object Engine {
         f.parentFile?.mkdirs()
         val part = File(f.path + ".part")
         val have = if (part.exists()) part.length() else 0L
-        val c = URL(MODEL_URL).openConnection() as HttpURLConnection
+        val c = URL(modeloActual(ctx).url).openConnection() as HttpURLConnection
         c.instanceFollowRedirects = true
         c.connectTimeout = 15000
         c.readTimeout = 30000
