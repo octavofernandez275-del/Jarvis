@@ -312,7 +312,7 @@ func _on_attack_active(att: Node3D, atk_name: String) -> void:
 		ai_att.notify_result(atk_name, "hit")
 	if df.ai:
 		df.ai.notify_got_hit(atk_name)
-	fx.emit("hit_heavy" if dmg >= 9.0 else "hit_light", pos, {"head": head, "damage": dmg, "counter": counter})
+	fx.emit("hit_heavy" if dmg >= 9.0 else "hit_light", pos, {"head": head, "damage": dmg, "counter": counter, "defender": df})
 	df.apply_hit({
 		"health_damage": health_dmg, "stamina_damage": stam_dmg, "stun": float(atk["stun"]),
 		"head": head, "knockdown": knock, "stagger": stagger, "push": 0.1 + dmg * 0.01,

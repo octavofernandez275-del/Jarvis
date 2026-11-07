@@ -150,6 +150,7 @@ func think(delta: float) -> void:
 	clock += delta
 	if me.frozen or me.is_stunned() or foe == null:
 		me.cmd_move(0.0)
+		me.cmd_side(0.0)
 		return
 	var dist: float = me.distance_to_opponent()
 	if _handle_reaction(delta, dist):
@@ -157,6 +158,7 @@ func think(delta: float) -> void:
 	_maintain_guard(delta, dist)
 	if me.is_attacking() and combo.is_empty():
 		me.cmd_move(0.0)
+		me.cmd_side(0.0)
 		return
 	_offense_and_movement(delta, dist)
 
@@ -192,6 +194,7 @@ func _handle_reaction(delta: float, dist: float) -> bool:
 		else:
 			react_choice = ""
 	if react_choice != "":
+		me.cmd_side(0.0)
 		react_delay -= delta
 		if react_delay <= 0.0:
 			if react_choice == "dodge":
@@ -266,6 +269,28 @@ func _offense_and_movement(delta: float, dist: float) -> void:
 	elif dist < desired - 0.2 and (pressure < 0.7 or rest_mode):
 		mv = -1.0
 	me.cmd_move(mv)
+
+	# Footwork orbital: el rival deja de perseguir en línea recta y cambia el ángulo.
+	# La dirección se renueva de forma irregular para evitar un patrón mecánico.
+	orbit_timer -= delta
+	if orbit_timer <= 0.0:
+		orbit_timer = rng.randf_range(1.1, 2.6) * (1.25 - skill * 0.25)
+		var offset_x := me.position.x - foe.position.x
+		if absf(offset_x) > 1.15:
+			orbit_dir = -signf(offset_x) # vuelve hacia el centro del ring
+		elif rng.randf() < 0.72:
+			orbit_dir *= -1.0
+	var orbit_factor := float(profile.get("orbit", 0.35))
+	var side := orbit_dir * orbit_factor
+	if rest_mode or dist > desired + 1.0:
+		side *= 0.45
+	if me.position.x < -1.35 and side < 0.0:
+		side = 0.35
+	elif me.position.x > 1.35 and side > 0.0:
+		side = -0.35
+	if dist < 0.72:
+		side *= 0.35
+	me.cmd_side(side)
 
 
 ## Ajusta los pesos según los hábitos del jugador.

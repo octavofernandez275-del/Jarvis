@@ -12,6 +12,8 @@ const Vfx = preload("res://SCRIPTS/vfx.gd")
 const Sfx = preload("res://SCRIPTS/sfx.gd")
 const Hud = preload("res://SCRIPTS/hud.gd")
 const Narrator = preload("res://SCRIPTS/narrator.gd")
+const Voz = preload("res://SCRIPTS/voz.gd")
+const Polish = preload("res://SCRIPTS/polish.gd")
 const Touch = preload("res://SCRIPTS/touch_controls.gd")
 const Replay = preload("res://SCRIPTS/replay.gd")
 const Menu = preload("res://SCRIPTS/menu.gd")
@@ -24,6 +26,8 @@ var arenas_cfg: Dictionary
 var referees: Array
 
 var menu
+var voz
+var flashes: Node3D = null
 var sfx
 var cam: Camera3D
 var world: Node3D
@@ -48,6 +52,7 @@ var camera_modes: Array = ["broadcast"]
 var camera_index := 0
 var shake := 0.0
 var touch_move := 0.0
+var touch_side := 0.0
 var touch_block := false
 
 
@@ -60,11 +65,14 @@ func _ready() -> void:
 	referees = Data.load_json("res://REFEREES/referees.json")["referees"]
 	sfx = Sfx.new()
 	add_child(sfx)
+	voz = Voz.new()                  # se crea ya al abrir el juego: Android tarda en arrancar el motor de voz
+	add_child(voz)
 	cam = Camera3D.new()
 	add_child(cam)
 	cam.current = true
 	cam.position = Vector3(5, 1.6, 0)
 	menu = Menu.new()
+	menu.voz = voz
 	add_child(menu)
 	menu.fight_requested.connect(start_fight)
 	menu.open()
@@ -86,8 +94,10 @@ func _teardown() -> void:
 		world.queue_free()
 		world = null
 	sfx.stop_ambience()
+	flashes = null
 	crowd_mat = null
 	touch_move = 0.0
+	touch_side = 0.0
 	touch_block = false
 
 
@@ -107,6 +117,8 @@ func start_fight(config: Dictionary) -> void:
 	var arena_cfg := Data.find_by_id(arenas_cfg["arenas"], String(config["arena"]))
 	var built := ArenaBuilder.build(arena_cfg, world)
 	crowd_mat = built["crowd_mat"]
+	var pol := Polish.apply_arena(world, arena_cfg, ArenaBuilder.FLOOR_Y, crowd_mat != null, bool(built["has_ring"]))
+	flashes = pol["flashes"]
 	crowd_base = float(arena_cfg["crowd"]["excitement"])
 	sfx.ambience(String(arena_cfg["ambience"]), -12.0)
 
@@ -132,7 +144,7 @@ func start_fight(config: Dictionary) -> void:
 	mgr.fight_finished.connect(_on_finished)
 	var narr = Narrator.new()
 	world.add_child(narr)
-	narr.setup(mgr, a, b)
+	narr.setup(mgr, a, b, voz)
 	narr_ref = narr
 
 	vfx = Vfx.new()
@@ -144,6 +156,7 @@ func start_fight(config: Dictionary) -> void:
 
 	hud = Hud.new()
 	add_child(hud)
+	hud.voz = voz
 	hud.setup(mgr, a, b)
 	narr_ref.hud = hud
 	narr_ref.intro()
@@ -190,11 +203,30 @@ func _intro(arena_cfg: Dictionary) -> void:
 	var ra: Dictionary = a.data["record"]
 	var rb: Dictionary = b.data["record"]
 	hud.announce("%s\n%d-%d (%d KO)" % [a.data["name"], ra["w"], ra["l"], ra["ko"]], 2.0)
+	# Plano cinematográfico: travelling de presentación y acercamiento al cara a cara.
+	var camera_home := cam.position
+	var camera_fov := cam.fov
+	cam.position = Vector3(7.5, 3.2, -8.0)
+	cam.look_at(Vector3(0, 1.2, 0), Vector3.UP)
+	var shot_one := create_tween()
+	shot_one.set_parallel(true)
+	shot_one.tween_property(cam, "position", Vector3(5.0, 2.4, -4.5), 1.8)
+	shot_one.tween_property(cam, "fov", 48.0, 1.8)
 	await get_tree().create_timer(2.2).timeout
 	if not in_fight:
 		return
 	hud.announce("%s\n%d-%d (%d KO)" % [b.data["name"], rb["w"], rb["l"], rb["ko"]], 2.0)
+	var shot_two := create_tween()
+	shot_two.set_parallel(true)
+	shot_two.tween_property(cam, "position", Vector3(-5.5, 2.8, 3.5), 1.6)
+	shot_two.tween_property(cam, "fov", 44.0, 1.6)
 	await get_tree().create_timer(2.2 if walk else 1.8).timeout
+	if not in_fight:
+		return
+	var faceoff := create_tween()
+	faceoff.set_parallel(true)
+	faceoff.tween_property(cam, "position", camera_home, 1.0)
+	faceoff.tween_property(cam, "fov", camera_fov, 1.0)
 	in_intro = false
 
 
@@ -233,6 +265,10 @@ func _on_touch(kind: String, id: String, pressed: bool) -> void:
 			touch_move = 1.0 if pressed else (0.0 if touch_move > 0.0 else touch_move)
 		elif id == "back":
 			touch_move = -1.0 if pressed else (0.0 if touch_move < 0.0 else touch_move)
+		elif id == "strafe_left":
+			touch_side = -1.0 if pressed else (0.0 if touch_side < 0.0 else touch_side)
+		elif id == "strafe_right":
+			touch_side = 1.0 if pressed else (0.0 if touch_side > 0.0 else touch_side)
 
 
 func _process(delta: float) -> void:
@@ -240,8 +276,10 @@ func _process(delta: float) -> void:
 		return
 	if not in_intro:
 		a.cmd_move(touch_move)
+		a.cmd_side(touch_side)
 		a.cmd_block(touch_block)
-	_update_camera(delta)
+	if not in_intro:
+		_update_camera(delta)
 
 
 # ---------------- cámara ----------------
@@ -267,6 +305,10 @@ func _update_camera(delta: float) -> void:
 	var look := mid + Vector3(0, 1.3, 0)
 	if cam.position.distance_to(look) > 0.1:
 		cam.look_at(look, up)
+		# balanceo mínimo de cámara en mano (se recalcula cada fotograma, no se acumula)
+		var t := Time.get_ticks_msec() / 1000.0
+		cam.rotate_object_local(Vector3.UP, sin(t * 0.6) * 0.003)
+		cam.rotate_object_local(Vector3.RIGHT, sin(t * 0.43 + 1.0) * 0.002)
 	cam.fov = lerpf(cam.fov, float(p["fov"]), clampf(delta * 3.0, 0.0, 1.0))
 	shake = move_toward(shake, 0.0, delta * 0.35)
 	cam.h_offset = randf_range(-shake, shake)
@@ -285,9 +327,16 @@ func _on_fx(kind: String, pos: Vector3, extra: Dictionary) -> void:
 		if head:
 			vfx.burst("sweat", pos)
 		_shake("heavy" if kind == "hit_heavy" else "light")
+		var df = extra.get("defender", null)
+		if df != null and mgr != null:
+			Polish.hit_flash(df, kind == "hit_heavy")
+			if kind == "hit_heavy":
+				Polish.wear(df, Polish.wear_level(df, mgr.round_n, mgr.total_rounds))
 		if kind == "hit_heavy":
 			sfx.play("crowd_cheer", -8.0)
 			_excite(0.9, 1.5)
+			cam.fov = maxf(30.0, cam.fov - 3.5)          # golpe de cámara (la FOV vuelve sola)
+			Polish.flash_burst(flashes, 3)
 	elif kind == "block":
 		sfx.play("block_hit")
 		vfx.burst("block_puff", pos)
@@ -299,15 +348,20 @@ func _on_fx(kind: String, pos: Vector3, extra: Dictionary) -> void:
 		_shake("knockdown")
 		_excite(1.0, 3.0)
 		_slowmo("knockdown")
+		Polish.flash_burst(flashes, 8)
 		_capture_highlight()
 	elif kind == "bell_round_start":
 		sfx.play("bell_round_start")
+		if mgr != null and a != null and b != null:
+			Polish.wear(a, Polish.wear_level(a, mgr.round_n, mgr.total_rounds))
+			Polish.wear(b, Polish.wear_level(b, mgr.round_n, mgr.total_rounds))
 	elif kind == "bell_round_end":
 		sfx.play("bell_round_end")
 	elif kind == "count_tick":
 		sfx.play("count_tick")
 	elif kind == "win":
 		vfx.burst("confetti", pos + Vector3(0, 1.5, 0))
+		Polish.flash_burst(flashes, 8)
 		_excite(1.0, 6.0)
 
 

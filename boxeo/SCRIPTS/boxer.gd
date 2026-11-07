@@ -35,6 +35,7 @@ var time_scale := 1.0          # velocidad de golpes según el atributo speed
 var dodge_t := 0.0
 var want_block := false
 var move_dir := 0.0            # -1 retroceder, +1 avanzar
+var side_dir := 0.0            # -1 izquierda, +1 derecha
 var frozen := false            # entre rounds / ceremonias
 var replay_mode := false
 
@@ -126,6 +127,9 @@ func can_act() -> bool:
 func cmd_move(dir: float) -> void:
 	move_dir = clampf(dir, -1.0, 1.0)
 
+func cmd_side(dir: float) -> void:
+	side_dir = clampf(dir, -1.0, 1.0)
+
 func cmd_block(on: bool) -> void:
 	want_block = on
 
@@ -204,6 +208,7 @@ func to_neutral() -> void:
 	state = S.IDLE
 	cur_attack = ""
 	move_dir = 0.0
+	side_dir = 0.0
 	want_block = false
 	play("idle_guard", 1.0, 0.2)
 
@@ -264,17 +269,26 @@ func _foot_speed() -> float:
 
 
 func _update_free(delta: float) -> void:
+	var foot := _foot_speed()
+	var lateral := absf(side_dir) > 0.1
+	var longitudinal := absf(move_dir) > 0.1
+	if lateral:
+		_move_x(side_dir * float(table["movement"].get("lateral", 1.25)) * foot * delta)
 	if want_block:
 		state = S.BLOCK
 		play("block_high", 1.0, 0.05)
 		action_started.emit(self, "block")
 		return
-	var foot := _foot_speed()
-	if absf(move_dir) > 0.1:
+	if longitudinal:
 		state = S.MOVE
 		var v: float = float(table["movement"]["forward"]) if move_dir > 0.0 else -float(table["movement"]["back"])
 		_move_z(facing * v * foot * delta)
+		# Si combina avance/retroceso con paso lateral, prioriza el clip longitudinal.
 		play("walk_forward" if move_dir > 0.0 else "walk_back", foot)
+	elif lateral:
+		state = S.MOVE
+		var side_clip := "step_left" if side_dir < 0.0 else "step_right"
+		play(side_clip, foot, 0.08)
 	else:
 		state = S.IDLE
 		play("idle_guard")
@@ -288,6 +302,9 @@ func _update_block(delta: float) -> void:
 	if absf(move_dir) > 0.1:
 		var v: float = float(table["movement"]["block"]) * move_dir
 		_move_z(facing * v * _foot_speed() * delta)
+	if absf(side_dir) > 0.1:
+		_move_x(side_dir * float(table["movement"].get("lateral_block", 0.72)) * _foot_speed() * delta)
+		play("step_left" if side_dir < 0.0 else "step_right", _foot_speed() * 0.82, 0.08)
 
 
 func _update_attack(delta: float) -> void:
@@ -301,6 +318,16 @@ func _update_attack(delta: float) -> void:
 		cur_attack = ""
 		play("idle_guard", 1.0, 0.1)
 
+
+func _move_x(dx: float) -> void:
+	# Desplazamiento lateral dentro del ring; mantiene el eje de combate y evita salir del área útil.
+	var lim := float(table["movement"].get("lateral_half", 1.75))
+	var nx := clampf(position.x + dx, -lim, lim)
+	if opponent != null:
+		var sep := float(table["movement"].get("lateral_separation", 0.42))
+		if absf(nx - opponent.position.x) < sep and absf(position.z - opponent.position.z) < 1.25:
+			nx = position.x
+	position.x = nx
 
 func _move_z(dz: float) -> void:
 	var lim: float = float(table["movement"]["ring_half"])

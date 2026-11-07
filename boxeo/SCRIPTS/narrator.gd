@@ -2,17 +2,16 @@ extends Node
 ## Narración en tiempo real con las voces TTS del dispositivo.
 ## Roles con voz/tono/velocidad distintos: presentador, comentarista A, comentarista B, entrenador rojo, entrenador azul.
 ## El análisis de AMBOS entrenadores lo genera Jarvis (con las estadísticas del round y lo que la IA aprendió del jugador).
-## Sin voces instaladas: no hace nada (el HUD sigue mostrando los textos).
+## La voz real la maneja voz.gd (cola, reintentos, voces en español). Aquí solo se decide QUÉ se dice y CUÁNDO.
+## Sin voces instaladas: no suena nada, pero los subtítulos siguen saliendo en el HUD.
 
-const NOMBRES := {"pres": "Leo Marín", "a": "Paula Rey", "b": "Gonzalo Pardo", "red": "Ramón Ibarra", "blue": "Inés Valdés", "jarvis": "Jarvis"}
-# rol -> [pitch, rate]
-const AJUSTE := {"pres": [0.85, 0.95], "a": [1.15, 1.08], "b": [0.8, 1.0], "red": [0.7, 0.95], "blue": [1.3, 1.0], "jarvis": [0.86, 0.94]}
+const NOMBRES := {"pres": "Leo Marín", "a": "Paula Rey", "b": "Gonzalo Pardo", "red": "Ramón Ibarra", "blue": "Inés Valdés", "jarvis": "Jarvis", "ref": "Árbitro"}
 
 var mgr
 var hud
 var a
 var b
-var voces: Array = []
+var voz            # voz.gd (compartida entre combates)
 var enabled := true
 var last_live := -10.0
 var clock := 0.0
@@ -21,11 +20,11 @@ var last_round_stats := {"landed": [0, 0], "thrown": [0, 0]}
 var cola: Array = []
 
 
-func setup(mgr_, a_, b_) -> void:
+func setup(mgr_, a_, b_, voz_ = null) -> void:
 	mgr = mgr_
 	a = a_
 	b = b_
-	_cargar_voces()
+	voz = voz_
 	mgr.announce.connect(_on_announce)
 	mgr.round_changed.connect(_on_round)
 	mgr.fx.connect(_on_fx)
@@ -35,20 +34,8 @@ func setup(mgr_, a_, b_) -> void:
 func intro() -> void:
 	decir("pres", "Damas y caballeros, esta noche, %s contra %s." % [String(a.data["name"]), String(b.data["name"])])
 	decir("a", "Ojo: el rival lo controla Jarvis, y va aprendiendo cada patrón de %s." % String(a.data["name"]))
-	_caption("Diagnóstico voz", "TTS soportado: %s · voces vistas: %d · hablando: %s" % [str(DisplayServer.has_feature(DisplayServer.FEATURE_TEXT_TO_SPEECH)), voces.size(), str(DisplayServer.tts_is_speaking())], 7.0)
-
-
-## En Android las voces se cargan tarde: se reintenta en cada línea hasta que aparezcan.
-func _cargar_voces() -> void:
-	if not DisplayServer.has_feature(DisplayServer.FEATURE_TEXT_TO_SPEECH):
-		return
-	voces = DisplayServer.tts_get_voices_for_language("es")
-	if voces.is_empty():
-		voces = DisplayServer.tts_get_voices_for_language("")
-	if voces.is_empty():
-		voces = []
-		for v in DisplayServer.tts_get_voices():
-			voces.append(v["id"])
+	if voz != null and voz.estado() == "error":
+		_caption("Voz", voz.pista() if voz.pista() != "" else voz.ultimo_error, 8.0)
 
 
 func _caption(who: String, texto: String, seg: float) -> void:
@@ -61,28 +48,20 @@ func _process(delta: float) -> void:
 
 
 func _exit_tree() -> void:
-	if DisplayServer.has_feature(DisplayServer.FEATURE_TEXT_TO_SPEECH):
-		DisplayServer.tts_stop()
+	if voz != null and is_instance_valid(voz):
+		voz.parar()
 
 
-## Voz distinta por rol: reparte las voces disponibles y diferencia con tono y velocidad.
+## Subtítulo + voz del rol (cada rol tiene voz, tono y velocidad distintos; ver voz.gd).
 func decir(rol: String, texto: String, urgente := false, subt := true) -> void:
 	if subt:
 		_caption(String(NOMBRES[rol]), texto, 3.0 + texto.length() * 0.05)
-	if voces.is_empty():
-		_cargar_voces()
-	var roles := AJUSTE.keys()
-	var i := roles.find(rol)
-	# sin lista de voces: se intenta igual con la voz por defecto del motor
-	var voz: String = "" if voces.is_empty() else String(voces[i % voces.size()])
-	var aj: Array = AJUSTE[rol]
-	if urgente:
-		DisplayServer.tts_stop()
-	DisplayServer.tts_speak(texto, voz, 80, aj[0], aj[1], 0, false)
+	if voz != null:
+		voz.hablar(rol, texto, urgente)
 
 
 func _libre() -> bool:
-	return not DisplayServer.tts_is_speaking() and clock - last_live > 2.5
+	return (voz == null or not voz.ocupada()) and clock - last_live > 2.5
 
 
 func _on_round(n: int, total: int) -> void:
@@ -92,6 +71,12 @@ func _on_round(n: int, total: int) -> void:
 func _on_announce(text: String, _s: float) -> void:
 	if text.begins_with("Fin del round"):
 		_analisis_entrenadores()
+	elif text.is_valid_int():
+		decir("ref", text, true, false)             # cuenta del árbitro: 1, 2, 3...
+	elif text == "¡BOX!":
+		decir("ref", "¡Box!", false, false)
+	elif text == "¡Arriba!":
+		decir("ref", "¡Arriba! Continúen.", false, false)
 
 
 func _on_fx(kind: String, _pos: Vector3, extra: Dictionary) -> void:

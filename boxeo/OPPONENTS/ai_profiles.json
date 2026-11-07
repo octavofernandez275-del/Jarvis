@@ -1,391 +1,591 @@
 {
- "note": "Parámetros de personalidad. skill (dificultad) modula reacción, tempo y velocidad de aprendizaje. Ver OPPONENTS/boxer_ai.gd.",
- "difficulty": {
-  "easy": 0.3,
-  "normal": 0.55,
-  "hard": 0.8,
-  "pro": 1.0
- },
- "profiles": {
-  "aggressive": {
-   "label": "Agresivo",
-   "desc": "Ataca primero y seguido; defiende poco.",
-   "aggression": 0.85,
-   "tempo": 0.55,
-   "reaction": 0.45,
-   "react_time": 0.28,
-   "guard_hold": 0.25,
-   "block_pref": 0.4,
-   "dodge_pref": 0.2,
-   "counter": 0.35,
-   "pressure": 0.7,
-   "range_pref": 0.85,
-   "learning": 0.35,
-   "stamina_rest": 22,
-   "speed": 1.05,
-   "combos": [
-    {
-     "seq": [
-      "jab",
-      "cross"
-     ],
-     "w": 2
-    },
-    {
-     "seq": [
-      "jab",
-      "cross",
-      "lead_hook"
-     ],
-     "w": 3
-    },
-    {
-     "seq": [
-      "lead_hook",
-      "cross"
-     ],
-     "w": 2
-    },
-    {
-     "seq": [
-      "cross",
-      "lead_hook",
-      "rear_uppercut"
-     ],
-     "w": 1.5
-    },
-    {
-     "seq": [
-      "body_hook",
-      "cross"
-     ],
-     "w": 1.5
-    }
-   ]
+  "note": "Parámetros de personalidad. skill (dificultad) modula reacción, tempo y velocidad de aprendizaje. Ver OPPONENTS/boxer_ai.gd.",
+  "difficulty": {
+    "easy": 0.3,
+    "normal": 0.55,
+    "hard": 0.8,
+    "pro": 1.0
   },
-  "technical": {
-   "label": "Técnico",
-   "desc": "Jab, distancia y combinaciones limpias.",
-   "aggression": 0.5,
-   "tempo": 0.7,
-   "reaction": 0.7,
-   "react_time": 0.2,
-   "guard_hold": 0.5,
-   "block_pref": 0.5,
-   "dodge_pref": 0.35,
-   "counter": 0.4,
-   "pressure": 0.3,
-   "range_pref": 1.0,
-   "learning": 0.55,
-   "stamina_rest": 30,
-   "speed": 1.0,
-   "combos": [
-    {
-     "seq": [
-      "jab"
-     ],
-     "w": 4
+  "profiles": {
+    "aggressive": {
+      "label": "Agresivo",
+      "desc": "Ataca primero y seguido; defiende poco.",
+      "aggression": 0.85,
+      "tempo": 0.55,
+      "reaction": 0.45,
+      "react_time": 0.28,
+      "guard_hold": 0.25,
+      "block_pref": 0.4,
+      "dodge_pref": 0.2,
+      "counter": 0.35,
+      "pressure": 0.7,
+      "range_pref": 0.85,
+      "learning": 0.35,
+      "stamina_rest": 22,
+      "speed": 1.05,
+      "combos": [
+        {
+          "seq": [
+            "jab",
+            "cross"
+          ],
+          "w": 2
+        },
+        {
+          "seq": [
+            "jab",
+            "cross",
+            "lead_hook"
+          ],
+          "w": 3
+        },
+        {
+          "seq": [
+            "lead_hook",
+            "cross"
+          ],
+          "w": 2
+        },
+        {
+          "seq": [
+            "cross",
+            "lead_hook",
+            "rear_uppercut"
+          ],
+          "w": 1.5
+        },
+        {
+          "seq": [
+            "body_hook",
+            "cross"
+          ],
+          "w": 1.5
+        },
+        {
+          "seq": [
+            "jab",
+            "cross",
+            "jab",
+            "lead_hook"
+          ],
+          "w": 2.2
+        },
+        {
+          "seq": [
+            "cross",
+            "body_hook",
+            "lead_hook"
+          ],
+          "w": 1.8
+        },
+        {
+          "seq": [
+            "jab",
+            "body_hook",
+            "cross"
+          ],
+          "w": 2.0
+        }
+      ],
+      "orbit": 0.22
     },
-    {
-     "seq": [
-      "jab",
-      "jab",
-      "cross"
-     ],
-     "w": 3
+    "technical": {
+      "label": "Técnico",
+      "desc": "Jab, distancia y combinaciones limpias.",
+      "aggression": 0.5,
+      "tempo": 0.7,
+      "reaction": 0.7,
+      "react_time": 0.2,
+      "guard_hold": 0.5,
+      "block_pref": 0.5,
+      "dodge_pref": 0.35,
+      "counter": 0.4,
+      "pressure": 0.3,
+      "range_pref": 1.0,
+      "learning": 0.55,
+      "stamina_rest": 30,
+      "speed": 1.0,
+      "combos": [
+        {
+          "seq": [
+            "jab"
+          ],
+          "w": 4
+        },
+        {
+          "seq": [
+            "jab",
+            "jab",
+            "cross"
+          ],
+          "w": 3
+        },
+        {
+          "seq": [
+            "jab",
+            "cross",
+            "lead_hook"
+          ],
+          "w": 2
+        },
+        {
+          "seq": [
+            "jab",
+            "body_hook",
+            "cross"
+          ],
+          "w": 1.5
+        },
+        {
+          "seq": [
+            "jab",
+            "cross",
+            "rear_uppercut"
+          ],
+          "w": 1.7
+        },
+        {
+          "seq": [
+            "jab",
+            "lead_hook",
+            "cross"
+          ],
+          "w": 1.8
+        },
+        {
+          "seq": [
+            "body_hook",
+            "cross"
+          ],
+          "w": 1.4
+        }
+      ],
+      "orbit": 0.62
     },
-    {
-     "seq": [
-      "jab",
-      "cross",
-      "lead_hook"
-     ],
-     "w": 2
+    "defensive": {
+      "label": "Defensivo",
+      "desc": "Guardia alta, castiga con pocos golpes seguros.",
+      "aggression": 0.3,
+      "tempo": 0.95,
+      "reaction": 0.75,
+      "react_time": 0.22,
+      "guard_hold": 0.8,
+      "block_pref": 0.85,
+      "dodge_pref": 0.15,
+      "counter": 0.45,
+      "pressure": 0.15,
+      "range_pref": 1.0,
+      "learning": 0.5,
+      "stamina_rest": 35,
+      "speed": 0.95,
+      "combos": [
+        {
+          "seq": [
+            "jab"
+          ],
+          "w": 4
+        },
+        {
+          "seq": [
+            "jab",
+            "cross"
+          ],
+          "w": 2
+        },
+        {
+          "seq": [
+            "body_hook"
+          ],
+          "w": 1.5
+        },
+        {
+          "seq": [
+            "jab",
+            "cross",
+            "lead_hook"
+          ],
+          "w": 1.4
+        },
+        {
+          "seq": [
+            "cross",
+            "rear_uppercut"
+          ],
+          "w": 1.3
+        },
+        {
+          "seq": [
+            "jab",
+            "body_hook"
+          ],
+          "w": 1.2
+        }
+      ],
+      "orbit": 0.48
     },
-    {
-     "seq": [
-      "jab",
-      "body_hook",
-      "cross"
-     ],
-     "w": 1.5
+    "counterpuncher": {
+      "label": "Contraatacador",
+      "desc": "Espera tu ataque y responde en la recuperación.",
+      "aggression": 0.35,
+      "tempo": 0.9,
+      "reaction": 0.8,
+      "react_time": 0.18,
+      "guard_hold": 0.45,
+      "block_pref": 0.35,
+      "dodge_pref": 0.65,
+      "counter": 0.9,
+      "pressure": 0.1,
+      "range_pref": 1.05,
+      "learning": 0.65,
+      "stamina_rest": 30,
+      "speed": 1.0,
+      "combos": [
+        {
+          "seq": [
+            "cross"
+          ],
+          "w": 3
+        },
+        {
+          "seq": [
+            "lead_hook",
+            "cross"
+          ],
+          "w": 3
+        },
+        {
+          "seq": [
+            "jab",
+            "cross"
+          ],
+          "w": 2
+        },
+        {
+          "seq": [
+            "rear_uppercut"
+          ],
+          "w": 1.5
+        },
+        {
+          "seq": [
+            "cross",
+            "rear_uppercut",
+            "lead_hook"
+          ],
+          "w": 1.8
+        },
+        {
+          "seq": [
+            "jab",
+            "cross",
+            "body_hook"
+          ],
+          "w": 1.5
+        },
+        {
+          "seq": [
+            "lead_hook",
+            "body_hook",
+            "cross"
+          ],
+          "w": 1.3
+        }
+      ],
+      "orbit": 0.72
+    },
+    "fast": {
+      "label": "Veloz",
+      "desc": "Golpes rápidos y mucho movimiento.",
+      "aggression": 0.65,
+      "tempo": 0.4,
+      "reaction": 0.65,
+      "react_time": 0.2,
+      "guard_hold": 0.3,
+      "block_pref": 0.3,
+      "dodge_pref": 0.55,
+      "counter": 0.45,
+      "pressure": 0.45,
+      "range_pref": 0.9,
+      "learning": 0.45,
+      "stamina_rest": 28,
+      "speed": 1.3,
+      "combos": [
+        {
+          "seq": [
+            "jab",
+            "jab"
+          ],
+          "w": 3
+        },
+        {
+          "seq": [
+            "jab",
+            "jab",
+            "cross"
+          ],
+          "w": 3
+        },
+        {
+          "seq": [
+            "jab",
+            "cross",
+            "lead_hook",
+            "cross"
+          ],
+          "w": 2
+        },
+        {
+          "seq": [
+            "jab",
+            "body_hook"
+          ],
+          "w": 1.5
+        },
+        {
+          "seq": [
+            "jab",
+            "cross",
+            "jab",
+            "cross"
+          ],
+          "w": 2.2
+        },
+        {
+          "seq": [
+            "jab",
+            "lead_hook",
+            "cross"
+          ],
+          "w": 1.8
+        },
+        {
+          "seq": [
+            "cross",
+            "body_hook",
+            "cross"
+          ],
+          "w": 1.5
+        }
+      ],
+      "orbit": 0.82
+    },
+    "durable": {
+      "label": "Resistente",
+      "desc": "Acepta intercambios y aguanta el castigo.",
+      "aggression": 0.6,
+      "tempo": 0.8,
+      "reaction": 0.35,
+      "react_time": 0.3,
+      "guard_hold": 0.3,
+      "block_pref": 0.5,
+      "dodge_pref": 0.1,
+      "counter": 0.3,
+      "pressure": 0.55,
+      "range_pref": 0.72,
+      "learning": 0.3,
+      "stamina_rest": 15,
+      "speed": 0.9,
+      "combos": [
+        {
+          "seq": [
+            "cross",
+            "lead_hook"
+          ],
+          "w": 3
+        },
+        {
+          "seq": [
+            "body_hook",
+            "lead_hook"
+          ],
+          "w": 2
+        },
+        {
+          "seq": [
+            "jab",
+            "cross"
+          ],
+          "w": 2
+        },
+        {
+          "seq": [
+            "rear_uppercut",
+            "lead_hook"
+          ],
+          "w": 2
+        },
+        {
+          "seq": [
+            "body_hook",
+            "cross",
+            "lead_hook"
+          ],
+          "w": 1.8
+        },
+        {
+          "seq": [
+            "cross",
+            "body_hook",
+            "rear_uppercut"
+          ],
+          "w": 1.6
+        },
+        {
+          "seq": [
+            "jab",
+            "cross",
+            "lead_hook"
+          ],
+          "w": 1.5
+        }
+      ],
+      "orbit": 0.18
+    },
+    "strategic": {
+      "label": "Estratega",
+      "desc": "Adapta su plan al marcador y a tus costumbres.",
+      "aggression": 0.5,
+      "tempo": 0.75,
+      "reaction": 0.8,
+      "react_time": 0.2,
+      "guard_hold": 0.5,
+      "block_pref": 0.5,
+      "dodge_pref": 0.4,
+      "counter": 0.5,
+      "pressure": 0.35,
+      "range_pref": 1.0,
+      "learning": 0.95,
+      "stamina_rest": 32,
+      "speed": 1.0,
+      "combos": [
+        {
+          "seq": [
+            "jab",
+            "cross"
+          ],
+          "w": 2
+        },
+        {
+          "seq": [
+            "jab",
+            "body_hook",
+            "cross"
+          ],
+          "w": 2
+        },
+        {
+          "seq": [
+            "lead_hook",
+            "cross"
+          ],
+          "w": 2
+        },
+        {
+          "seq": [
+            "jab"
+          ],
+          "w": 2
+        },
+        {
+          "seq": [
+            "jab",
+            "cross",
+            "rear_uppercut"
+          ],
+          "w": 1.7
+        },
+        {
+          "seq": [
+            "body_hook",
+            "lead_hook",
+            "cross"
+          ],
+          "w": 1.6
+        },
+        {
+          "seq": [
+            "jab",
+            "lead_hook",
+            "body_hook"
+          ],
+          "w": 1.4
+        }
+      ],
+      "orbit": 0.58
+    },
+    "pressure": {
+      "label": "Presión",
+      "desc": "Avanza siempre, te arrincona y busca el cuerpo.",
+      "aggression": 0.8,
+      "tempo": 0.6,
+      "reaction": 0.5,
+      "react_time": 0.26,
+      "guard_hold": 0.35,
+      "block_pref": 0.55,
+      "dodge_pref": 0.15,
+      "counter": 0.25,
+      "pressure": 0.95,
+      "range_pref": 0.68,
+      "learning": 0.4,
+      "stamina_rest": 18,
+      "speed": 1.0,
+      "combos": [
+        {
+          "seq": [
+            "body_hook",
+            "lead_hook"
+          ],
+          "w": 3
+        },
+        {
+          "seq": [
+            "jab",
+            "body_hook",
+            "cross"
+          ],
+          "w": 3
+        },
+        {
+          "seq": [
+            "rear_uppercut",
+            "lead_hook"
+          ],
+          "w": 2
+        },
+        {
+          "seq": [
+            "cross",
+            "body_hook"
+          ],
+          "w": 2
+        },
+        {
+          "seq": [
+            "body_hook",
+            "lead_hook",
+            "cross"
+          ],
+          "w": 2.0
+        },
+        {
+          "seq": [
+            "jab",
+            "body_hook",
+            "cross",
+            "lead_hook"
+          ],
+          "w": 1.8
+        },
+        {
+          "seq": [
+            "cross",
+            "body_hook",
+            "rear_uppercut"
+          ],
+          "w": 1.6
+        }
+      ],
+      "orbit": 0.12
     }
-   ]
-  },
-  "defensive": {
-   "label": "Defensivo",
-   "desc": "Guardia alta, castiga con pocos golpes seguros.",
-   "aggression": 0.3,
-   "tempo": 0.95,
-   "reaction": 0.75,
-   "react_time": 0.22,
-   "guard_hold": 0.8,
-   "block_pref": 0.85,
-   "dodge_pref": 0.15,
-   "counter": 0.45,
-   "pressure": 0.15,
-   "range_pref": 1.0,
-   "learning": 0.5,
-   "stamina_rest": 35,
-   "speed": 0.95,
-   "combos": [
-    {
-     "seq": [
-      "jab"
-     ],
-     "w": 4
-    },
-    {
-     "seq": [
-      "jab",
-      "cross"
-     ],
-     "w": 2
-    },
-    {
-     "seq": [
-      "body_hook"
-     ],
-     "w": 1.5
-    }
-   ]
-  },
-  "counterpuncher": {
-   "label": "Contraatacador",
-   "desc": "Espera tu ataque y responde en la recuperación.",
-   "aggression": 0.35,
-   "tempo": 0.9,
-   "reaction": 0.8,
-   "react_time": 0.18,
-   "guard_hold": 0.45,
-   "block_pref": 0.35,
-   "dodge_pref": 0.65,
-   "counter": 0.9,
-   "pressure": 0.1,
-   "range_pref": 1.05,
-   "learning": 0.65,
-   "stamina_rest": 30,
-   "speed": 1.0,
-   "combos": [
-    {
-     "seq": [
-      "cross"
-     ],
-     "w": 3
-    },
-    {
-     "seq": [
-      "lead_hook",
-      "cross"
-     ],
-     "w": 3
-    },
-    {
-     "seq": [
-      "jab",
-      "cross"
-     ],
-     "w": 2
-    },
-    {
-     "seq": [
-      "rear_uppercut"
-     ],
-     "w": 1.5
-    }
-   ]
-  },
-  "fast": {
-   "label": "Veloz",
-   "desc": "Golpes rápidos y mucho movimiento.",
-   "aggression": 0.65,
-   "tempo": 0.4,
-   "reaction": 0.65,
-   "react_time": 0.2,
-   "guard_hold": 0.3,
-   "block_pref": 0.3,
-   "dodge_pref": 0.55,
-   "counter": 0.45,
-   "pressure": 0.45,
-   "range_pref": 0.9,
-   "learning": 0.45,
-   "stamina_rest": 28,
-   "speed": 1.3,
-   "combos": [
-    {
-     "seq": [
-      "jab",
-      "jab"
-     ],
-     "w": 3
-    },
-    {
-     "seq": [
-      "jab",
-      "jab",
-      "cross"
-     ],
-     "w": 3
-    },
-    {
-     "seq": [
-      "jab",
-      "cross",
-      "lead_hook",
-      "cross"
-     ],
-     "w": 2
-    },
-    {
-     "seq": [
-      "jab",
-      "body_hook"
-     ],
-     "w": 1.5
-    }
-   ]
-  },
-  "durable": {
-   "label": "Resistente",
-   "desc": "Acepta intercambios y aguanta el castigo.",
-   "aggression": 0.6,
-   "tempo": 0.8,
-   "reaction": 0.35,
-   "react_time": 0.3,
-   "guard_hold": 0.3,
-   "block_pref": 0.5,
-   "dodge_pref": 0.1,
-   "counter": 0.3,
-   "pressure": 0.55,
-   "range_pref": 0.72,
-   "learning": 0.3,
-   "stamina_rest": 15,
-   "speed": 0.9,
-   "combos": [
-    {
-     "seq": [
-      "cross",
-      "lead_hook"
-     ],
-     "w": 3
-    },
-    {
-     "seq": [
-      "body_hook",
-      "lead_hook"
-     ],
-     "w": 2
-    },
-    {
-     "seq": [
-      "jab",
-      "cross"
-     ],
-     "w": 2
-    },
-    {
-     "seq": [
-      "rear_uppercut",
-      "lead_hook"
-     ],
-     "w": 2
-    }
-   ]
-  },
-  "strategic": {
-   "label": "Estratega",
-   "desc": "Adapta su plan al marcador y a tus costumbres.",
-   "aggression": 0.5,
-   "tempo": 0.75,
-   "reaction": 0.8,
-   "react_time": 0.2,
-   "guard_hold": 0.5,
-   "block_pref": 0.5,
-   "dodge_pref": 0.4,
-   "counter": 0.5,
-   "pressure": 0.35,
-   "range_pref": 1.0,
-   "learning": 0.95,
-   "stamina_rest": 32,
-   "speed": 1.0,
-   "combos": [
-    {
-     "seq": [
-      "jab",
-      "cross"
-     ],
-     "w": 2
-    },
-    {
-     "seq": [
-      "jab",
-      "body_hook",
-      "cross"
-     ],
-     "w": 2
-    },
-    {
-     "seq": [
-      "lead_hook",
-      "cross"
-     ],
-     "w": 2
-    },
-    {
-     "seq": [
-      "jab"
-     ],
-     "w": 2
-    }
-   ]
-  },
-  "pressure": {
-   "label": "Presión",
-   "desc": "Avanza siempre, te arrincona y busca el cuerpo.",
-   "aggression": 0.8,
-   "tempo": 0.6,
-   "reaction": 0.5,
-   "react_time": 0.26,
-   "guard_hold": 0.35,
-   "block_pref": 0.55,
-   "dodge_pref": 0.15,
-   "counter": 0.25,
-   "pressure": 0.95,
-   "range_pref": 0.68,
-   "learning": 0.4,
-   "stamina_rest": 18,
-   "speed": 1.0,
-   "combos": [
-    {
-     "seq": [
-      "body_hook",
-      "lead_hook"
-     ],
-     "w": 3
-    },
-    {
-     "seq": [
-      "jab",
-      "body_hook",
-      "cross"
-     ],
-     "w": 3
-    },
-    {
-     "seq": [
-      "rear_uppercut",
-      "lead_hook"
-     ],
-     "w": 2
-    },
-    {
-     "seq": [
-      "cross",
-      "body_hook"
-     ],
-     "w": 2
-    }
-   ]
   }
- }
 }

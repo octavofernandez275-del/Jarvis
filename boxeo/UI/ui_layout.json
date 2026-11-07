@@ -1,113 +1,129 @@
 {
- "note": "Posiciones normalizadas (0..1) respecto a la pantalla horizontal. Las usa SCRIPTS/touch_controls.gd y SCRIPTS/hud.gd.",
- "touch_buttons": [
-  {
-   "id": "jab",
-   "label": "JAB",
-   "x": 0.865,
-   "y": 0.8,
-   "r": 0.075,
-   "action": "attack:jab"
-  },
-  {
-   "id": "cross",
-   "label": "CRUZ",
-   "x": 0.95,
-   "y": 0.68,
-   "r": 0.075,
-   "action": "attack:cross"
-  },
-  {
-   "id": "hook",
-   "label": "GANCHO",
-   "x": 0.78,
-   "y": 0.66,
-   "r": 0.075,
-   "action": "attack:lead_hook"
-  },
-  {
-   "id": "upper",
-   "label": "UPPER",
-   "x": 0.865,
-   "y": 0.55,
-   "r": 0.07,
-   "action": "attack:rear_uppercut"
-  },
-  {
-   "id": "body",
-   "label": "CUERPO",
-   "x": 0.95,
-   "y": 0.88,
-   "r": 0.065,
-   "action": "attack:body_hook"
-  },
-  {
-   "id": "block",
-   "label": "BLOQ",
-   "x": 0.08,
-   "y": 0.8,
-   "r": 0.08,
-   "action": "hold:block"
-  },
-  {
-   "id": "back",
-   "label": "<<",
-   "x": 0.21,
-   "y": 0.84,
-   "r": 0.065,
-   "action": "hold:back"
-  },
-  {
-   "id": "fwd",
-   "label": ">>",
-   "x": 0.3,
-   "y": 0.84,
-   "r": 0.065,
-   "action": "hold:forward"
-  },
-  {
-   "id": "dodge_l",
-   "label": "ESQ<",
-   "x": 0.08,
-   "y": 0.6,
-   "r": 0.06,
-   "action": "tap:dodge_left"
-  },
-  {
-   "id": "dodge_r",
-   "label": ">ESQ",
-   "x": 0.19,
-   "y": 0.64,
-   "r": 0.06,
-   "action": "tap:dodge_right"
-  },
-  {
-   "id": "camera",
-   "label": "CAM",
-   "x": 0.94,
-   "y": 0.36,
-   "r": 0.05,
-   "action": "tap:camera"
-  }
- ],
- "difficulty_options": [
-  "easy",
-  "normal",
-  "hard",
-  "pro"
- ],
- "screens": [
-  "main_menu",
-  "fighter_select",
-  "opponent_select",
-  "arena_select",
-  "difficulty",
-  "combat_hud",
-  "results",
-  "rankings",
-  "career_hub",
-  "training",
-  "contracts",
-  "customize"
- ]
+  "note": "Posiciones normalizadas (0..1) respecto a la pantalla horizontal. Las usa SCRIPTS/touch_controls.gd y SCRIPTS/hud.gd.",
+  "touch_buttons": [
+    {
+      "id": "jab",
+      "label": "JAB",
+      "x": 0.865,
+      "y": 0.8,
+      "r": 0.075,
+      "action": "attack:jab"
+    },
+    {
+      "id": "cross",
+      "label": "CRUZ",
+      "x": 0.95,
+      "y": 0.68,
+      "r": 0.075,
+      "action": "attack:cross"
+    },
+    {
+      "id": "hook",
+      "label": "GANCHO",
+      "x": 0.78,
+      "y": 0.66,
+      "r": 0.075,
+      "action": "attack:lead_hook"
+    },
+    {
+      "id": "upper",
+      "label": "UPPER",
+      "x": 0.865,
+      "y": 0.55,
+      "r": 0.07,
+      "action": "attack:rear_uppercut"
+    },
+    {
+      "id": "body",
+      "label": "CUERPO",
+      "x": 0.95,
+      "y": 0.88,
+      "r": 0.065,
+      "action": "attack:body_hook"
+    },
+    {
+      "id": "block",
+      "label": "BLOQ",
+      "x": 0.08,
+      "y": 0.8,
+      "r": 0.08,
+      "action": "hold:block"
+    },
+    {
+      "id": "back",
+      "label": "<<",
+      "x": 0.21,
+      "y": 0.84,
+      "r": 0.065,
+      "action": "hold:back"
+    },
+    {
+      "id": "fwd",
+      "label": ">>",
+      "x": 0.3,
+      "y": 0.84,
+      "r": 0.065,
+      "action": "hold:forward"
+    },
+    {
+      "id": "dodge_l",
+      "label": "ESQ<",
+      "x": 0.08,
+      "y": 0.6,
+      "r": 0.06,
+      "action": "tap:dodge_left"
+    },
+    {
+      "id": "dodge_r",
+      "label": ">ESQ",
+      "x": 0.19,
+      "y": 0.64,
+      "r": 0.06,
+      "action": "tap:dodge_right"
+    },
+    {
+      "id": "camera",
+      "label": "CAM",
+      "x": 0.94,
+      "y": 0.36,
+      "r": 0.05,
+      "action": "tap:camera"
+    },
+    {
+      "id": "strafe_left",
+      "label": "IZQ",
+      "x": 0.3,
+      "y": 0.68,
+      "r": 0.055,
+      "action": "hold:strafe_left"
+    },
+    {
+      "id": "strafe_right",
+      "label": "DER",
+      "x": 0.4,
+      "y": 0.68,
+      "r": 0.055,
+      "action": "hold:strafe_right"
+    }
+  ],
+  "difficulty_options": [
+    "easy",
+    "normal",
+    "hard",
+    "pro"
+  ],
+  "screens": [
+    "main_menu",
+    "fighter_select",
+    "opponent_select",
+    "arena_select",
+    "difficulty",
+    "combat_hud",
+    "results",
+    "rankings",
+    "career_hub",
+    "training",
+    "contracts",
+    "customize"
+  ]
 }
