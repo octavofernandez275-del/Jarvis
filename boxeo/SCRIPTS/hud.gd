@@ -178,6 +178,7 @@ func setup(mgr_, a_, b_) -> void:
 	voz_label.position = Vector2(26, 106)
 	ui.add_child(voz_label)
 	mgr.announce.connect(announce)
+	mgr.fx.connect(_on_fx_flash)
 	mgr.round_changed.connect(func(n, t): round_label.text = "R%d/%d" % [n, t])
 	mgr.score_updated.connect(func(t): score_label.text = t)
 	mgr.fight_finished.connect(show_result)
@@ -249,6 +250,44 @@ func caption(who: String, text: String, seconds: float = 5.0) -> void:
 	caption_tween = create_tween()
 	caption_tween.tween_interval(maxf(0.5, seconds))
 	caption_tween.tween_property(caption_panel, "modulate:a", 0.0, 0.4)
+
+
+## Aviso corto de combate (parada, esquiva, contragolpe).
+var flash_label: Label
+var flash_tween: Tween
+
+
+func flash(text: String, color: Color) -> void:
+	if flash_label == null:
+		flash_label = _label("", 44)
+		flash_label.set_anchors_preset(Control.PRESET_CENTER_TOP)
+		flash_label.anchor_left = 0.0
+		flash_label.anchor_right = 1.0
+		flash_label.offset_left = 0
+		flash_label.offset_right = 0
+		flash_label.offset_top = 205
+		flash_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		flash_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		ui.add_child(flash_label)
+	flash_label.text = text
+	flash_label.add_theme_color_override("font_color", color)
+	flash_label.modulate.a = 1.0
+	if flash_tween:
+		flash_tween.kill()
+	flash_tween = create_tween()
+	flash_tween.tween_interval(0.5)
+	flash_tween.tween_property(flash_label, "modulate:a", 0.0, 0.3)
+
+
+func _on_fx_flash(kind: String, _pos: Vector3, extra: Dictionary) -> void:
+	var df = extra.get("defender", null)
+	var mine: bool = df == a
+	if kind == "parry":
+		flash("¡PARADA PERFECTA!" if mine else "JARVIS PARA", Color(1.0, 0.85, 0.2) if mine else Color(0.5, 0.75, 1.0))
+	elif kind == "slip":
+		flash("¡ESQUIVA!" if mine else "JARVIS ESQUIVA", Color(0.4, 1.0, 0.6) if mine else Color(0.5, 0.75, 1.0))
+	elif (kind == "hit_heavy" or kind == "hit_light") and extra.get("counter", false):
+		flash("¡CONTRAGOLPE!" if not mine else "TE CONTRAGOLPEAN", Color(0.4, 1.0, 0.6) if not mine else Color(1.0, 0.4, 0.4))
 
 
 func announce(text: String, seconds: float) -> void:

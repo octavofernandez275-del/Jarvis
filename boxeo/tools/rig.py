@@ -90,48 +90,112 @@ def ground_y(pose, hips_t):
 
 # ---------------- mallas ----------------
 
+def tube(stations, sides=16, caps=True):
+    """Sólido de revolución elíptico con perfil variable (músculos). stations = [(y, rx, rz[, cx, cz]), ...] de abajo a arriba."""
+    st = [tuple(list(s) + [0.0] * (5 - len(s))) for s in stations]
+    pos, nrm, idx = [], [], []
+    n = len(st)
+    for k, (y, rx, rz, cx, cz) in enumerate(st):
+        k0, k1 = max(k - 1, 0), min(k + 1, n - 1)
+        for i in range(sides):
+            a = 2 * np.pi * i / sides
+            c, s_ = np.cos(a), np.sin(a)
+            pos.append((cx + c * rx, y, cz + s_ * rz))
+            y0, rx0, rz0, cx0, cz0 = st[k0]
+            y1, rx1, rz1, cx1, cz1 = st[k1]
+            ty = np.array([(cx1 + c * rx1) - (cx0 + c * rx0), y1 - y0, (cz1 + s_ * rz1) - (cz0 + s_ * rz0)])
+            tr = np.array([-s_ * rx, 0.0, c * rz])
+            nn = np.cross(tr, ty)
+            if np.dot(nn, [c, 0.0, s_]) < 0:
+                nn = -nn
+            nrm.append(nn / max(np.linalg.norm(nn), 1e-9))
+    for k in range(n - 1):
+        for i in range(sides):
+            j = (i + 1) % sides
+            a, b, c2, d = k * sides + i, k * sides + j, (k + 1) * sides + i, (k + 1) * sides + j
+            idx += [a, b, c2, b, d, c2]
+    if caps:
+        for k, sign in ((0, -1), (n - 1, 1)):
+            y, rx, rz, cx, cz = st[k]
+            base = len(pos)
+            pos.append((cx, y, cz)); nrm.append((0, sign, 0))
+            for i in range(sides):
+                a = 2 * np.pi * i / sides
+                pos.append((cx + np.cos(a) * rx, y, cz + np.sin(a) * rz)); nrm.append((0, sign, 0))
+            for i in range(sides):
+                j = (i + 1) % sides
+                idx += [base, base + 1 + i, base + 1 + j]
+    return np.array(pos, float), np.array(nrm, float), np.array(idx)
+
+
+def ell(c, r, seg=20, rings=12):
+    return ellipsoid(c, r, seg, rings)
+
+
 def build_parts(kind="boxer"):
-    """Devuelve {material: [(pos,nrm,idx,joint_index), ...]}. kind = 'boxer' | 'staff'."""
+    """Devuelve {material: [(pos,nrm,idx,joint_index), ...]}. kind = 'boxer' | 'staff'.
+    Versión de alta calidad: perfiles musculares (tube), más segmentos, cara con ojos/cejas/orejas/mandíbula,
+    hombros, pectorales, pantorrillas, guantes con pulgar y puño, cintura y suelas."""
     J = IDX
-    parts = {"skin": [], "shorts": [], "gloves": [], "shoes": [], "hair": [], "shirt": [], "pants": []}
+    parts = {"skin": [], "shorts": [], "gloves": [], "shoes": [], "hair": [], "shirt": [], "pants": [], "dark": [], "trim": []}
 
     def add(mat, geo, joint):
         parts[mat].append((*geo, J[joint]))
 
     boxer = kind == "boxer"
-    top = "skin" if boxer else "shirt"          # material del torso y los brazos superiores
+    top = "skin" if boxer else "shirt"
     leg = "skin" if boxer else "pants"
 
-    # cabeza, cuello, nariz (marca el frente) y pelo
-    add("skin", ellipsoid((0, 1.72, 0), (0.095, 0.12, 0.105), 10, 6), "Head")
-    add("skin", box((0, 1.705, 0.108), (0.014, 0.022, 0.02)), "Head")
-    add("hair", ellipsoid((0, 1.755, -0.012), (0.1, 0.095, 0.112), 10, 5), "Head")
-    add("skin", loft((0, 1.53, 0), (0, 1.64, 0), (0.05, 0.05), (0.045, 0.045), 8), "Neck")
-    # torso
-    add(top, loft((0, 1.30, 0), (0, 1.56, 0), (0.165, 0.10), (0.20, 0.115), 10), "Chest")
-    add(top, loft((0, 1.06, 0), (0, 1.30, 0), (0.15, 0.10), (0.165, 0.10), 10), "Spine")
+    # ---- cabeza ----
+    add("skin", ell((0, 1.725, 0.0), (0.094, 0.118, 0.102), 24, 14), "Head")                 # cráneo
+    add("skin", ell((0, 1.655, 0.030), (0.068, 0.058, 0.076), 20, 10), "Head")               # mandíbula
+    add("skin", ell((0, 1.640, 0.082), (0.026, 0.018, 0.02), 12, 6), "Head")                 # mentón
+    add("skin", ell((0, 1.700, 0.104), (0.016, 0.026, 0.024), 12, 8), "Head")                # nariz
+    add("skin", ell((0, 1.740, 0.088), (0.078, 0.014, 0.03), 14, 6), "Head")                 # arco de las cejas
+    add("skin", ell((0, 1.668, 0.088), (0.034, 0.010, 0.016), 12, 6), "Head")                # labios
+    for sx in (1, -1):
+        add("skin", ell((sx * 0.096, 1.715, -0.006), (0.012, 0.030, 0.022), 10, 8), "Head")  # orejas
+        add("dark", ell((sx * 0.036, 1.722, 0.088), (0.012, 0.008, 0.008), 10, 6), "Head")   # ojos
+        add("hair", ell((sx * 0.036, 1.739, 0.094), (0.022, 0.0045, 0.008), 10, 4), "Head") # cejas
     if boxer:
-        add("shorts", loft((0, 0.90, 0), (0, 1.12, 0), (0.185, 0.12), (0.15, 0.10), 10), "Hips")
+        add("hair", ell((0, 1.765, -0.014), (0.099, 0.090, 0.108), 24, 10), "Head")          # pelo
+        add("hair", ell((0, 1.78, -0.05), (0.09, 0.07, 0.085), 18, 8), "Head")
     else:
-        add("pants", loft((0, 0.90, 0), (0, 1.12, 0), (0.185, 0.12), (0.15, 0.10), 10), "Hips")
+        add("hair", ell((0, 1.76, -0.012), (0.1, 0.092, 0.11), 24, 10), "Head")
+    # ---- cuello y trapecios ----
+    add("skin", tube([(1.50, 0.062, 0.058), (1.58, 0.048, 0.048), (1.65, 0.044, 0.046)], 16), "Neck")
+    # ---- torso (V de hombros a cintura) ----
+    add(top, tube([(1.30, 0.168, 0.108), (1.40, 0.182, 0.114), (1.49, 0.205, 0.112), (1.55, 0.150, 0.095), (1.58, 0.075, 0.07)], 20), "Chest")
+    add(top, tube([(1.06, 0.150, 0.098), (1.15, 0.148, 0.098), (1.23, 0.158, 0.104), (1.30, 0.168, 0.108)], 20), "Spine")
+    add("pants" if not boxer else "shorts", tube([(0.88, 0.190, 0.122), (0.96, 0.192, 0.124), (1.06, 0.162, 0.108), (1.12, 0.152, 0.102)], 20), "Hips")
+    if boxer:
+        for sx in (1, -1):
+            add("skin", ell((sx * 0.075, 1.455, 0.082), (0.078, 0.058, 0.042), 14, 8), "Chest")   # pectorales
+        add("trim", tube([(1.085, 0.158, 0.106), (1.125, 0.156, 0.104), (1.145, 0.150, 0.100)], 20), "Hips")  # cintura blanca
     for s, sx in (("L", 1), ("R", -1)):
-        # brazos
-        add(top, ellipsoid((sx * 0.21, 1.48, 0), (0.065, 0.065, 0.065), 8, 5), f"UpperArm_{s}")
-        add(top, loft((sx * 0.21, 1.20, 0), (sx * 0.21, 1.48, 0), (0.042, 0.042), (0.058, 0.058), 8), f"UpperArm_{s}")
-        add("skin", ellipsoid((sx * 0.21, 1.20, 0), (0.047, 0.047, 0.047), 8, 5), f"Forearm_{s}")
-        add("skin", loft((sx * 0.21, 0.95, 0), (sx * 0.21, 1.20, 0), (0.034, 0.034), (0.045, 0.045), 8), f"Forearm_{s}")
+        # hombro (deltoides) y brazo con bíceps
+        add(top, ell((sx * 0.215, 1.48, 0), (0.072, 0.076, 0.072), 16, 10), f"UpperArm_{s}")
+        add(top, tube([(1.20, 0.044, 0.044, sx * 0.21), (1.33, 0.054, 0.052, sx * 0.21), (1.42, 0.058, 0.056, sx * 0.21), (1.49, 0.056, 0.056, sx * 0.21)], 16), f"UpperArm_{s}")
+        add("skin", ell((sx * 0.21, 1.20, 0), (0.046, 0.046, 0.046), 14, 8), f"Forearm_{s}")
+        add("skin", tube([(0.95, 0.032, 0.032, sx * 0.21), (1.05, 0.040, 0.040, sx * 0.21), (1.13, 0.046, 0.044, sx * 0.21), (1.20, 0.044, 0.044, sx * 0.21)], 16), f"Forearm_{s}")
         if boxer:
-            add("gloves", ellipsoid((sx * 0.21, 0.90, 0.015), (0.078, 0.092, 0.082), 10, 6), f"Hand_{s}")
-            add("gloves", loft((sx * 0.21, 0.97, 0), (sx * 0.21, 1.07, 0), (0.06, 0.06), (0.052, 0.052), 8), f"Forearm_{s}")
+            # guante: cuerpo, pulgar, puño y vendaje de muñeca
+            add("gloves", ell((sx * 0.21, 0.895, 0.018), (0.088, 0.100, 0.094), 22, 14), f"Hand_{s}")
+            add("gloves", ell((sx * 0.21 - sx * 0.072, 0.915, 0.045), (0.032, 0.058, 0.042), 12, 8), f"Hand_{s}")
+            add("trim", tube([(0.965, 0.058, 0.058, sx * 0.21), (1.02, 0.056, 0.056, sx * 0.21), (1.075, 0.052, 0.052, sx * 0.21)], 16), f"Forearm_{s}")
+            add("gloves", tube([(1.07, 0.052, 0.052, sx * 0.21), (1.09, 0.047, 0.047, sx * 0.21)], 14), f"Forearm_{s}")
         else:
-            add("skin", ellipsoid((sx * 0.21, 0.92, 0.0), (0.04, 0.06, 0.03), 8, 5), f"Hand_{s}")
-        # piernas
-        add(leg, loft((sx * 0.10, 0.52, 0), (sx * 0.10, 0.98, 0), (0.06, 0.06), (0.085, 0.085), 8), f"Thigh_{s}")
-        add(leg, ellipsoid((sx * 0.10, 0.52, 0), (0.063, 0.063, 0.063), 8, 5), f"Shin_{s}")
-        add(leg, loft((sx * 0.10, 0.10, 0), (sx * 0.10, 0.52, 0), (0.042, 0.042), (0.058, 0.058), 8), f"Shin_{s}")
+            add("skin", ell((sx * 0.21, 0.92, 0.0), (0.042, 0.062, 0.032), 12, 8), f"Hand_{s}")
+        # piernas: cuádriceps, rodilla, pantorrilla
+        add(leg, tube([(0.52, 0.060, 0.060, sx * 0.10), (0.68, 0.082, 0.082, sx * 0.10), (0.86, 0.092, 0.092, sx * 0.10), (0.99, 0.088, 0.090, sx * 0.10)], 16), f"Thigh_{s}")
+        add(leg, ell((sx * 0.10, 0.52, 0.006), (0.062, 0.062, 0.064), 14, 8), f"Shin_{s}")
+        add(leg, tube([(0.09, 0.040, 0.044, sx * 0.10), (0.18, 0.046, 0.050, sx * 0.10), (0.36, 0.064, 0.068, sx * 0.10, -0.01), (0.46, 0.058, 0.060, sx * 0.10), (0.52, 0.056, 0.058, sx * 0.10)], 16), f"Shin_{s}")
         if boxer:
-            add("shorts", loft((sx * 0.10, 0.74, 0), (sx * 0.10, 0.99, 0), (0.092, 0.092), (0.092, 0.092), 8), f"Thigh_{s}")
-        add("shoes", box((sx * 0.10, 0.045, 0.06), (0.048, 0.045, 0.125)), f"Foot_{s}")
+            add("shorts", tube([(0.70, 0.104, 0.104, sx * 0.10), (0.86, 0.108, 0.108, sx * 0.10), (1.00, 0.100, 0.100, sx * 0.10)], 16), f"Thigh_{s}")
+            add("trim", tube([(0.690, 0.106, 0.106, sx * 0.10), (0.715, 0.107, 0.107, sx * 0.10)], 16), f"Thigh_{s}")   # ribete del pantalón
+            add("trim", ell((sx * 0.10, 0.055, 0.115), (0.050, 0.020, 0.135), 14, 6), f"Foot_{s}")                    # suela blanca
+        add("shoes", ell((sx * 0.10, 0.075, 0.055), (0.050, 0.052, 0.125), 18, 10), f"Foot_{s}")
+        add("shoes", ell((sx * 0.10, 0.085, -0.04), (0.046, 0.06, 0.05), 12, 8), f"Foot_{s}")
     return {k: v for k, v in parts.items() if v}
 
 

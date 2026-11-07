@@ -39,6 +39,13 @@ var side_dir := 0.0            # -1 izquierda, +1 derecha
 var frozen := false            # entre rounds / ceremonias
 var replay_mode := false
 
+var counter_window := 0.0      # >0 tras esquivar o parar con timing: el próximo golpe sale más rápido y más fuerte
+var block_age := 0.0           # tiempo desde que levantó la guardia (guardia fresca = parada perfecta)
+var atk_speed_mul := 1.0
+var buffered := ""             # golpe pedido un instante antes de poder actuar (solo jugador)
+var buffer_t := 0.0
+const PARRY_WINDOW := 0.18
+
 var visual: Node3D
 var anim: AnimationPlayer
 var last_clip := ""
@@ -134,16 +141,23 @@ func cmd_block(on: bool) -> void:
 	want_block = on
 
 func cmd_attack(name: String) -> bool:
-	if not can_act() or stamina < 3.0 or not table["attacks"].has(name):
+	if not table["attacks"].has(name):
 		return false
+	if not can_act() or stamina < 3.0:
+		if is_player and not frozen and not replay_mode and state != S.HIT and state != S.STAGGER and not is_down():
+			buffered = name        # buffer de entrada: se dispara en cuanto se pueda actuar
+			buffer_t = 0.28
+		return false
+	buffered = ""
 	var a: Dictionary = table["attacks"][name]
+	atk_speed_mul = 1.35 if counter_window > 0.0 else 1.0
 	cur_attack = name
 	attack_t = 0.0
 	attack_hit_done = false
 	attack_id += 1
 	state = S.ATTACK
 	stamina = maxf(0.0, stamina - float(a["stamina"]))
-	play(name, time_scale, 0.05)
+	play(name, time_scale * atk_speed_mul, 0.05)
 	action_started.emit(self, name)
 	return true
 
@@ -178,6 +192,17 @@ func apply_hit(info: Dictionary) -> void:
 		stun = float(info.get("stun", 0.3))
 		play("hit_head" if info.get("head", true) else "hit_body", 1.0, 0.03)
 	_move_z(-facing * float(info.get("push", 0.12)))
+
+## Parada perfecta: el atacante queda aturdido y el defensor gana ventana de contraataque.
+func get_parried() -> void:
+	cur_attack = ""
+	state = S.HIT
+	stun = 0.55
+	play("hit_head", 1.0, 0.03)
+	_move_z(-facing * 0.18)
+
+func is_parrying() -> bool:
+	return state == S.BLOCK and block_age <= PARRY_WINDOW
 
 func block_feedback() -> void:
 	if anim and anim.has_animation("block_high"):
@@ -230,6 +255,15 @@ func _physics_process(delta: float) -> void:
 	if ai != null:
 		ai.think(delta)
 	_regen(delta)
+	counter_window = maxf(0.0, counter_window - delta)
+	if buffered != "":
+		buffer_t -= delta
+		if buffer_t <= 0.0:
+			buffered = ""
+		elif can_act() and stamina >= 3.0:
+			var nm := buffered
+			buffered = ""
+			cmd_attack(nm)
 	if state == S.IDLE or state == S.MOVE:
 		_update_free(delta)
 	elif state == S.BLOCK:
@@ -276,6 +310,7 @@ func _update_free(delta: float) -> void:
 		_move_x(side_dir * float(table["movement"].get("lateral", 1.25)) * foot * delta)
 	if want_block:
 		state = S.BLOCK
+		block_age = 0.0
 		play("block_high", 1.0, 0.05)
 		action_started.emit(self, "block")
 		return
@@ -295,6 +330,7 @@ func _update_free(delta: float) -> void:
 
 
 func _update_block(delta: float) -> void:
+	block_age += delta
 	if not want_block:
 		state = S.IDLE
 		play("idle_guard", 1.0, 0.1)
@@ -309,7 +345,7 @@ func _update_block(delta: float) -> void:
 
 func _update_attack(delta: float) -> void:
 	var a: Dictionary = table["attacks"][cur_attack]
-	attack_t += delta * time_scale
+	attack_t += delta * time_scale * atk_speed_mul
 	if not attack_hit_done and attack_t >= float(a["startup"]):
 		attack_hit_done = true
 		attack_active.emit(self, cur_attack)

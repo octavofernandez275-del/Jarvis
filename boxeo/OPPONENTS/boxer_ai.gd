@@ -149,6 +149,8 @@ func get_insight() -> String:
 func think(delta: float) -> void:
 	clock += delta
 	if me.frozen or me.is_stunned() or foe == null:
+		combo.clear()
+		react_choice = ""
 		me.cmd_move(0.0)
 		me.cmd_side(0.0)
 		return
@@ -229,6 +231,11 @@ func _aggression() -> float:
 func _offense_and_movement(delta: float, dist: float) -> void:
 	var pressure := float(profile.get("pressure", 0.4))
 	var rest_mode: bool = me.stamina < float(profile.get("stamina_rest", 25))
+
+	# 0) Tras esquivar o parar: responde enseguida (ventana de contraataque)
+	if me.counter_window > 0.0 and combo.is_empty() and not rest_mode and me.can_act():
+		if rng.randf() < 0.5 + 0.4 * skill and _start_combo(dist):
+			return
 
 	# 1) Contraataque: el jugador está en la recuperación de su golpe
 	if foe.is_attacking() and foe.attack_phase() == "recovery" and foe.attack_id != counter_checked_id:

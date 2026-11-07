@@ -267,6 +267,9 @@ func _on_attack_active(att: Node3D, atk_name: String) -> void:
 	var head: bool = String(atk["target"]) == "head"
 	var pos := df.global_position + Vector3(0, 1.55 if head else 1.1, 0)
 	var ai_att = att.ai
+	var cw: bool = att.counter_window > 0.0
+	att.counter_window = 0.0
+	att.atk_speed_mul = 1.0
 	# 1) fuera de alcance o rival caído
 	if att.distance_to_opponent() > att.attack_range(atk_name) or df.is_down():
 		fx.emit("whoosh", att.global_position, {})
@@ -276,7 +279,9 @@ func _on_attack_active(att: Node3D, atk_name: String) -> void:
 	# 2) esquivado
 	if df.dodge_active():
 		df.stamina = maxf(0.0, df.stamina - 2.0)
+		df.counter_window = 0.9          # esquiva limpia: ventana de contraataque
 		fx.emit("whoosh", pos, {})
+		fx.emit("slip", pos, {"defender": df})
 		if ai_att:
 			ai_att.notify_result(atk_name, "dodged")
 		return
@@ -285,18 +290,38 @@ func _on_attack_active(att: Node3D, atk_name: String) -> void:
 	var dmg: float = float(atk["damage"]) * power_f * low
 	# 3) bloqueado
 	if df.is_blocking():
+		# parada perfecta: guardia levantada justo antes del impacto (la IA solo a veces, según su nivel)
+		if df.is_parrying() and (df.ai == null or rng.randf() < 0.15 + 0.3 * float(df.ai.skill)):
+			att.get_parried()
+			df.counter_window = 1.1
+			df.stamina = minf(100.0, df.stamina + 4.0)
+			fx.emit("block", pos, {})
+			fx.emit("parry", pos, {"defender": df})
+			if ai_att:
+				ai_att.notify_result(atk_name, "blocked")
+			return
+		# guardia rota: sin aguante, el golpe entra casi completo y desequilibra
+		if df.stamina <= 1.0:
+			var bd: float = dmg * 0.7
+			df.apply_hit({"health_damage": bd * (1.0 if head else 0.45), "stamina_damage": 0.0, "stun": float(atk["stun"]),
+				"head": head, "knockdown": false, "stagger": true, "push": 0.25})
+			fx.emit("hit_heavy", pos, {"head": head, "damage": dmg, "counter": false, "defender": df})
+			if ai_att:
+				ai_att.notify_result(atk_name, "hit")
+			return
 		var bm: float = float(table["defense"]["block_damage_mult"]) if head else float(table["defense"]["block_body_mult"])
 		df.stamina = maxf(0.0, df.stamina - dmg * float(table["defense"]["block_stamina_mult"]))
 		df.health = maxf(0.0, df.health - dmg * bm * 0.3)
 		df.block_feedback()
+		df.counter_window = maxf(df.counter_window, 0.25)     # bloquear también deja un hueco breve para responder
 		fx.emit("block", pos, {})
 		if ai_att:
 			ai_att.notify_result(atk_name, "blocked")
 		return
 	# 4) impacto
 	var clean_p := clampf(0.55 + float(att.stats["accuracy"]) / 200.0 - float(df.stats["defense"]) / 400.0, 0.3, 0.95)
-	var clean := rng.randf() < clean_p
-	var counter: bool = df.is_attacking() and df.attack_phase() != "recovery"
+	var clean := cw or rng.randf() < clean_p
+	var counter: bool = (df.is_attacking() and df.attack_phase() != "recovery") or cw
 	dmg *= (1.0 if clean else 0.5) * (1.3 if counter else 1.0)
 	var chin_f := 1.25 - float(df.stats["chin"]) / 200.0
 	var health_dmg := dmg * chin_f * (1.0 if head else 0.45)

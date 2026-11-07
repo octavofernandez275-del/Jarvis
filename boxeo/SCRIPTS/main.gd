@@ -169,6 +169,7 @@ func start_fight(config: Dictionary) -> void:
 	touch = Touch.new()
 	touch_layer.add_child(touch)
 	touch.setup(layout)
+	touch.player = a
 	touch.action_pressed.connect(_on_touch)
 
 	camera_modes = arena_cfg.get("cameras", ["broadcast"])
@@ -340,6 +341,12 @@ func _on_fx(kind: String, pos: Vector3, extra: Dictionary) -> void:
 	elif kind == "block":
 		sfx.play("block_hit")
 		vfx.burst("block_puff", pos)
+	elif kind == "parry":
+		sfx.play("ui_confirm", -4.0, 1.4)
+		_shake("light")
+		var pd = extra.get("defender", null)
+		if pd != null:
+			Polish.hit_flash(pd, false)
 	elif kind == "whoosh":
 		sfx.play("whoosh", -6.0, randf_range(0.9, 1.15))
 	elif kind == "knockdown":

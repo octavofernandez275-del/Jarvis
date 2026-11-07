@@ -15,15 +15,18 @@ def out(*p):
 
 # ---------------- personajes con esqueleto ----------------
 BOXER_MATS = {"skin": (0.78, 0.58, 0.45, 1), "shorts": (0.80, 0.10, 0.10, 1), "gloves": (0.75, 0.05, 0.05, 1),
-              "shoes": (0.10, 0.10, 0.10, 1), "hair": (0.10, 0.07, 0.05, 1)}
+              "shoes": (0.10, 0.10, 0.10, 1), "hair": (0.10, 0.07, 0.05, 1),
+              "dark": (0.02, 0.02, 0.025, 1), "trim": (0.93, 0.93, 0.90, 1)}
 STAFF_MATS = {"skin": (0.78, 0.58, 0.45, 1), "shirt": (0.92, 0.92, 0.92, 1), "pants": (0.08, 0.08, 0.10, 1),
-              "shoes": (0.08, 0.08, 0.08, 1), "hair": (0.10, 0.07, 0.05, 1)}
+              "shoes": (0.08, 0.08, 0.08, 1), "hair": (0.10, 0.07, 0.05, 1),
+              "dark": (0.02, 0.02, 0.025, 1), "trim": (0.93, 0.93, 0.90, 1)}
 
 
 def build_character(path, kind, cat):
     g = GLB()
     mats = BOXER_MATS if kind == "boxer" else STAFF_MATS
-    mid = {n: g.material(n, c, rough=0.75) for n, c in mats.items()}
+    ROUGH = {"skin": 0.55, "gloves": 0.32, "shorts": 0.45, "shoes": 0.4, "hair": 0.85, "dark": 0.2, "trim": 0.6, "shirt": 0.7, "pants": 0.7}
+    mid = {n: g.material(n, c, rough=ROUGH.get(n, 0.7)) for n, c in mats.items()}
     bone_nodes = {n: g.node(n, t=rig.offset(n)) for n in rig.NAMES}
     for n in rig.NAMES:
         p = rig.PARENT[n]
