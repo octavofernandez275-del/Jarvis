@@ -134,4 +134,61 @@ static func build(cfg: Dictionary, parent: Node3D) -> Dictionary:
 	# ring
 	if out["has_ring"]:
 		_prop(parent, "res://RINGS/ring_pro.glb", Vector3.ZERO)
+		out["ropes"] = _build_ropes(parent)
 	return out
+
+
+const ROPE_HEIGHTS := [0.42, 0.72, 1.02, 1.32]
+const ROPE_COLORS := [Color(0.8, 0.08, 0.08), Color(0.92, 0.92, 0.92), Color(0.1, 0.2, 0.75), Color(0.92, 0.92, 0.92)]
+const ROPE_HALF := 3.2
+
+
+## Cuerdas como nodos: devuelve {"z+": [..], "z-": [..], "x+": [..], "x-": [..]} para poder sacudirlas.
+static func _build_ropes(parent: Node3D) -> Dictionary:
+	var ropes := {"z+": [], "z-": [], "x+": [], "x-": []}
+	for i in range(ROPE_HEIGHTS.size()):
+		var mat := StandardMaterial3D.new()
+		mat.albedo_color = ROPE_COLORS[i]
+		mat.roughness = 0.38
+		mat.metallic_specular = 0.7
+		mat.rim_enabled = true
+		mat.rim = 0.3
+		for side in ropes.keys():
+			var m := MeshInstance3D.new()
+			var c := CylinderMesh.new()
+			c.top_radius = 0.024
+			c.bottom_radius = 0.024
+			c.height = ROPE_HALF * 2.0
+			c.radial_segments = 10
+			c.rings = 1
+			m.mesh = c
+			m.material_override = mat
+			var sgn := 1.0 if String(side).ends_with("+") else -1.0
+			if String(side).begins_with("z"):
+				m.rotation_degrees = Vector3(0, 0, 90)          # a lo largo de X
+				m.position = Vector3(0, ROPE_HEIGHTS[i], sgn * ROPE_HALF)
+			else:
+				m.rotation_degrees = Vector3(90, 0, 0)          # a lo largo de Z
+				m.position = Vector3(sgn * ROPE_HALF, ROPE_HEIGHTS[i], 0)
+			m.set_meta("home", m.position)
+			parent.add_child(m)
+			ropes[side].append(m)
+	return ropes
+
+
+## Sacude las cuerdas de un lado (side = "z+", "z-"...): se estiran hacia afuera y vibran hasta calmarse.
+static func shake_ropes(ropes: Dictionary, side: String, strength: float = 1.0) -> void:
+	if not ropes.has(side):
+		return
+	var out_dir := Vector3(0, 0, 1) if side == "z+" else (Vector3(0, 0, -1) if side == "z-" else (Vector3(1, 0, 0) if side == "x+" else Vector3(-1, 0, 0)))
+	for k in range(ropes[side].size()):
+		var r: Node3D = ropes[side][k]
+		if not is_instance_valid(r):
+			continue
+		var home: Vector3 = r.get_meta("home")
+		var amp := 0.14 * strength * (1.0 - 0.12 * float(k))
+		var tw := r.create_tween()
+		tw.tween_property(r, "position", home + out_dir * amp, 0.07)
+		tw.tween_property(r, "position", home - out_dir * amp * 0.5, 0.12)
+		tw.tween_property(r, "position", home + out_dir * amp * 0.25, 0.12)
+		tw.tween_property(r, "position", home, 0.2)

@@ -145,10 +145,7 @@ def build_ring(path):
     for x, z, pad in corners:
         s.add("post", cyl((x, -0.03, z), (x, 1.55, z), 0.06, 8))
         s.add(pad, box((x - np.sign(x) * 0.02, 0.88, z - np.sign(z) * 0.02), (0.10, 0.58, 0.10)))
-    rope_mats = ["rope_red", "rope_white", "rope_blue", "rope_white"]
-    for h, m in zip((0.42, 0.72, 1.02, 1.32), rope_mats):
-        for (x0, z0, _), (x1, z1, _) in zip(corners, corners[1:] + corners[:1]):
-            s.add(m, cyl((x0, h, z0), (x1, h, z1), 0.022, 6, caps=False))
+    # las cuerdas ya no van en el modelo: las crea arena_builder.gd como nodos para que se muevan con los golpes
     # taburetes de esquina (rojo y azul, fuera de las cuerdas)
     for x, z in ((-3.9, -3.2), (3.9, -3.2)):
         s.add("stool", box((x, -0.62, z), (0.2, 0.02, 0.2)))

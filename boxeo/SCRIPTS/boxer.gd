@@ -7,6 +7,7 @@ const Data = preload("res://SCRIPTS/data.gd")
 signal action_started(boxer, action)     # "jab", "cross"... "block", "dodge_left", "dodge_right"
 signal attack_active(boxer, attack)      # empieza la ventana de impacto de un golpe
 signal knocked_down(boxer)
+signal rope_bounce(boxer, strength)      # el empujón lo lanzó contra las cuerdas
 
 enum S { IDLE, MOVE, ATTACK, BLOCK, DODGE, HIT, STAGGER, DOWN, GETUP, WIN, LOSE }
 
@@ -226,6 +227,8 @@ func block_feedback() -> void:
 	_move_z(-facing * 0.06)
 
 func go_down() -> void:
+	if absf(position.z) > 2.2:
+		rope_bounce.emit(self, 1.0)
 	state = S.DOWN
 	knockdowns += 1
 	knockdowns_round += 1
@@ -278,6 +281,7 @@ func _physics_process(delta: float) -> void:
 		_move_z(kb_vel * delta)
 		var lim: float = float(table["movement"]["ring_half"])
 		if absf(position.z) >= lim - 0.01 and signf(kb_vel) == signf(position.z):
+			rope_bounce.emit(self, clampf(absf(kb_vel) / 2.0, 0.4, 1.6))
 			kb_vel *= -0.35                 # rebote en las cuerdas
 		kb_vel = move_toward(kb_vel, 0.0, 7.0 * delta)
 	if buffered != "":

@@ -36,6 +36,7 @@ var b
 var mgr
 var hud
 var narr_ref
+var ropes: Dictionary = {}
 var touch
 var touch_layer: CanvasLayer
 var replay
@@ -116,6 +117,7 @@ func start_fight(config: Dictionary) -> void:
 	add_child(world)
 	var arena_cfg := Data.find_by_id(arenas_cfg["arenas"], String(config["arena"]))
 	var built := ArenaBuilder.build(arena_cfg, world)
+	ropes = built.get("ropes", {})
 	crowd_mat = built["crowd_mat"]
 	var pol := Polish.apply_arena(world, arena_cfg, ArenaBuilder.FLOOR_Y, crowd_mat != null, bool(built["has_ring"]))
 	flashes = pol["flashes"]
@@ -129,6 +131,8 @@ func start_fight(config: Dictionary) -> void:
 	var ai = AI.new()
 	ai.setup(b, a, profiles["profiles"][prof_name], float(config["skill"]))
 	b.ai = ai
+	for bx in [a, b]:
+		bx.rope_bounce.connect(_on_rope_bounce)
 	ai.load_habits(String(a.data["name"]))
 
 	var ref = StaffScript.new()
@@ -428,6 +432,13 @@ func _on_jarvis_report() -> void:
 	var res_txt := "gané" if r.get("winner", "") == "a" else ("perdí" if r.get("winner", "") == "b" else "empaté")
 	var txt := "Boxeo: %s contra %s (%s, round %d). %s" % [res_txt, String(b.data["name"]), String(r.get("method", "")), int(r.get("round", 0)), b.ai.resumen() if b.ai != null else ""]
 	OS.shell_open("jarvis://boxeo?r=" + txt.uri_encode())
+
+
+func _on_rope_bounce(bx, strength: float) -> void:
+	if ropes.is_empty():
+		return
+	ArenaBuilder.shake_ropes(ropes, "z+" if bx.position.z > 0.0 else "z-", strength)
+	sfx.play("block_hit", -10.0, 0.7)
 
 
 func _on_rematch() -> void:
