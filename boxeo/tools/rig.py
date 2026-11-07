@@ -199,12 +199,63 @@ def build_parts(kind="boxer"):
     return {k: v for k, v in parts.items() if v}
 
 
+# Cadenas de huesos entre las que se mezcla el peso cerca de las articulaciones (codos, rodillas, cintura, cuello).
+CHAINS = [["Hips", "Spine", "Chest", "Neck", "Head"],
+          ["UpperArm_L", "Forearm_L", "Hand_L"], ["UpperArm_R", "Forearm_R", "Hand_R"],
+          ["Thigh_L", "Shin_L", "Foot_L"], ["Thigh_R", "Shin_R", "Foot_R"]]
+_TAIL = {"Head": (0, 1.86, 0), "Hand_L": (0.21, 0.80, 0), "Hand_R": (-0.21, 0.80, 0),
+         "Foot_L": (0.10, 0.05, 0.20), "Foot_R": (-0.10, 0.05, 0.20)}
+
+
+def _segment(n):
+    head = HEAD[n]
+    nxt = None
+    for c in CHAINS:
+        if n in c and c.index(n) + 1 < len(c):
+            nxt = c[c.index(n) + 1]
+    tail = HEAD[nxt] if nxt else np.array(_TAIL[n], float)
+    return head, tail
+
+
+def _dist_seg(P, a, b):
+    ab = b - a
+    t = np.clip(((P - a) @ ab) / max(ab @ ab, 1e-9), 0.0, 1.0)
+    return np.linalg.norm(P - (a + t[:, None] * ab), axis=1)
+
+
 def skin_data(parts_for_mat):
+    """Skinning suave: cada vértice mezcla su hueso con los vecinos de su cadena según la distancia al segmento de hueso."""
     pos, nrm, idx, J = merge(parts_for_mat)
-    joints = np.zeros((len(pos), 4), dtype=np.uint16)
-    joints[:, 0] = J
-    weights = np.zeros((len(pos), 4), dtype=np.float32)
-    weights[:, 0] = 1.0
+    n = len(pos)
+    joints = np.zeros((n, 4), dtype=np.uint16)
+    weights = np.zeros((n, 4), dtype=np.float32)
+    seg = {nm: _segment(nm) for c in CHAINS for nm in c}
+    for j in np.unique(J):
+        name = NAMES[int(j)]
+        sel = np.where(J == j)[0]
+        cand = [name]
+        for c in CHAINS:
+            if name in c:
+                k = c.index(name)
+                cand += [c[m] for m in (k - 1, k + 1) if 0 <= m < len(c)]
+        if len(cand) == 1:
+            joints[sel, 0] = j
+            weights[sel, 0] = 1.0
+            continue
+        P = pos[sel]
+        W = np.zeros((len(sel), len(cand)))
+        for ci, cn in enumerate(cand):
+            d = _dist_seg(P, *seg[cn])
+            W[:, ci] = 1.0 / (d + 0.012) ** 4 * (3.0 if ci == 0 else 1.0)    # el hueso propio pesa más
+        W /= W.sum(axis=1, keepdims=True)
+        W[W < 0.03] = 0.0
+        W /= W.sum(axis=1, keepdims=True)
+        order = np.argsort(-W, axis=1)[:, :4]
+        for r in range(len(sel)):
+            for slot in range(min(4, len(cand))):
+                ci = order[r, slot]
+                joints[sel[r], slot] = IDX[cand[ci]]
+                weights[sel[r], slot] = W[r, ci]
     return pos, nrm, idx, joints, weights
 
 
