@@ -52,6 +52,7 @@ var camera_modes: Array = ["broadcast"]
 var camera_index := 0
 var shake := 0.0
 var touch_move := 0.0
+var touch_side := 0.0
 var touch_block := false
 
 
@@ -96,6 +97,7 @@ func _teardown() -> void:
 	flashes = null
 	crowd_mat = null
 	touch_move = 0.0
+	touch_side = 0.0
 	touch_block = false
 
 
@@ -263,6 +265,10 @@ func _on_touch(kind: String, id: String, pressed: bool) -> void:
 			touch_move = 1.0 if pressed else (0.0 if touch_move > 0.0 else touch_move)
 		elif id == "back":
 			touch_move = -1.0 if pressed else (0.0 if touch_move < 0.0 else touch_move)
+		elif id == "strafe_left":
+			touch_side = -1.0 if pressed else (0.0 if touch_side < 0.0 else touch_side)
+		elif id == "strafe_right":
+			touch_side = 1.0 if pressed else (0.0 if touch_side > 0.0 else touch_side)
 
 
 func _process(delta: float) -> void:
@@ -270,6 +276,7 @@ func _process(delta: float) -> void:
 		return
 	if not in_intro:
 		a.cmd_move(touch_move)
+		a.cmd_side(touch_side)
 		a.cmd_block(touch_block)
 	if not in_intro:
 		_update_camera(delta)
