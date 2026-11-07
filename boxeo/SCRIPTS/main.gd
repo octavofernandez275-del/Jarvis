@@ -201,11 +201,30 @@ func _intro(arena_cfg: Dictionary) -> void:
 	var ra: Dictionary = a.data["record"]
 	var rb: Dictionary = b.data["record"]
 	hud.announce("%s\n%d-%d (%d KO)" % [a.data["name"], ra["w"], ra["l"], ra["ko"]], 2.0)
+	# Plano cinematográfico: travelling de presentación y acercamiento al cara a cara.
+	var camera_home := cam.position
+	var camera_fov := cam.fov
+	cam.position = Vector3(7.5, 3.2, -8.0)
+	cam.look_at(Vector3(0, 1.2, 0), Vector3.UP)
+	var shot_one := create_tween()
+	shot_one.set_parallel(true)
+	shot_one.tween_property(cam, "position", Vector3(5.0, 2.4, -4.5), 1.8)
+	shot_one.tween_property(cam, "fov", 48.0, 1.8)
 	await get_tree().create_timer(2.2).timeout
 	if not in_fight:
 		return
 	hud.announce("%s\n%d-%d (%d KO)" % [b.data["name"], rb["w"], rb["l"], rb["ko"]], 2.0)
+	var shot_two := create_tween()
+	shot_two.set_parallel(true)
+	shot_two.tween_property(cam, "position", Vector3(-5.5, 2.8, 3.5), 1.6)
+	shot_two.tween_property(cam, "fov", 44.0, 1.6)
 	await get_tree().create_timer(2.2 if walk else 1.8).timeout
+	if not in_fight:
+		return
+	var faceoff := create_tween()
+	faceoff.set_parallel(true)
+	faceoff.tween_property(cam, "position", camera_home, 1.0)
+	faceoff.tween_property(cam, "fov", camera_fov, 1.0)
 	in_intro = false
 
 
@@ -252,7 +271,8 @@ func _process(delta: float) -> void:
 	if not in_intro:
 		a.cmd_move(touch_move)
 		a.cmd_block(touch_block)
-	_update_camera(delta)
+	if not in_intro:
+		_update_camera(delta)
 
 
 # ---------------- cámara ----------------
