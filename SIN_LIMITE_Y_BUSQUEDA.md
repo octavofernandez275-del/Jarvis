@@ -95,3 +95,10 @@ No se pudo compilar aquí (sin Kotlin/Android SDK). Ejecuta el workflow *Compila
 - Memoria: respaldo automático (getExternalFilesDir/memoria_respaldo.txt); comandos «respalda la memoria» (comparte el texto) y «restaura la memoria» (desde el portapapeles).
 - Boxeo: cuerdas del ring como nodos animados: vibran cuando un empujón lanza a un boxeador contra ellas o en las caídas cerca de las cuerdas.
 - Modelo de lenguaje elegible: «usa modelo pequeno/mediano/grande» (Qwen3.5 2B / Qwen3 4B / Qwen3 8B) o «usa modelo https://…gguf»; «qué modelos hay» lista tamaños y RAM; si la descarga falla vuelve al pequeño; el contexto se limita con modelos grandes.
+
+## Boxeo en 2D con todos los recursos de arte
+- `boxeo/ART/`: 33 retratos, 26 sprites de cuerpo entero, 32 fondos de arena, 16 efectos (mezcla aditiva), cinturones, guantes, pantalones, botas, trofeo, logo y VS (extraídos con `tools/extract_art.py`).
+- Plantel de 33 boxeadores con retrato y sprite, y 32 arenas con fondo propio (`tools/build_roster.py`).
+- `SCRIPTS/stage2d.gd`: combate de lado; los muñecos siguen los huesos del esqueleto (misma lógica, IA y animaciones), cara del retrato, ring con cuerdas que vibran, banquetas en el descanso, efectos de impacto, confeti y flashes. Botón de cámara = zoom. `MODO_2D := false` en `main.gd` vuelve al 3D.
+- `SCRIPTS/vs_screen.gd` pantalla VS; menú con logo y sprites, selección con retratos, arenas con miniaturas, Vestuario (guantes/pantalón/botas), HUD con retratos, resultado con ganador y trofeo, cinturones en la carrera.
+- Sin probar en Godot: solo validado el formato de datos y los recursos.

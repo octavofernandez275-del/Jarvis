@@ -108,7 +108,9 @@
     "behind",
     "corner"
    ],
-   "notes": "Combates de debut y sparring."
+   "notes": "Combates de debut y sparring.",
+   "backdrop": "res://ART/backdrops/s7_gym_train.jpg",
+   "accent": "#0f6ced"
   },
   {
    "id": "gym_pro",
@@ -205,7 +207,9 @@
     "behind",
     "corner"
    ],
-   "notes": "Zona de entrenamiento del modo carrera."
+   "notes": "Zona de entrenamiento del modo carrera.",
+   "backdrop": "res://ART/backdrops/s7_club.jpg",
+   "accent": "#f51b0b"
   },
   {
    "id": "arena_city",
@@ -247,7 +251,9 @@
     "corner",
     "ringside"
    ],
-   "notes": "Peleas regionales y eliminatorias."
+   "notes": "Peleas regionales y eliminatorias.",
+   "backdrop": "res://ART/backdrops/s1_pro.jpg",
+   "accent": "#0859fa"
   },
   {
    "id": "arena_international",
@@ -290,7 +296,9 @@
     "ringside",
     "overhead"
    ],
-   "notes": "Peleas de título mundial."
+   "notes": "Peleas de título mundial.",
+   "backdrop": "res://ART/backdrops/s1_coliseo.jpg",
+   "accent": "#f60f11"
   },
   {
    "id": "stadium",
@@ -334,7 +342,9 @@
     "ringside",
     "overhead"
    ],
-   "notes": "Evento especial de campeonato (máximo público)."
+   "notes": "Evento especial de campeonato (máximo público).",
+   "backdrop": "res://ART/backdrops/s1_estadio.jpg",
+   "accent": "#094ff6"
   },
   {
    "id": "locker_room",
@@ -378,7 +388,9 @@
    "cameras": [
     "behind"
    ],
-   "notes": "Previa del combate y vendaje."
+   "notes": "Previa del combate y vendaje.",
+   "backdrop": "res://ART/backdrops/locker.jpg",
+   "accent": "#c40905"
   },
   {
    "id": "entry_tunnel",
@@ -416,7 +428,1561 @@
    "cameras": [
     "behind"
    ],
-   "notes": "Caminata de entrada al ring."
+   "notes": "Caminata de entrada al ring.",
+   "backdrop": "res://ART/backdrops/tunnel.jpg",
+   "accent": "#fc061a"
+  },
+  {
+   "id": "bg_s1_callejero",
+   "name": "Callejón clandestino",
+   "kind": "gym",
+   "size": [
+    24,
+    20,
+    7
+   ],
+   "floor": "#2f3a42",
+   "wall": "#47535c",
+   "ambient": "#d4e2f2",
+   "ambient_energy": 1.0,
+   "light_color": "#ffffff",
+   "spot_count": 4,
+   "spot_energy": 2.5,
+   "crowd": {
+    "tiers": 0,
+    "density": 0.0,
+    "palette": [
+     "#c62828",
+     "#1565c0",
+     "#f9a825",
+     "#2e7d32",
+     "#eeeeee",
+     "#6a1b9a"
+    ],
+    "excitement": 0.5
+   },
+   "props": {
+    "heavy_bags": [
+     [
+      -9,
+      0,
+      -6
+     ],
+     [
+      -9,
+      0,
+      -3
+     ],
+     [
+      -9,
+      0,
+      0
+     ],
+     [
+      -9,
+      0,
+      3
+     ]
+    ],
+    "speed_bags": [
+     [
+      9,
+      0,
+      -6
+     ],
+     [
+      9,
+      0,
+      -3
+     ]
+    ],
+    "barbells": [
+     [
+      8,
+      0,
+      4
+     ],
+     [
+      8,
+      0,
+      6
+     ]
+    ],
+    "benches": [
+     [
+      6,
+      0,
+      6
+     ],
+     [
+      10,
+      0,
+      6
+     ]
+    ]
+   },
+   "ambience": "AUDIO/gym_ambience_loop.wav",
+   "cameras": [
+    "broadcast",
+    "behind",
+    "corner"
+   ],
+   "notes": "Combate de calle, sin focos.",
+   "backdrop": "res://ART/backdrops/s1_callejero.jpg",
+   "accent": "#ce0707"
+  },
+  {
+   "id": "bg_s1_gimnasio",
+   "name": "Gimnasio clásico",
+   "kind": "gym",
+   "size": [
+    24,
+    20,
+    7
+   ],
+   "floor": "#2f3a42",
+   "wall": "#47535c",
+   "ambient": "#d4e2f2",
+   "ambient_energy": 1.0,
+   "light_color": "#ffffff",
+   "spot_count": 4,
+   "spot_energy": 2.5,
+   "crowd": {
+    "tiers": 0,
+    "density": 0.0,
+    "palette": [
+     "#c62828",
+     "#1565c0",
+     "#f9a825",
+     "#2e7d32",
+     "#eeeeee",
+     "#6a1b9a"
+    ],
+    "excitement": 0.5
+   },
+   "props": {
+    "heavy_bags": [
+     [
+      -9,
+      0,
+      -6
+     ],
+     [
+      -9,
+      0,
+      -3
+     ],
+     [
+      -9,
+      0,
+      0
+     ],
+     [
+      -9,
+      0,
+      3
+     ]
+    ],
+    "speed_bags": [
+     [
+      9,
+      0,
+      -6
+     ],
+     [
+      9,
+      0,
+      -3
+     ]
+    ],
+    "barbells": [
+     [
+      8,
+      0,
+      4
+     ],
+     [
+      8,
+      0,
+      6
+     ]
+    ],
+    "benches": [
+     [
+      6,
+      0,
+      6
+     ],
+     [
+      10,
+      0,
+      6
+     ]
+    ]
+   },
+   "ambience": "AUDIO/gym_ambience_loop.wav",
+   "cameras": [
+    "broadcast",
+    "behind",
+    "corner"
+   ],
+   "notes": "Cuerdas viejas y sudor.",
+   "backdrop": "res://ART/backdrops/s1_gimnasio.jpg",
+   "accent": "#df181a"
+  },
+  {
+   "id": "bg_s1_lujo",
+   "name": "Salón de lujo",
+   "kind": "arena",
+   "size": [
+    40,
+    36,
+    14
+   ],
+   "floor": "#15171c",
+   "wall": "#1c1f28",
+   "ambient": "#4c5a80",
+   "ambient_energy": 0.55,
+   "light_color": "#ffffff",
+   "spot_count": 6,
+   "spot_energy": 5.0,
+   "crowd": {
+    "tiers": 3,
+    "density": 0.75,
+    "palette": [
+     "#c62828",
+     "#1565c0",
+     "#f9a825",
+     "#2e7d32",
+     "#eeeeee",
+     "#6a1b9a"
+    ],
+    "excitement": 0.6
+   },
+   "props": {
+    "truss": true,
+    "scoreboard": true
+   },
+   "ambience": "AUDIO/crowd_loop.wav",
+   "cameras": [
+    "broadcast",
+    "behind",
+    "corner",
+    "ringside"
+   ],
+   "notes": "Velada de gala.",
+   "backdrop": "res://ART/backdrops/s1_lujo.jpg",
+   "accent": "#ffd93c"
+  },
+  {
+   "id": "bg_s1_desierto",
+   "name": "Arena del desierto",
+   "kind": "stadium",
+   "size": [
+    110,
+    90,
+    30
+   ],
+   "floor": "#1b2b1b",
+   "wall": "#222222",
+   "ambient": "#6f86b3",
+   "ambient_energy": 0.7,
+   "light_color": "#fff3d1",
+   "spot_count": 8,
+   "spot_energy": 9.0,
+   "crowd": {
+    "tiers": 8,
+    "density": 1.0,
+    "palette": [
+     "#c62828",
+     "#1565c0",
+     "#f9a825",
+     "#2e7d32",
+     "#eeeeee",
+     "#6a1b9a"
+    ],
+    "excitement": 1.0
+   },
+   "props": {
+    "truss": true,
+    "scoreboard": true,
+    "night": true
+   },
+   "ambience": "AUDIO/crowd_loop.wav",
+   "cameras": [
+    "broadcast",
+    "behind",
+    "corner",
+    "ringside",
+    "overhead"
+   ],
+   "notes": "Calor, polvo y viento.",
+   "backdrop": "res://ART/backdrops/s1_desierto.jpg",
+   "accent": "#417be6"
+  },
+  {
+   "id": "bg_s1_azotea",
+   "name": "Azotea al atardecer",
+   "kind": "gym",
+   "size": [
+    24,
+    20,
+    7
+   ],
+   "floor": "#2f3a42",
+   "wall": "#47535c",
+   "ambient": "#d4e2f2",
+   "ambient_energy": 1.0,
+   "light_color": "#ffffff",
+   "spot_count": 4,
+   "spot_energy": 2.5,
+   "crowd": {
+    "tiers": 0,
+    "density": 0.0,
+    "palette": [
+     "#c62828",
+     "#1565c0",
+     "#f9a825",
+     "#2e7d32",
+     "#eeeeee",
+     "#6a1b9a"
+    ],
+    "excitement": 0.5
+   },
+   "props": {
+    "heavy_bags": [
+     [
+      -9,
+      0,
+      -6
+     ],
+     [
+      -9,
+      0,
+      -3
+     ],
+     [
+      -9,
+      0,
+      0
+     ],
+     [
+      -9,
+      0,
+      3
+     ]
+    ],
+    "speed_bags": [
+     [
+      9,
+      0,
+      -6
+     ],
+     [
+      9,
+      0,
+      -3
+     ]
+    ],
+    "barbells": [
+     [
+      8,
+      0,
+      4
+     ],
+     [
+      8,
+      0,
+      6
+     ]
+    ],
+    "benches": [
+     [
+      6,
+      0,
+      6
+     ],
+     [
+      10,
+      0,
+      6
+     ]
+    ]
+   },
+   "ambience": "AUDIO/gym_ambience_loop.wav",
+   "cameras": [
+    "broadcast",
+    "behind",
+    "corner"
+   ],
+   "notes": "Ring sobre la ciudad.",
+   "backdrop": "res://ART/backdrops/s1_azotea.jpg",
+   "accent": "#e49023"
+  },
+  {
+   "id": "bg_s1_neon",
+   "name": "Club de neón",
+   "kind": "arena",
+   "size": [
+    40,
+    36,
+    14
+   ],
+   "floor": "#15171c",
+   "wall": "#1c1f28",
+   "ambient": "#4c5a80",
+   "ambient_energy": 0.55,
+   "light_color": "#ffffff",
+   "spot_count": 6,
+   "spot_energy": 5.0,
+   "crowd": {
+    "tiers": 3,
+    "density": 0.75,
+    "palette": [
+     "#c62828",
+     "#1565c0",
+     "#f9a825",
+     "#2e7d32",
+     "#eeeeee",
+     "#6a1b9a"
+    ],
+    "excitement": 0.6
+   },
+   "props": {
+    "truss": true,
+    "scoreboard": true
+   },
+   "ambience": "AUDIO/crowd_loop.wav",
+   "cameras": [
+    "broadcast",
+    "behind",
+    "corner",
+    "ringside"
+   ],
+   "notes": "Luces violetas y música alta.",
+   "backdrop": "res://ART/backdrops/s1_neon.jpg",
+   "accent": "#5c09ed"
+  },
+  {
+   "id": "bg_s1_templo",
+   "name": "Templo dorado",
+   "kind": "arena",
+   "size": [
+    40,
+    36,
+    14
+   ],
+   "floor": "#15171c",
+   "wall": "#1c1f28",
+   "ambient": "#4c5a80",
+   "ambient_energy": 0.55,
+   "light_color": "#ffffff",
+   "spot_count": 6,
+   "spot_energy": 5.0,
+   "crowd": {
+    "tiers": 3,
+    "density": 0.75,
+    "palette": [
+     "#c62828",
+     "#1565c0",
+     "#f9a825",
+     "#2e7d32",
+     "#eeeeee",
+     "#6a1b9a"
+    ],
+    "excitement": 0.6
+   },
+   "props": {
+    "truss": true,
+    "scoreboard": true
+   },
+   "ambience": "AUDIO/crowd_loop.wav",
+   "cameras": [
+    "broadcast",
+    "behind",
+    "corner",
+    "ringside"
+   ],
+   "notes": "Silencio antes del combate.",
+   "backdrop": "res://ART/backdrops/s1_templo.jpg",
+   "accent": "#fab709"
+  },
+  {
+   "id": "bg_s7_madison",
+   "name": "Gran garden",
+   "kind": "stadium",
+   "size": [
+    110,
+    90,
+    30
+   ],
+   "floor": "#1b2b1b",
+   "wall": "#222222",
+   "ambient": "#6f86b3",
+   "ambient_energy": 0.7,
+   "light_color": "#fff3d1",
+   "spot_count": 8,
+   "spot_energy": 9.0,
+   "crowd": {
+    "tiers": 8,
+    "density": 1.0,
+    "palette": [
+     "#c62828",
+     "#1565c0",
+     "#f9a825",
+     "#2e7d32",
+     "#eeeeee",
+     "#6a1b9a"
+    ],
+    "excitement": 1.0
+   },
+   "props": {
+    "truss": true,
+    "scoreboard": true,
+    "night": true
+   },
+   "ambience": "AUDIO/crowd_loop.wav",
+   "cameras": [
+    "broadcast",
+    "behind",
+    "corner",
+    "ringside",
+    "overhead"
+   ],
+   "notes": "El escenario más famoso.",
+   "backdrop": "res://ART/backdrops/s7_madison.jpg",
+   "accent": "#0763fd"
+  },
+  {
+   "id": "bg_s7_vegas",
+   "name": "Noche de Las Vegas",
+   "kind": "arena",
+   "size": [
+    40,
+    36,
+    14
+   ],
+   "floor": "#15171c",
+   "wall": "#1c1f28",
+   "ambient": "#4c5a80",
+   "ambient_energy": 0.55,
+   "light_color": "#ffffff",
+   "spot_count": 6,
+   "spot_energy": 5.0,
+   "crowd": {
+    "tiers": 3,
+    "density": 0.75,
+    "palette": [
+     "#c62828",
+     "#1565c0",
+     "#f9a825",
+     "#2e7d32",
+     "#eeeeee",
+     "#6a1b9a"
+    ],
+    "excitement": 0.6
+   },
+   "props": {
+    "truss": true,
+    "scoreboard": true
+   },
+   "ambience": "AUDIO/crowd_loop.wav",
+   "cameras": [
+    "broadcast",
+    "behind",
+    "corner",
+    "ringside"
+   ],
+   "notes": "Casino, luces y apuestas.",
+   "backdrop": "res://ART/backdrops/s7_vegas.jpg",
+   "accent": "#1654e6"
+  },
+  {
+   "id": "bg_s7_mundial",
+   "name": "Final mundial",
+   "kind": "stadium",
+   "size": [
+    110,
+    90,
+    30
+   ],
+   "floor": "#1b2b1b",
+   "wall": "#222222",
+   "ambient": "#6f86b3",
+   "ambient_energy": 0.7,
+   "light_color": "#fff3d1",
+   "spot_count": 8,
+   "spot_energy": 9.0,
+   "crowd": {
+    "tiers": 8,
+    "density": 1.0,
+    "palette": [
+     "#c62828",
+     "#1565c0",
+     "#f9a825",
+     "#2e7d32",
+     "#eeeeee",
+     "#6a1b9a"
+    ],
+    "excitement": 1.0
+   },
+   "props": {
+    "truss": true,
+    "scoreboard": true,
+    "night": true
+   },
+   "ambience": "AUDIO/crowd_loop.wav",
+   "cameras": [
+    "broadcast",
+    "behind",
+    "corner",
+    "ringside",
+    "overhead"
+   ],
+   "notes": "Título del mundo en juego.",
+   "backdrop": "res://ART/backdrops/s7_mundial.jpg",
+   "accent": "#0271ef"
+  },
+  {
+   "id": "bg_s7_urbana",
+   "name": "Pista urbana",
+   "kind": "gym",
+   "size": [
+    24,
+    20,
+    7
+   ],
+   "floor": "#2f3a42",
+   "wall": "#47535c",
+   "ambient": "#d4e2f2",
+   "ambient_energy": 1.0,
+   "light_color": "#ffffff",
+   "spot_count": 4,
+   "spot_energy": 2.5,
+   "crowd": {
+    "tiers": 0,
+    "density": 0.0,
+    "palette": [
+     "#c62828",
+     "#1565c0",
+     "#f9a825",
+     "#2e7d32",
+     "#eeeeee",
+     "#6a1b9a"
+    ],
+    "excitement": 0.5
+   },
+   "props": {
+    "heavy_bags": [
+     [
+      -9,
+      0,
+      -6
+     ],
+     [
+      -9,
+      0,
+      -3
+     ],
+     [
+      -9,
+      0,
+      0
+     ],
+     [
+      -9,
+      0,
+      3
+     ]
+    ],
+    "speed_bags": [
+     [
+      9,
+      0,
+      -6
+     ],
+     [
+      9,
+      0,
+      -3
+     ]
+    ],
+    "barbells": [
+     [
+      8,
+      0,
+      4
+     ],
+     [
+      8,
+      0,
+      6
+     ]
+    ],
+    "benches": [
+     [
+      6,
+      0,
+      6
+     ],
+     [
+      10,
+      0,
+      6
+     ]
+    ]
+   },
+   "ambience": "AUDIO/gym_ambience_loop.wav",
+   "cameras": [
+    "broadcast",
+    "behind",
+    "corner"
+   ],
+   "notes": "Cemento y grafiti.",
+   "backdrop": "res://ART/backdrops/s7_urbana.jpg",
+   "accent": "#0254ed"
+  },
+  {
+   "id": "bg_s7_nocturno",
+   "name": "Estadio nocturno",
+   "kind": "stadium",
+   "size": [
+    110,
+    90,
+    30
+   ],
+   "floor": "#1b2b1b",
+   "wall": "#222222",
+   "ambient": "#6f86b3",
+   "ambient_energy": 0.7,
+   "light_color": "#fff3d1",
+   "spot_count": 8,
+   "spot_energy": 9.0,
+   "crowd": {
+    "tiers": 8,
+    "density": 1.0,
+    "palette": [
+     "#c62828",
+     "#1565c0",
+     "#f9a825",
+     "#2e7d32",
+     "#eeeeee",
+     "#6a1b9a"
+    ],
+    "excitement": 1.0
+   },
+   "props": {
+    "truss": true,
+    "scoreboard": true,
+    "night": true
+   },
+   "ambience": "AUDIO/crowd_loop.wav",
+   "cameras": [
+    "broadcast",
+    "behind",
+    "corner",
+    "ringside",
+    "overhead"
+   ],
+   "notes": "Reflectores bajo la lluvia.",
+   "backdrop": "res://ART/backdrops/s7_nocturno.jpg",
+   "accent": "#004ef4"
+  },
+  {
+   "id": "bg_s7_coliseo_lucha",
+   "name": "Coliseo de lucha",
+   "kind": "stadium",
+   "size": [
+    110,
+    90,
+    30
+   ],
+   "floor": "#1b2b1b",
+   "wall": "#222222",
+   "ambient": "#6f86b3",
+   "ambient_energy": 0.7,
+   "light_color": "#fff3d1",
+   "spot_count": 8,
+   "spot_energy": 9.0,
+   "crowd": {
+    "tiers": 8,
+    "density": 1.0,
+    "palette": [
+     "#c62828",
+     "#1565c0",
+     "#f9a825",
+     "#2e7d32",
+     "#eeeeee",
+     "#6a1b9a"
+    ],
+    "excitement": 1.0
+   },
+   "props": {
+    "truss": true,
+    "scoreboard": true,
+    "night": true
+   },
+   "ambience": "AUDIO/crowd_loop.wav",
+   "cameras": [
+    "broadcast",
+    "behind",
+    "corner",
+    "ringside",
+    "overhead"
+   ],
+   "notes": "Gladiadores modernos.",
+   "backdrop": "res://ART/backdrops/s7_coliseo_lucha.jpg",
+   "accent": "#a2301c"
+  },
+  {
+   "id": "bg_s7_playa",
+   "name": "Ring en la playa",
+   "kind": "gym",
+   "size": [
+    24,
+    20,
+    7
+   ],
+   "floor": "#2f3a42",
+   "wall": "#47535c",
+   "ambient": "#d4e2f2",
+   "ambient_energy": 1.0,
+   "light_color": "#ffffff",
+   "spot_count": 4,
+   "spot_energy": 2.5,
+   "crowd": {
+    "tiers": 0,
+    "density": 0.0,
+    "palette": [
+     "#c62828",
+     "#1565c0",
+     "#f9a825",
+     "#2e7d32",
+     "#eeeeee",
+     "#6a1b9a"
+    ],
+    "excitement": 0.5
+   },
+   "props": {
+    "heavy_bags": [
+     [
+      -9,
+      0,
+      -6
+     ],
+     [
+      -9,
+      0,
+      -3
+     ],
+     [
+      -9,
+      0,
+      0
+     ],
+     [
+      -9,
+      0,
+      3
+     ]
+    ],
+    "speed_bags": [
+     [
+      9,
+      0,
+      -6
+     ],
+     [
+      9,
+      0,
+      -3
+     ]
+    ],
+    "barbells": [
+     [
+      8,
+      0,
+      4
+     ],
+     [
+      8,
+      0,
+      6
+     ]
+    ],
+    "benches": [
+     [
+      6,
+      0,
+      6
+     ],
+     [
+      10,
+      0,
+      6
+     ]
+    ]
+   },
+   "ambience": "AUDIO/gym_ambience_loop.wav",
+   "cameras": [
+    "broadcast",
+    "behind",
+    "corner"
+   ],
+   "notes": "Arena, sol y olas.",
+   "backdrop": "res://ART/backdrops/s7_playa.jpg",
+   "accent": "#0098f1"
+  },
+  {
+   "id": "bg_s7_mega",
+   "name": "Mega arena",
+   "kind": "stadium",
+   "size": [
+    110,
+    90,
+    30
+   ],
+   "floor": "#1b2b1b",
+   "wall": "#222222",
+   "ambient": "#6f86b3",
+   "ambient_energy": 0.7,
+   "light_color": "#fff3d1",
+   "spot_count": 8,
+   "spot_energy": 9.0,
+   "crowd": {
+    "tiers": 8,
+    "density": 1.0,
+    "palette": [
+     "#c62828",
+     "#1565c0",
+     "#f9a825",
+     "#2e7d32",
+     "#eeeeee",
+     "#6a1b9a"
+    ],
+    "excitement": 1.0
+   },
+   "props": {
+    "truss": true,
+    "scoreboard": true,
+    "night": true
+   },
+   "ambience": "AUDIO/crowd_loop.wav",
+   "cameras": [
+    "broadcast",
+    "behind",
+    "corner",
+    "ringside",
+    "overhead"
+   ],
+   "notes": "Cincuenta mil gargantas.",
+   "backdrop": "res://ART/backdrops/s7_mega.jpg",
+   "accent": "#0169f6"
+  },
+  {
+   "id": "bg_s7_extrema",
+   "name": "Arena extrema",
+   "kind": "arena",
+   "size": [
+    40,
+    36,
+    14
+   ],
+   "floor": "#15171c",
+   "wall": "#1c1f28",
+   "ambient": "#4c5a80",
+   "ambient_energy": 0.55,
+   "light_color": "#ffffff",
+   "spot_count": 6,
+   "spot_energy": 5.0,
+   "crowd": {
+    "tiers": 3,
+    "density": 0.75,
+    "palette": [
+     "#c62828",
+     "#1565c0",
+     "#f9a825",
+     "#2e7d32",
+     "#eeeeee",
+     "#6a1b9a"
+    ],
+    "excitement": 0.6
+   },
+   "props": {
+    "truss": true,
+    "scoreboard": true
+   },
+   "ambience": "AUDIO/crowd_loop.wav",
+   "cameras": [
+    "broadcast",
+    "behind",
+    "corner",
+    "ringside"
+   ],
+   "notes": "Fuego y pirotecnia.",
+   "backdrop": "res://ART/backdrops/s7_extrema.jpg",
+   "accent": "#0651e7"
+  },
+  {
+   "id": "bg_s7_ring_pro",
+   "name": "Ring profesional",
+   "kind": "arena",
+   "size": [
+    40,
+    36,
+    14
+   ],
+   "floor": "#15171c",
+   "wall": "#1c1f28",
+   "ambient": "#4c5a80",
+   "ambient_energy": 0.55,
+   "light_color": "#ffffff",
+   "spot_count": 6,
+   "spot_energy": 5.0,
+   "crowd": {
+    "tiers": 3,
+    "density": 0.75,
+    "palette": [
+     "#c62828",
+     "#1565c0",
+     "#f9a825",
+     "#2e7d32",
+     "#eeeeee",
+     "#6a1b9a"
+    ],
+    "excitement": 0.6
+   },
+   "props": {
+    "truss": true,
+    "scoreboard": true
+   },
+   "ambience": "AUDIO/crowd_loop.wav",
+   "cameras": [
+    "broadcast",
+    "behind",
+    "corner",
+    "ringside"
+   ],
+   "notes": "Luz cenital y silencio.",
+   "backdrop": "res://ART/backdrops/s7_ring_pro.jpg",
+   "accent": "#007cfd"
+  },
+  {
+   "id": "bg_crowd_blue",
+   "name": "Pabellón azul",
+   "kind": "arena",
+   "size": [
+    40,
+    36,
+    14
+   ],
+   "floor": "#15171c",
+   "wall": "#1c1f28",
+   "ambient": "#4c5a80",
+   "ambient_energy": 0.55,
+   "light_color": "#ffffff",
+   "spot_count": 6,
+   "spot_energy": 5.0,
+   "crowd": {
+    "tiers": 3,
+    "density": 0.75,
+    "palette": [
+     "#c62828",
+     "#1565c0",
+     "#f9a825",
+     "#2e7d32",
+     "#eeeeee",
+     "#6a1b9a"
+    ],
+    "excitement": 0.6
+   },
+   "props": {
+    "truss": true,
+    "scoreboard": true
+   },
+   "ambience": "AUDIO/crowd_loop.wav",
+   "cameras": [
+    "broadcast",
+    "behind",
+    "corner",
+    "ringside"
+   ],
+   "notes": "Gradas azules.",
+   "backdrop": "res://ART/backdrops/crowd_blue.jpg",
+   "accent": "#0081ff"
+  },
+  {
+   "id": "bg_crowd_screen",
+   "name": "Pabellón con pantalla",
+   "kind": "arena",
+   "size": [
+    40,
+    36,
+    14
+   ],
+   "floor": "#15171c",
+   "wall": "#1c1f28",
+   "ambient": "#4c5a80",
+   "ambient_energy": 0.55,
+   "light_color": "#ffffff",
+   "spot_count": 6,
+   "spot_energy": 5.0,
+   "crowd": {
+    "tiers": 3,
+    "density": 0.75,
+    "palette": [
+     "#c62828",
+     "#1565c0",
+     "#f9a825",
+     "#2e7d32",
+     "#eeeeee",
+     "#6a1b9a"
+    ],
+    "excitement": 0.6
+   },
+   "props": {
+    "truss": true,
+    "scoreboard": true
+   },
+   "ambience": "AUDIO/crowd_loop.wav",
+   "cameras": [
+    "broadcast",
+    "behind",
+    "corner",
+    "ringside"
+   ],
+   "notes": "Videomarcador gigante.",
+   "backdrop": "res://ART/backdrops/crowd_screen.jpg",
+   "accent": "#126bf4"
+  },
+  {
+   "id": "bg_gym_bags",
+   "name": "Gimnasio de sacos",
+   "kind": "gym",
+   "size": [
+    24,
+    20,
+    7
+   ],
+   "floor": "#2f3a42",
+   "wall": "#47535c",
+   "ambient": "#d4e2f2",
+   "ambient_energy": 1.0,
+   "light_color": "#ffffff",
+   "spot_count": 4,
+   "spot_energy": 2.5,
+   "crowd": {
+    "tiers": 0,
+    "density": 0.0,
+    "palette": [
+     "#c62828",
+     "#1565c0",
+     "#f9a825",
+     "#2e7d32",
+     "#eeeeee",
+     "#6a1b9a"
+    ],
+    "excitement": 0.5
+   },
+   "props": {
+    "heavy_bags": [
+     [
+      -9,
+      0,
+      -6
+     ],
+     [
+      -9,
+      0,
+      -3
+     ],
+     [
+      -9,
+      0,
+      0
+     ],
+     [
+      -9,
+      0,
+      3
+     ]
+    ],
+    "speed_bags": [
+     [
+      9,
+      0,
+      -6
+     ],
+     [
+      9,
+      0,
+      -3
+     ]
+    ],
+    "barbells": [
+     [
+      8,
+      0,
+      4
+     ],
+     [
+      8,
+      0,
+      6
+     ]
+    ],
+    "benches": [
+     [
+      6,
+      0,
+      6
+     ],
+     [
+      10,
+      0,
+      6
+     ]
+    ]
+   },
+   "ambience": "AUDIO/gym_ambience_loop.wav",
+   "cameras": [
+    "broadcast",
+    "behind",
+    "corner"
+   ],
+   "notes": "Sacos de entrenamiento.",
+   "backdrop": "res://ART/backdrops/gym_bags.jpg",
+   "accent": "#970000"
+  },
+  {
+   "id": "bg_gym_posters",
+   "name": "Gimnasio de carteles",
+   "kind": "gym",
+   "size": [
+    24,
+    20,
+    7
+   ],
+   "floor": "#2f3a42",
+   "wall": "#47535c",
+   "ambient": "#d4e2f2",
+   "ambient_energy": 1.0,
+   "light_color": "#ffffff",
+   "spot_count": 4,
+   "spot_energy": 2.5,
+   "crowd": {
+    "tiers": 0,
+    "density": 0.0,
+    "palette": [
+     "#c62828",
+     "#1565c0",
+     "#f9a825",
+     "#2e7d32",
+     "#eeeeee",
+     "#6a1b9a"
+    ],
+    "excitement": 0.5
+   },
+   "props": {
+    "heavy_bags": [
+     [
+      -9,
+      0,
+      -6
+     ],
+     [
+      -9,
+      0,
+      -3
+     ],
+     [
+      -9,
+      0,
+      0
+     ],
+     [
+      -9,
+      0,
+      3
+     ]
+    ],
+    "speed_bags": [
+     [
+      9,
+      0,
+      -6
+     ],
+     [
+      9,
+      0,
+      -3
+     ]
+    ],
+    "barbells": [
+     [
+      8,
+      0,
+      4
+     ],
+     [
+      8,
+      0,
+      6
+     ]
+    ],
+    "benches": [
+     [
+      6,
+      0,
+      6
+     ],
+     [
+      10,
+      0,
+      6
+     ]
+    ]
+   },
+   "ambience": "AUDIO/gym_ambience_loop.wav",
+   "cameras": [
+    "broadcast",
+    "behind",
+    "corner"
+   ],
+   "notes": "Paredes llenas de leyendas.",
+   "backdrop": "res://ART/backdrops/gym_posters.jpg",
+   "accent": "#e15822"
+  },
+  {
+   "id": "bg_rooftop_sunset",
+   "name": "Terraza del puerto",
+   "kind": "gym",
+   "size": [
+    24,
+    20,
+    7
+   ],
+   "floor": "#2f3a42",
+   "wall": "#47535c",
+   "ambient": "#d4e2f2",
+   "ambient_energy": 1.0,
+   "light_color": "#ffffff",
+   "spot_count": 4,
+   "spot_energy": 2.5,
+   "crowd": {
+    "tiers": 0,
+    "density": 0.0,
+    "palette": [
+     "#c62828",
+     "#1565c0",
+     "#f9a825",
+     "#2e7d32",
+     "#eeeeee",
+     "#6a1b9a"
+    ],
+    "excitement": 0.5
+   },
+   "props": {
+    "heavy_bags": [
+     [
+      -9,
+      0,
+      -6
+     ],
+     [
+      -9,
+      0,
+      -3
+     ],
+     [
+      -9,
+      0,
+      0
+     ],
+     [
+      -9,
+      0,
+      3
+     ]
+    ],
+    "speed_bags": [
+     [
+      9,
+      0,
+      -6
+     ],
+     [
+      9,
+      0,
+      -3
+     ]
+    ],
+    "barbells": [
+     [
+      8,
+      0,
+      4
+     ],
+     [
+      8,
+      0,
+      6
+     ]
+    ],
+    "benches": [
+     [
+      6,
+      0,
+      6
+     ],
+     [
+      10,
+      0,
+      6
+     ]
+    ]
+   },
+   "ambience": "AUDIO/gym_ambience_loop.wav",
+   "cameras": [
+    "broadcast",
+    "behind",
+    "corner"
+   ],
+   "notes": "Brisa y luces del puerto.",
+   "backdrop": "res://ART/backdrops/rooftop_sunset.jpg",
+   "accent": "#0a42da"
+  },
+  {
+   "id": "bg_arena_red_stage",
+   "name": "Escenario rojo",
+   "kind": "arena",
+   "size": [
+    40,
+    36,
+    14
+   ],
+   "floor": "#15171c",
+   "wall": "#1c1f28",
+   "ambient": "#4c5a80",
+   "ambient_energy": 0.55,
+   "light_color": "#ffffff",
+   "spot_count": 6,
+   "spot_energy": 5.0,
+   "crowd": {
+    "tiers": 3,
+    "density": 0.75,
+    "palette": [
+     "#c62828",
+     "#1565c0",
+     "#f9a825",
+     "#2e7d32",
+     "#eeeeee",
+     "#6a1b9a"
+    ],
+    "excitement": 0.6
+   },
+   "props": {
+    "truss": true,
+    "scoreboard": true
+   },
+   "ambience": "AUDIO/crowd_loop.wav",
+   "cameras": [
+    "broadcast",
+    "behind",
+    "corner",
+    "ringside"
+   ],
+   "notes": "Foco rojo sobre el cuadrilátero.",
+   "backdrop": "res://ART/backdrops/arena_red_stage.jpg",
+   "accent": "#f9102b"
+  },
+  {
+   "id": "bg_arena_podium",
+   "name": "Gran podio",
+   "kind": "arena",
+   "size": [
+    40,
+    36,
+    14
+   ],
+   "floor": "#15171c",
+   "wall": "#1c1f28",
+   "ambient": "#4c5a80",
+   "ambient_energy": 0.55,
+   "light_color": "#ffffff",
+   "spot_count": 6,
+   "spot_energy": 5.0,
+   "crowd": {
+    "tiers": 3,
+    "density": 0.75,
+    "palette": [
+     "#c62828",
+     "#1565c0",
+     "#f9a825",
+     "#2e7d32",
+     "#eeeeee",
+     "#6a1b9a"
+    ],
+    "excitement": 0.6
+   },
+   "props": {
+    "truss": true,
+    "scoreboard": true
+   },
+   "ambience": "AUDIO/crowd_loop.wav",
+   "cameras": [
+    "broadcast",
+    "behind",
+    "corner",
+    "ringside"
+   ],
+   "notes": "Podio de campeones.",
+   "backdrop": "res://ART/backdrops/arena_podium.jpg",
+   "accent": "#1885fd"
+  },
+  {
+   "id": "bg_arena_dark_lights",
+   "name": "Arena en penumbra",
+   "kind": "arena",
+   "size": [
+    40,
+    36,
+    14
+   ],
+   "floor": "#15171c",
+   "wall": "#1c1f28",
+   "ambient": "#4c5a80",
+   "ambient_energy": 0.55,
+   "light_color": "#ffffff",
+   "spot_count": 6,
+   "spot_energy": 5.0,
+   "crowd": {
+    "tiers": 3,
+    "density": 0.75,
+    "palette": [
+     "#c62828",
+     "#1565c0",
+     "#f9a825",
+     "#2e7d32",
+     "#eeeeee",
+     "#6a1b9a"
+    ],
+    "excitement": 0.6
+   },
+   "props": {
+    "truss": true,
+    "scoreboard": true
+   },
+   "ambience": "AUDIO/crowd_loop.wav",
+   "cameras": [
+    "broadcast",
+    "behind",
+    "corner",
+    "ringside"
+   ],
+   "notes": "Luces tenues y humo.",
+   "backdrop": "res://ART/backdrops/arena_dark_lights.jpg",
+   "accent": "#5488b5"
   }
  ]
 }

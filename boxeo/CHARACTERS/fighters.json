@@ -1,5 +1,5 @@
 {
- "note": "Boxeadores FICTICIOS originales. No representan a ninguna persona real.",
+ "note": "33 boxeadores ficticios. portrait/sprite apuntan a ART/. Generado con tools/build_roster.py.",
  "fighters": [
   {
    "id": "tito_vargas",
@@ -24,9 +24,9 @@
     "ring_iq": 55
    },
    "look": {
-    "skin": "#b07a55",
+    "skin": "#ad714d",
     "hair": "#14100c",
-    "shorts": "#1f8a3c",
+    "shorts": "#12201d",
     "gloves": "#c62828",
     "shoes": "#111111"
    },
@@ -35,7 +35,10 @@
     "l": 2,
     "ko": 19
    },
-   "bio": "Peleador de ataque constante que busca el nocaut desde el primer round."
+   "bio": "Peleador de ataque constante que busca el nocaut desde el primer round.",
+   "portrait": "res://ART/portraits/p26.jpg",
+   "sprite": "res://ART/sprites/s10.png",
+   "female": false
   },
   {
    "id": "kai_morrow",
@@ -60,9 +63,9 @@
     "ring_iq": 80
    },
    "look": {
-    "skin": "#6b4630",
+    "skin": "#9c6347",
     "hair": "#0d0d0d",
-    "shorts": "#1d3f8f",
+    "shorts": "#04060a",
     "gloves": "#e0e0e0",
     "shoes": "#111111"
    },
@@ -71,7 +74,10 @@
     "l": 1,
     "ko": 14
    },
-   "bio": "Boxeador de manual: jab, distancia y precisión quirúrgica."
+   "bio": "Boxeador de manual: jab, distancia y precisión quirúrgica.",
+   "portrait": "res://ART/portraits/p14.jpg",
+   "sprite": "res://ART/sprites/s14.png",
+   "female": false
   },
   {
    "id": "domingo_reyes",
@@ -96,9 +102,9 @@
     "ring_iq": 84
    },
    "look": {
-    "skin": "#c08c64",
+    "skin": "#be7f5e",
     "hair": "#2a1a10",
-    "shorts": "#6fb7e8",
+    "shorts": "#011b8d",
     "gloves": "#ffffff",
     "shoes": "#111111"
    },
@@ -107,7 +113,10 @@
     "l": 4,
     "ko": 17
    },
-   "bio": "Zurdo escurridizo que castiga cada error del rival."
+   "bio": "Zurdo escurridizo que castiga cada error del rival.",
+   "portrait": "res://ART/portraits/p06.jpg",
+   "sprite": "res://ART/sprites/s24.png",
+   "female": false
   },
   {
    "id": "lev_zorin",
@@ -132,9 +141,9 @@
     "ring_iq": 92
    },
    "look": {
-    "skin": "#d6a98a",
+    "skin": "#bf846a",
     "hair": "#4a3a20",
-    "shorts": "#f2c200",
+    "shorts": "#35161a",
     "gloves": "#1f1f1f",
     "shoes": "#111111"
    },
@@ -143,7 +152,10 @@
     "l": 0,
     "ko": 15
    },
-   "bio": "Lee el combate como una partida y cambia de plan según el marcador."
+   "bio": "Lee el combate como una partida y cambia de plan según el marcador.",
+   "portrait": "res://ART/portraits/p09.jpg",
+   "sprite": "res://ART/sprites/s15.png",
+   "female": false
   },
   {
    "id": "abel_okonkwo",
@@ -168,9 +180,9 @@
     "ring_iq": 60
    },
    "look": {
-    "skin": "#3f2a1e",
+    "skin": "#a26347",
     "hair": "#000000",
-    "shorts": "#7a1fa2",
+    "shorts": "#091324",
     "gloves": "#f5f5f5",
     "shoes": "#111111"
    },
@@ -179,7 +191,10 @@
     "l": 3,
     "ko": 21
    },
-   "bio": "Aguanta lo imposible y responde con golpes de poder."
+   "bio": "Aguanta lo imposible y responde con golpes de poder.",
+   "portrait": "res://ART/portraits/p00.jpg",
+   "sprite": "res://ART/sprites/s11.png",
+   "female": false
   },
   {
    "id": "sora_tanaka",
@@ -204,9 +219,9 @@
     "ring_iq": 70
    },
    "look": {
-    "skin": "#d9ad8a",
+    "skin": "#c18469",
     "hair": "#0a0a0a",
-    "shorts": "#e53935",
+    "shorts": "#032345",
     "gloves": "#ffffff",
     "shoes": "#111111"
    },
@@ -215,7 +230,10 @@
     "l": 2,
     "ko": 6
    },
-   "bio": "Velocidad de manos y piernas fuera de serie."
+   "bio": "Velocidad de manos y piernas fuera de serie.",
+   "portrait": "res://ART/portraits/p29.jpg",
+   "sprite": "res://ART/sprites/s21.png",
+   "female": false
   },
   {
    "id": "mateo_brandt",
@@ -240,9 +258,9 @@
     "ring_iq": 78
    },
    "look": {
-    "skin": "#e0b89c",
+    "skin": "#c78a75",
     "hair": "#7a5a2a",
-    "shorts": "#222222",
+    "shorts": "#060a11",
     "gloves": "#d4af37",
     "shoes": "#111111"
    },
@@ -251,7 +269,10 @@
     "l": 2,
     "ko": 9
    },
-   "bio": "Guardia cerrada y paciencia: gana por puntos sin recibir."
+   "bio": "Guardia cerrada y paciencia: gana por puntos sin recibir.",
+   "portrait": "res://ART/portraits/p08.jpg",
+   "sprite": "res://ART/sprites/s19.png",
+   "female": false
   },
   {
    "id": "rafa_cortez",
@@ -276,9 +297,9 @@
     "ring_iq": 52
    },
    "look": {
-    "skin": "#9a6a48",
+    "skin": "#9c6752",
     "hair": "#1a0f08",
-    "shorts": "#f57c00",
+    "shorts": "#021d85",
     "gloves": "#212121",
     "shoes": "#111111"
    },
@@ -287,7 +308,10 @@
     "l": 3,
     "ko": 13
    },
-   "bio": "Presiona sin descanso hasta ahogar al rival."
+   "bio": "Presiona sin descanso hasta ahogar al rival.",
+   "portrait": "res://ART/portraits/p01.jpg",
+   "sprite": "res://ART/sprites/s07.png",
+   "female": false
   },
   {
    "id": "nico_haddad",
@@ -312,9 +336,9 @@
     "ring_iq": 58
    },
    "look": {
-    "skin": "#b98c68",
+    "skin": "#b27962",
     "hair": "#120c08",
-    "shorts": "#00897b",
+    "shorts": "#05080f",
     "gloves": "#fafafa",
     "shoes": "#111111"
    },
@@ -323,7 +347,10 @@
     "l": 1,
     "ko": 9
    },
-   "bio": "Motor inagotable: combina golpes al cuerpo y cabeza."
+   "bio": "Motor inagotable: combina golpes al cuerpo y cabeza.",
+   "portrait": "res://ART/portraits/p22.jpg",
+   "sprite": "res://ART/sprites/s18.png",
+   "female": false
   },
   {
    "id": "jonas_lindqvist",
@@ -348,9 +375,9 @@
     "ring_iq": 82
    },
    "look": {
-    "skin": "#e8c4a8",
+    "skin": "#c88974",
     "hair": "#c8a860",
-    "shorts": "#0d47a1",
+    "shorts": "#031c93",
     "gloves": "#ffffff",
     "shoes": "#111111"
    },
@@ -359,7 +386,10 @@
     "l": 2,
     "ko": 16
    },
-   "bio": "Alcance largo y combinaciones limpias."
+   "bio": "Alcance largo y combinaciones limpias.",
+   "portrait": "res://ART/portraits/p10.jpg",
+   "sprite": "res://ART/sprites/s16.png",
+   "female": false
   },
   {
    "id": "diego_salinas",
@@ -384,9 +414,9 @@
     "ring_iq": 74
    },
    "look": {
-    "skin": "#a77455",
+    "skin": "#a76e53",
     "hair": "#0f0a06",
-    "shorts": "#c62828",
+    "shorts": "#653c19",
     "gloves": "#ffd600",
     "shoes": "#111111"
    },
@@ -395,7 +425,10 @@
     "l": 1,
     "ko": 5
    },
-   "bio": "Pequeño y ágil, siempre espera el error para contraatacar."
+   "bio": "Pequeño y ágil, siempre espera el error para contraatacar.",
+   "portrait": "res://ART/portraits/p04.jpg",
+   "sprite": "res://ART/sprites/s13.png",
+   "female": false
   },
   {
    "id": "bruno_kessler",
@@ -420,9 +453,9 @@
     "ring_iq": 54
    },
    "look": {
-    "skin": "#dcb496",
+    "skin": "#c2826a",
     "hair": "#6b4a2a",
-    "shorts": "#37474f",
+    "shorts": "#900d0c",
     "gloves": "#b71c1c",
     "shoes": "#111111"
    },
@@ -431,7 +464,829 @@
     "l": 5,
     "ko": 26
    },
-   "bio": "Pegada devastadora y mandíbula de hierro, pero lento."
+   "bio": "Pegada devastadora y mandíbula de hierro, pero lento.",
+   "portrait": "res://ART/portraits/p13.jpg",
+   "sprite": "res://ART/sprites/s17.png",
+   "female": false
+  },
+  {
+   "id": "marco_valdes",
+   "name": "Marco Valdés",
+   "nickname": "El Martillo",
+   "country": "Argentina",
+   "weight_class": "crucero",
+   "height_cm": 188,
+   "weight_kg": 90,
+   "reach_cm": 191,
+   "age": 23,
+   "stance": "orthodox",
+   "ai_profile": "defensive",
+   "stats": {
+    "power": 50,
+    "speed": 61,
+    "stamina": 73,
+    "chin": 73,
+    "defense": 79,
+    "accuracy": 60,
+    "footwork": 78,
+    "ring_iq": 73
+   },
+   "look": {
+    "skin": "#b1745f",
+    "hair": "#241720",
+    "shoes": "#111111",
+    "shorts": "#3d0b0e",
+    "gloves": "#1c1c1c"
+   },
+   "record": {
+    "w": 17,
+    "l": 2,
+    "ko": 6
+   },
+   "bio": "Cierra la guardia, esquiva y contesta solo cuando está seguro.",
+   "portrait": "res://ART/portraits/p02.jpg",
+   "sprite": "res://ART/sprites/s20.png",
+   "female": false
+  },
+  {
+   "id": "idris_kamara",
+   "name": "Idris Kamara",
+   "nickname": "La Sombra",
+   "country": "España",
+   "weight_class": "medio",
+   "height_cm": 179,
+   "weight_kg": 75,
+   "reach_cm": 182,
+   "age": 28,
+   "stance": "southpaw",
+   "ai_profile": "aggressive",
+   "stats": {
+    "power": 74,
+    "speed": 69,
+    "stamina": 71,
+    "chin": 61,
+    "defense": 56,
+    "accuracy": 66,
+    "footwork": 54,
+    "ring_iq": 50
+   },
+   "look": {
+    "skin": "#a96e58",
+    "hair": "#020207",
+    "shoes": "#111111",
+    "shorts": "#011f79",
+    "gloves": "#1565c0"
+   },
+   "record": {
+    "w": 34,
+    "l": 5,
+    "ko": 25
+   },
+   "bio": "Sale a buscar el nocaut desde el primer campanazo y no da respiro.",
+   "portrait": "res://ART/portraits/p03.jpg",
+   "sprite": "res://ART/sprites/s25.png",
+   "female": false
+  },
+  {
+   "id": "tomas_aguirre",
+   "name": "Tomás Aguirre",
+   "nickname": "Piedra",
+   "country": "Colombia",
+   "weight_class": "ligero",
+   "height_cm": 172,
+   "weight_kg": 62,
+   "reach_cm": 173,
+   "age": 23,
+   "stance": "orthodox",
+   "ai_profile": "durable",
+   "stats": {
+    "power": 63,
+    "speed": 53,
+    "stamina": 75,
+    "chin": 89,
+    "defense": 52,
+    "accuracy": 60,
+    "footwork": 47,
+    "ring_iq": 61
+   },
+   "look": {
+    "skin": "#a76b58",
+    "hair": "#030512",
+    "shoes": "#111111",
+    "shorts": "#a60605",
+    "gloves": "#c62828"
+   },
+   "record": {
+    "w": 19,
+    "l": 0,
+    "ko": 11
+   },
+   "bio": "Aguanta lo que le echen y responde con golpes pesados al cuerpo.",
+   "portrait": "res://ART/portraits/p05.jpg",
+   "sprite": "res://ART/sprites/s12.png",
+   "female": false
+  },
+  {
+   "id": "viktor_hale",
+   "name": "Viktor Hale",
+   "nickname": "El Zorro",
+   "country": "Cuba",
+   "weight_class": "pesado",
+   "height_cm": 196,
+   "weight_kg": 105,
+   "reach_cm": 197,
+   "age": 28,
+   "stance": "southpaw",
+   "ai_profile": "fast",
+   "stats": {
+    "power": 54,
+    "speed": 93,
+    "stamina": 69,
+    "chin": 55,
+    "defense": 73,
+    "accuracy": 72,
+    "footwork": 86,
+    "ring_iq": 66
+   },
+   "look": {
+    "skin": "#a8745e",
+    "hair": "#010105",
+    "shoes": "#111111",
+    "shorts": "#ab0407",
+    "gloves": "#7b1fa2"
+   },
+   "record": {
+    "w": 28,
+    "l": 2,
+    "ko": 13
+   },
+   "bio": "Manos y piernas veloces: entra, golpea y desaparece.",
+   "portrait": "res://ART/portraits/p07.jpg",
+   "sprite": "res://ART/sprites/s00.png",
+   "female": false
+  },
+  {
+   "id": "valeria_cruz",
+   "name": "Valeria Cruz",
+   "nickname": "La Pantera",
+   "country": "Puerto Rico",
+   "weight_class": "supermedio",
+   "height_cm": 188,
+   "weight_kg": 76,
+   "reach_cm": 190,
+   "age": 25,
+   "stance": "orthodox",
+   "ai_profile": "technical",
+   "stats": {
+    "power": 60,
+    "speed": 81,
+    "stamina": 68,
+    "chin": 66,
+    "defense": 70,
+    "accuracy": 77,
+    "footwork": 78,
+    "ring_iq": 70
+   },
+   "look": {
+    "skin": "#bf785c",
+    "hair": "#0d080a",
+    "shoes": "#111111",
+    "shorts": "#011b8d",
+    "gloves": "#d4af37"
+   },
+   "record": {
+    "w": 17,
+    "l": 4,
+    "ko": 9
+   },
+   "bio": "Boxeo limpio y preciso: gana los rounds con el jab y los ángulos.",
+   "portrait": "res://ART/portraits/p11.jpg",
+   "sprite": "res://ART/sprites/s24.png",
+   "female": true
+  },
+  {
+   "id": "anika_sorensen",
+   "name": "Anika Sørensen",
+   "nickname": "Estrella",
+   "country": "EE. UU.",
+   "weight_class": "welter",
+   "height_cm": 178,
+   "weight_kg": 69,
+   "reach_cm": 185,
+   "age": 35,
+   "stance": "southpaw",
+   "ai_profile": "counterpuncher",
+   "stats": {
+    "power": 69,
+    "speed": 70,
+    "stamina": 71,
+    "chin": 61,
+    "defense": 80,
+    "accuracy": 81,
+    "footwork": 81,
+    "ring_iq": 86
+   },
+   "look": {
+    "skin": "#c28264",
+    "hair": "#0d0808",
+    "shoes": "#111111",
+    "shorts": "#04142a",
+    "gloves": "#f2f2f2"
+   },
+   "record": {
+    "w": 24,
+    "l": 2,
+    "ko": 9
+   },
+   "bio": "Espera el error y lo castiga con un contragolpe seco.",
+   "portrait": "res://ART/portraits/p12.jpg",
+   "sprite": "res://ART/sprites/s03.png",
+   "female": true
+  },
+  {
+   "id": "andre_dubois",
+   "name": "Andre Dubois",
+   "nickname": "Rayo",
+   "country": "Reino Unido",
+   "weight_class": "gallo",
+   "height_cm": 169,
+   "weight_kg": 55,
+   "reach_cm": 171,
+   "age": 32,
+   "stance": "southpaw",
+   "ai_profile": "strategic",
+   "stats": {
+    "power": 61,
+    "speed": 68,
+    "stamina": 76,
+    "chin": 69,
+    "defense": 66,
+    "accuracy": 65,
+    "footwork": 74,
+    "ring_iq": 92
+   },
+   "look": {
+    "skin": "#bf8269",
+    "hair": "#4b3531",
+    "shoes": "#111111",
+    "shorts": "#02186a",
+    "gloves": "#1c1c1c"
+   },
+   "record": {
+    "w": 23,
+    "l": 5,
+    "ko": 12
+   },
+   "bio": "Estudia al rival y cambia el plan según cómo vaya el combate.",
+   "portrait": "res://ART/portraits/p15.jpg",
+   "sprite": "res://ART/sprites/s22.png",
+   "female": false
+  },
+  {
+   "id": "haruto_mori",
+   "name": "Haruto Mori",
+   "nickname": "El Tigre",
+   "country": "Rusia",
+   "weight_class": "semipesado",
+   "height_cm": 188,
+   "weight_kg": 82,
+   "reach_cm": 194,
+   "age": 36,
+   "stance": "southpaw",
+   "ai_profile": "pressure",
+   "stats": {
+    "power": 67,
+    "speed": 66,
+    "stamina": 80,
+    "chin": 74,
+    "defense": 49,
+    "accuracy": 58,
+    "footwork": 63,
+    "ring_iq": 59
+   },
+   "look": {
+    "skin": "#b07560",
+    "hair": "#0c0a0e",
+    "shoes": "#111111",
+    "shorts": "#3b150e",
+    "gloves": "#1565c0"
+   },
+   "record": {
+    "w": 18,
+    "l": 5,
+    "ko": 9
+   },
+   "bio": "Camina hacia delante sin parar y desgasta al rival round tras round.",
+   "portrait": "res://ART/portraits/p16.jpg",
+   "sprite": "res://ART/sprites/s06.png",
+   "female": false
+  },
+  {
+   "id": "emil_sandoval",
+   "name": "Emil Sandoval",
+   "nickname": "Hielo",
+   "country": "Ucrania",
+   "weight_class": "superwelter",
+   "height_cm": 182,
+   "weight_kg": 71,
+   "reach_cm": 185,
+   "age": 28,
+   "stance": "southpaw",
+   "ai_profile": "defensive",
+   "stats": {
+    "power": 53,
+    "speed": 63,
+    "stamina": 81,
+    "chin": 65,
+    "defense": 92,
+    "accuracy": 65,
+    "footwork": 78,
+    "ring_iq": 73
+   },
+   "look": {
+    "skin": "#be826c",
+    "hair": "#0c0a0f",
+    "shoes": "#111111",
+    "shorts": "#a60411",
+    "gloves": "#c62828"
+   },
+   "record": {
+    "w": 22,
+    "l": 5,
+    "ko": 9
+   },
+   "bio": "Cierra la guardia, esquiva y contesta solo cuando está seguro.",
+   "portrait": "res://ART/portraits/p17.jpg",
+   "sprite": "res://ART/sprites/s04.png",
+   "female": false
+  },
+  {
+   "id": "kofi_mensah",
+   "name": "Kofi Mensah",
+   "nickname": "El Profeta",
+   "country": "Japón",
+   "weight_class": "pluma",
+   "height_cm": 165,
+   "weight_kg": 57,
+   "reach_cm": 174,
+   "age": 32,
+   "stance": "orthodox",
+   "ai_profile": "aggressive",
+   "stats": {
+    "power": 76,
+    "speed": 71,
+    "stamina": 68,
+    "chin": 61,
+    "defense": 50,
+    "accuracy": 70,
+    "footwork": 62,
+    "ring_iq": 49
+   },
+   "look": {
+    "skin": "#c38464",
+    "hair": "#1a1012",
+    "shoes": "#111111",
+    "shorts": "#071438",
+    "gloves": "#7b1fa2"
+   },
+   "record": {
+    "w": 22,
+    "l": 2,
+    "ko": 10
+   },
+   "bio": "Sale a buscar el nocaut desde el primer campanazo y no da respiro.",
+   "portrait": "res://ART/portraits/p18.jpg",
+   "sprite": "res://ART/sprites/s08.png",
+   "female": false
+  },
+  {
+   "id": "luca_ferraro",
+   "name": "Luca Ferraro",
+   "nickname": "Cobra",
+   "country": "Nigeria",
+   "weight_class": "crucero",
+   "height_cm": 194,
+   "weight_kg": 92,
+   "reach_cm": 197,
+   "age": 33,
+   "stance": "southpaw",
+   "ai_profile": "durable",
+   "stats": {
+    "power": 61,
+    "speed": 58,
+    "stamina": 86,
+    "chin": 89,
+    "defense": 60,
+    "accuracy": 61,
+    "footwork": 53,
+    "ring_iq": 64
+   },
+   "look": {
+    "skin": "#b5795b",
+    "hair": "#070505",
+    "shoes": "#111111",
+    "shorts": "#011b8d",
+    "gloves": "#d4af37"
+   },
+   "record": {
+    "w": 15,
+    "l": 3,
+    "ko": 9
+   },
+   "bio": "Aguanta lo que le echen y responde con golpes pesados al cuerpo.",
+   "portrait": "res://ART/portraits/p19.jpg",
+   "sprite": "res://ART/sprites/s24.png",
+   "female": false
+  },
+  {
+   "id": "dante_ibarra",
+   "name": "Dante Ibarra",
+   "nickname": "El Toro",
+   "country": "Ghana",
+   "weight_class": "medio",
+   "height_cm": 180,
+   "weight_kg": 72,
+   "reach_cm": 191,
+   "age": 25,
+   "stance": "orthodox",
+   "ai_profile": "fast",
+   "stats": {
+    "power": 47,
+    "speed": 86,
+    "stamina": 62,
+    "chin": 52,
+    "defense": 68,
+    "accuracy": 69,
+    "footwork": 80,
+    "ring_iq": 62
+   },
+   "look": {
+    "skin": "#a76847",
+    "hair": "#020202",
+    "shoes": "#111111",
+    "shorts": "#0b0f15",
+    "gloves": "#f2f2f2"
+   },
+   "record": {
+    "w": 33,
+    "l": 0,
+    "ko": 25
+   },
+   "bio": "Manos y piernas veloces: entra, golpea y desaparece.",
+   "portrait": "res://ART/portraits/p20.jpg",
+   "sprite": "res://ART/sprites/s05.png",
+   "female": false
+  },
+  {
+   "id": "ismael_cruz",
+   "name": "Ismael Cruz",
+   "nickname": "Fénix",
+   "country": "Brasil",
+   "weight_class": "ligero",
+   "height_cm": 174,
+   "weight_kg": 62,
+   "reach_cm": 179,
+   "age": 24,
+   "stance": "southpaw",
+   "ai_profile": "technical",
+   "stats": {
+    "power": 62,
+    "speed": 67,
+    "stamina": 64,
+    "chin": 68,
+    "defense": 66,
+    "accuracy": 82,
+    "footwork": 75,
+    "ring_iq": 71
+   },
+   "look": {
+    "skin": "#b16d4e",
+    "hair": "#060404",
+    "shoes": "#111111",
+    "shorts": "#011733",
+    "gloves": "#1c1c1c"
+   },
+   "record": {
+    "w": 34,
+    "l": 2,
+    "ko": 19
+   },
+   "bio": "Boxeo limpio y preciso: gana los rounds con el jab y los ángulos.",
+   "portrait": "res://ART/portraits/p21.jpg",
+   "sprite": "res://ART/sprites/s02.png",
+   "female": false
+  },
+  {
+   "id": "rurik_volkov",
+   "name": "Rurik Volkov",
+   "nickname": "Yunque",
+   "country": "Chile",
+   "weight_class": "pesado",
+   "height_cm": 196,
+   "weight_kg": 107,
+   "reach_cm": 197,
+   "age": 21,
+   "stance": "orthodox",
+   "ai_profile": "counterpuncher",
+   "stats": {
+    "power": 66,
+    "speed": 76,
+    "stamina": 66,
+    "chin": 57,
+    "defense": 72,
+    "accuracy": 71,
+    "footwork": 68,
+    "ring_iq": 84
+   },
+   "look": {
+    "skin": "#b6795f",
+    "hair": "#040406",
+    "shoes": "#111111",
+    "shorts": "#011b8d",
+    "gloves": "#1565c0"
+   },
+   "record": {
+    "w": 24,
+    "l": 5,
+    "ko": 18
+   },
+   "bio": "Espera el error y lo castiga con un contragolpe seco.",
+   "portrait": "res://ART/portraits/p23.jpg",
+   "sprite": "res://ART/sprites/s24.png",
+   "female": false
+  },
+  {
+   "id": "matias_quiroga",
+   "name": "Matías Quiroga",
+   "nickname": "El Relámpago",
+   "country": "Italia",
+   "weight_class": "supermedio",
+   "height_cm": 183,
+   "weight_kg": 77,
+   "reach_cm": 193,
+   "age": 32,
+   "stance": "orthodox",
+   "ai_profile": "strategic",
+   "stats": {
+    "power": 62,
+    "speed": 63,
+    "stamina": 76,
+    "chin": 67,
+    "defense": 79,
+    "accuracy": 65,
+    "footwork": 75,
+    "ring_iq": 89
+   },
+   "look": {
+    "skin": "#bb7961",
+    "hair": "#020101",
+    "shoes": "#111111",
+    "shorts": "#011b8d",
+    "gloves": "#c62828"
+   },
+   "record": {
+    "w": 23,
+    "l": 5,
+    "ko": 11
+   },
+   "bio": "Estudia al rival y cambia el plan según cómo vaya el combate.",
+   "portrait": "res://ART/portraits/p24.jpg",
+   "sprite": "res://ART/sprites/s24.png",
+   "female": false
+  },
+  {
+   "id": "camila_ortega",
+   "name": "Camila Ortega",
+   "nickname": "La Leona",
+   "country": "Francia",
+   "weight_class": "welter",
+   "height_cm": 176,
+   "weight_kg": 67,
+   "reach_cm": 182,
+   "age": 28,
+   "stance": "southpaw",
+   "ai_profile": "pressure",
+   "stats": {
+    "power": 68,
+    "speed": 65,
+    "stamina": 87,
+    "chin": 79,
+    "defense": 57,
+    "accuracy": 60,
+    "footwork": 61,
+    "ring_iq": 58
+   },
+   "look": {
+    "skin": "#b0765c",
+    "hair": "#010102",
+    "shoes": "#111111",
+    "shorts": "#022169",
+    "gloves": "#7b1fa2"
+   },
+   "record": {
+    "w": 33,
+    "l": 6,
+    "ko": 18
+   },
+   "bio": "Camina hacia delante sin parar y desgasta al rival round tras round.",
+   "portrait": "res://ART/portraits/p25.jpg",
+   "sprite": "res://ART/sprites/s09.png",
+   "female": true
+  },
+  {
+   "id": "mei_lin_zhao",
+   "name": "Mei Lin Zhao",
+   "nickname": "Dragona",
+   "country": "Alemania",
+   "weight_class": "gallo",
+   "height_cm": 169,
+   "weight_kg": 55,
+   "reach_cm": 170,
+   "age": 23,
+   "stance": "orthodox",
+   "ai_profile": "defensive",
+   "stats": {
+    "power": 56,
+    "speed": 59,
+    "stamina": 67,
+    "chin": 75,
+    "defense": 83,
+    "accuracy": 66,
+    "footwork": 69,
+    "ring_iq": 68
+   },
+   "look": {
+    "skin": "#bc7f60",
+    "hair": "#070a16",
+    "shoes": "#111111",
+    "shorts": "#011b8d",
+    "gloves": "#d4af37"
+   },
+   "record": {
+    "w": 33,
+    "l": 2,
+    "ko": 14
+   },
+   "bio": "Cierra la guardia, esquiva y contesta solo cuando está seguro.",
+   "portrait": "res://ART/portraits/p27.jpg",
+   "sprite": "res://ART/sprites/s24.png",
+   "female": true
+  },
+  {
+   "id": "jamal_whitaker",
+   "name": "Jamal Whitaker",
+   "nickname": "Lobo",
+   "country": "Filipinas",
+   "weight_class": "semipesado",
+   "height_cm": 190,
+   "weight_kg": 79,
+   "reach_cm": 189,
+   "age": 33,
+   "stance": "orthodox",
+   "ai_profile": "aggressive",
+   "stats": {
+    "power": 76,
+    "speed": 66,
+    "stamina": 68,
+    "chin": 68,
+    "defense": 52,
+    "accuracy": 71,
+    "footwork": 62,
+    "ring_iq": 60
+   },
+   "look": {
+    "skin": "#b87957",
+    "hair": "#020203",
+    "shoes": "#111111",
+    "shorts": "#011b8d",
+    "gloves": "#f2f2f2"
+   },
+   "record": {
+    "w": 14,
+    "l": 3,
+    "ko": 9
+   },
+   "bio": "Sale a buscar el nocaut desde el primer campanazo y no da respiro.",
+   "portrait": "res://ART/portraits/p28.jpg",
+   "sprite": "res://ART/sprites/s24.png",
+   "female": false
+  },
+  {
+   "id": "hugo_barrientos",
+   "name": "Hugo Barrientos",
+   "nickname": "Acero",
+   "country": "Corea del Sur",
+   "weight_class": "superwelter",
+   "height_cm": 182,
+   "weight_kg": 69,
+   "reach_cm": 181,
+   "age": 26,
+   "stance": "orthodox",
+   "ai_profile": "durable",
+   "stats": {
+    "power": 66,
+    "speed": 61,
+    "stamina": 75,
+    "chin": 87,
+    "defense": 63,
+    "accuracy": 61,
+    "footwork": 48,
+    "ring_iq": 54
+   },
+   "look": {
+    "skin": "#a7694b",
+    "hair": "#1a1212",
+    "shoes": "#111111",
+    "shorts": "#522c17",
+    "gloves": "#1c1c1c"
+   },
+   "record": {
+    "w": 26,
+    "l": 3,
+    "ko": 9
+   },
+   "bio": "Aguanta lo que le echen y responde con golpes pesados al cuerpo.",
+   "portrait": "res://ART/portraits/p30.jpg",
+   "sprite": "res://ART/sprites/s01.png",
+   "female": false
+  },
+  {
+   "id": "nikolai_petrov",
+   "name": "Nikolai Petrov",
+   "nickname": "El Halcón",
+   "country": "Kazajistán",
+   "weight_class": "pluma",
+   "height_cm": 170,
+   "weight_kg": 57,
+   "reach_cm": 176,
+   "age": 25,
+   "stance": "southpaw",
+   "ai_profile": "fast",
+   "stats": {
+    "power": 56,
+    "speed": 95,
+    "stamina": 68,
+    "chin": 61,
+    "defense": 71,
+    "accuracy": 69,
+    "footwork": 88,
+    "ring_iq": 70
+   },
+   "look": {
+    "skin": "#b2745c",
+    "hair": "#040305",
+    "shoes": "#111111",
+    "shorts": "#011b8d",
+    "gloves": "#1565c0"
+   },
+   "record": {
+    "w": 33,
+    "l": 3,
+    "ko": 23
+   },
+   "bio": "Manos y piernas veloces: entra, golpea y desaparece.",
+   "portrait": "res://ART/portraits/p31.jpg",
+   "sprite": "res://ART/sprites/s24.png",
+   "female": false
+  },
+  {
+   "id": "rosa_ibanez",
+   "name": "Rosa Ibáñez",
+   "nickname": "Tempestad",
+   "country": "Tailandia",
+   "weight_class": "crucero",
+   "height_cm": 191,
+   "weight_kg": 89,
+   "reach_cm": 195,
+   "age": 27,
+   "stance": "orthodox",
+   "ai_profile": "technical",
+   "stats": {
+    "power": 64,
+    "speed": 77,
+    "stamina": 64,
+    "chin": 63,
+    "defense": 74,
+    "accuracy": 87,
+    "footwork": 71,
+    "ring_iq": 75
+   },
+   "look": {
+    "skin": "#c28363",
+    "hair": "#070403",
+    "shoes": "#111111",
+    "shorts": "#c67e27",
+    "gloves": "#c62828"
+   },
+   "record": {
+    "w": 20,
+    "l": 6,
+    "ko": 9
+   },
+   "bio": "Boxeo limpio y preciso: gana los rounds con el jab y los ángulos.",
+   "portrait": "res://ART/portraits/p32.jpg",
+   "sprite": "res://ART/sprites/s23.png",
+   "female": true
   }
  ]
 }

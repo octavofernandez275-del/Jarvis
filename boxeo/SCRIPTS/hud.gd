@@ -25,6 +25,7 @@ var show_insight := true
 var voz = null                 # voz.gd (para el indicador VOZ)
 var voz_label: Label
 var _voz_estado := ""
+const Art = preload("res://SCRIPTS/art.gd")
 
 
 func _style(color: Color) -> StyleBoxFlat:
@@ -126,6 +127,35 @@ func setup(mgr_, a_, b_) -> void:
 	ui.add_child(band)
 	var left := _corner(true)
 	var right := _corner(false)
+	for side in [0, 1]:
+		var fd: Dictionary = (a if side == 0 else b).data
+		var pic := TextureRect.new()
+		pic.texture = Art.tex(String(fd.get("portrait", "")))
+		if pic.texture != null:
+			pic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			pic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+			pic.anchor_left = 0.0 if side == 0 else 1.0
+			pic.anchor_right = pic.anchor_left
+			pic.offset_left = 24 if side == 0 else -24 - 66
+			pic.offset_right = 24 + 66 if side == 0 else -24
+			pic.offset_top = 12
+			pic.offset_bottom = 12 + 86
+			pic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			var fr := Panel.new()
+			var sb := StyleBoxFlat.new()
+			sb.bg_color = Color(0, 0, 0, 0)
+			sb.set_border_width_all(3)
+			sb.border_color = Color(1.0, 0.4, 0.4) if side == 0 else Color(0.45, 0.7, 1.0)
+			sb.set_corner_radius_all(6)
+			fr.add_theme_stylebox_override("panel", sb)
+			fr.set_anchors_preset(Control.PRESET_FULL_RECT)
+			fr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			pic.add_child(fr)
+			ui.add_child(pic)
+			if side == 0:
+				left.offset_left += 74
+			else:
+				right.offset_right -= 74
 	left.add_child(_label(String(a.data["name"]).to_upper(), 24, Color(1.0, 0.45, 0.45)))
 	hp_a = _bar(Color(0.27, 0.82, 0.48), 24)
 	st_a = _bar(Color(1.0, 0.82, 0.4), 10)
@@ -322,9 +352,32 @@ func show_result(res: Dictionary) -> void:
 		title = "¡VICTORIA!"
 	elif res["winner"] == "b":
 		title = "DERROTA"
+	var win_f = a.data if res["winner"] == "a" else (b.data if res["winner"] == "b" else null)
+	var head := HBoxContainer.new()
+	head.alignment = BoxContainer.ALIGNMENT_CENTER
+	head.add_theme_constant_override("separation", 18)
+	v.add_child(head)
+	if win_f != null:
+		var ws := TextureRect.new()
+		ws.texture = Art.tex(String(win_f.get("sprite", "")))
+		ws.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		ws.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		ws.custom_minimum_size = Vector2(110, 170)
+		head.add_child(ws)
 	var t := _label(title, 56, Color(1, 0.82, 0.4))
 	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	v.add_child(t)
+	head.add_child(t)
+	if res["winner"] == "a":
+		var tr := TextureRect.new()
+		tr.texture = Art.gear("trophy")
+		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		tr.custom_minimum_size = Vector2(90, 120)
+		head.add_child(tr)
+	if win_f != null:
+		var wn := _label(String(win_f["name"]).to_upper() + " GANA", 24, Color(0.85, 0.9, 1.0))
+		wn.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		v.add_child(wn)
 	var m := _label("%s  (round %d)" % [res["method"], res["round"]], 26)
 	m.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(m)

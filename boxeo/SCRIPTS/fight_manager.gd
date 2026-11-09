@@ -81,9 +81,17 @@ func score_text() -> String:
 ## Esquinas y banquetas para el descanso entre rounds (los boxeadores se sientan).
 const STOOL_POS := [Vector3(-2.0, 0, -2.2), Vector3(-2.0, 0, 2.2)]
 var stools: Array = []
+var mode2d := false
 
 
 func _rest_sit() -> void:
+	if mode2d:
+		for i in range(2):
+			var bx2 = [a, b][i]
+			var tw2 := create_tween().set_parallel(true)
+			tw2.tween_property(bx2, "position", STOOL_POS[i], 0.9)
+			tw2.tween_property(bx2.visual, "position:y", -0.42, 0.9)
+		return
 	if stools.is_empty():
 		for p in STOOL_POS:
 			var m := MeshInstance3D.new()

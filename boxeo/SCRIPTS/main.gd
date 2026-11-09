@@ -17,6 +17,10 @@ const Polish = preload("res://SCRIPTS/polish.gd")
 const Touch = preload("res://SCRIPTS/touch_controls.gd")
 const Replay = preload("res://SCRIPTS/replay.gd")
 const Menu = preload("res://SCRIPTS/menu.gd")
+const Stage2D = preload("res://SCRIPTS/stage2d.gd")
+const VsScreen = preload("res://SCRIPTS/vs_screen.gd")
+
+const MODO_2D := true            # false = vuelve al combate 3D original
 
 var table: Dictionary
 var vfx_data: Dictionary
@@ -55,6 +59,9 @@ var shake := 0.0
 var touch_move := 0.0
 var touch_side := 0.0
 var touch_block := false
+var mode2d := false
+var stage = null
+var stage_layer: CanvasLayer = null
 
 
 func _ready() -> void:
@@ -94,6 +101,11 @@ func _teardown() -> void:
 	if world:
 		world.queue_free()
 		world = null
+	if stage_layer:
+		stage_layer.queue_free()
+		stage_layer = null
+		stage = null
+	get_viewport().disable_3d = false
 	sfx.stop_ambience()
 	flashes = null
 	crowd_mat = null
@@ -116,13 +128,14 @@ func start_fight(config: Dictionary) -> void:
 	world = Node3D.new()
 	add_child(world)
 	var arena_cfg := Data.find_by_id(arenas_cfg["arenas"], String(config["arena"]))
-	var built := ArenaBuilder.build(arena_cfg, world)
-	ropes = built.get("ropes", {})
-	crowd_mat = built["crowd_mat"]
-	var pol := Polish.apply_arena(world, arena_cfg, ArenaBuilder.FLOOR_Y, crowd_mat != null, bool(built["has_ring"]))
-	flashes = pol["flashes"]
+	mode2d = MODO_2D and String(arena_cfg.get("backdrop", "")) != ""
+	ropes = {}
+	crowd_mat = null
+	flashes = null
 	crowd_base = float(arena_cfg["crowd"]["excitement"])
 	sfx.ambience(String(arena_cfg["ambience"]), -12.0)
+	if not mode2d:
+		_build_3d_arena(arena_cfg)
 
 	var model := load("res://CHARACTERS/boxer_base.glb") as PackedScene
 	a = _make_boxer(config["player"], model, true)
@@ -135,11 +148,16 @@ func start_fight(config: Dictionary) -> void:
 		bx.rope_bounce.connect(_on_rope_bounce)
 	ai.load_habits(String(a.data["name"]))
 
+	if mode2d:
+		get_viewport().disable_3d = true
 	var ref = StaffScript.new()
 	world.add_child(ref)
 	ref.setup(load("res://CHARACTERS/staff_base.glb") as PackedScene, referees[randi() % referees.size()]["look"], table)
 	ref.position = Vector3(-1.6, 0, 0)
 	ref.rotation.y = PI / 2.0
+	if mode2d:
+		ref.position = Vector3(0, 0, 0)       # de perfil, entre los dos y por detrás
+		ref.rotation.y = 0.0
 
 	mgr = Manager.new()
 	world.add_child(mgr)
@@ -152,9 +170,28 @@ func start_fight(config: Dictionary) -> void:
 	narr.setup(mgr, a, b, voz)
 	narr_ref = narr
 
-	vfx = Vfx.new()
-	world.add_child(vfx)
-	vfx.setup(vfx_data)
+	vfx = null
+	if mode2d:
+		stage_layer = CanvasLayer.new()
+		stage_layer.layer = 1
+		add_child(stage_layer)
+		stage = Stage2D.new()
+		stage_layer.add_child(stage)
+		if not stage.setup(mgr, a, b, arena_cfg, ref):
+			push_warning("Modo 2D no disponible (esqueleto no encontrado): se usa el 3D")
+			stage_layer.queue_free()
+			stage_layer = null
+			stage = null
+			mode2d = false
+			get_viewport().disable_3d = false
+			_build_3d_arena(arena_cfg)
+	if not mode2d:
+		vfx = Vfx.new()
+		world.add_child(vfx)
+		vfx.setup(vfx_data)
+		mgr.mode2d = false
+	else:
+		mgr.mode2d = true
 	replay = Replay.new()
 	world.add_child(replay)
 	replay.setup([a, b], float(vfx_data["replay"]["sample_hz"]), float(vfx_data["replay"]["buffer_seconds"]), float(vfx_data["replay"]["speed"]))
@@ -181,9 +218,49 @@ func start_fight(config: Dictionary) -> void:
 	camera_modes = arena_cfg.get("cameras", ["broadcast"])
 	camera_index = 0
 	in_fight = true
-	await _intro(arena_cfg)
+	if mode2d:
+		await _intro2d(arena_cfg)
+	else:
+		await _intro(arena_cfg)
 	if in_fight:
 		mgr.start_fight()
+
+
+func _build_3d_arena(arena_cfg: Dictionary) -> void:
+	var built := ArenaBuilder.build(arena_cfg, world)
+	ropes = built.get("ropes", {})
+	crowd_mat = built["crowd_mat"]
+	var pol := Polish.apply_arena(world, arena_cfg, ArenaBuilder.FLOOR_Y, crowd_mat != null, bool(built["has_ring"]))
+	flashes = pol["flashes"]
+
+
+## Presentación 2D: pantalla VS con los sprites mientras los boxeadores caminan al ring; luego saludo y nombres.
+func _intro2d(arena_cfg: Dictionary) -> void:
+	in_intro = true
+	a.set_facing(1.0)
+	b.set_facing(-1.0)
+	a.frozen = true
+	b.frozen = true
+	a.position = Vector3(0, 0, -5.5)
+	b.position = Vector3(0, 0, 5.5)
+	for bx in [a, b]:
+		bx.play("walk_forward")
+	for pair in [[a, -1.0], [b, 1.0]]:
+		var tw := create_tween()
+		tw.tween_interval(1.2)
+		tw.tween_property(pair[0], "position", Vector3(0, 0, pair[1]), 2.2)
+		tw.tween_callback(pair[0].play.bind("entrance_taunt"))
+	var vs = VsScreen.new()
+	add_child(vs)
+	vs.setup(a.data, b.data, arena_cfg, 3.2)
+	await vs.finished
+	if not in_fight:
+		return
+	var ra: Dictionary = a.data["record"]
+	var rb: Dictionary = b.data["record"]
+	hud.announce("%s  vs  %s\n%d-%d  ·  %d-%d" % [a.data["name"], b.data["name"], ra["w"], ra["l"], rb["w"], rb["l"]], 1.6)
+	await get_tree().create_timer(1.8).timeout
+	in_intro = false
 
 
 ## Presentación: entrada de cada boxeador (desde el túnel en arenas), nombre y récord.
@@ -268,7 +345,10 @@ func _on_touch(kind: String, id: String, pressed: bool) -> void:
 		_player_attack(id)
 	elif kind == "tap" and pressed:
 		if id == "camera":
-			camera_index = (camera_index + 1) % camera_modes.size()
+			if mode2d and stage != null:
+				stage.cycle_zoom()
+			else:
+				camera_index = (camera_index + 1) % camera_modes.size()
 		else:
 			_player_dodge(id)
 	elif kind == "hold":
@@ -291,7 +371,7 @@ func _process(delta: float) -> void:
 		a.cmd_move(touch_move)
 		a.cmd_side(touch_side)
 		a.cmd_block(touch_block)
-	if not in_intro:
+	if not in_intro and not mode2d:
 		_update_camera(delta)
 
 
@@ -331,57 +411,71 @@ func _update_camera(delta: float) -> void:
 # ---------------- efectos ----------------
 
 func _on_fx(kind: String, pos: Vector3, extra: Dictionary) -> void:
-	if vfx == null:
+	if mode2d and stage != null:
+		stage.on_fx(kind, pos, extra)
+	elif vfx == null:
 		return
 	if kind == "hit_light" or kind == "hit_heavy":
 		var head: bool = extra.get("head", true)
 		sfx.play("punch_light" if kind == "hit_light" and head else ("punch_body" if not head else "punch_heavy"), 0.0, randf_range(0.95, 1.1))
-		vfx.burst("hit_heavy" if kind == "hit_heavy" else "hit_spark", pos)
-		if head:
-			vfx.burst("sweat", pos)
-		_shake("heavy" if kind == "hit_heavy" else "light")
+		if not mode2d:
+			vfx.burst("hit_heavy" if kind == "hit_heavy" else "hit_spark", pos)
+			if head:
+				vfx.burst("sweat", pos)
+			_shake("heavy" if kind == "hit_heavy" else "light")
 		var df = extra.get("defender", null)
-		if df != null and mgr != null:
+		if df != null and mgr != null and not mode2d:
 			Polish.hit_flash(df, kind == "hit_heavy")
 			if kind == "hit_heavy":
 				Polish.wear(df, Polish.wear_level(df, mgr.round_n, mgr.total_rounds))
 		if kind == "hit_heavy":
 			sfx.play("crowd_cheer", -8.0)
 			_excite(0.9, 1.5)
-			cam.fov = maxf(30.0, cam.fov - 3.5)          # golpe de cámara (la FOV vuelve sola)
-			Polish.flash_burst(flashes, 3)
+			if not mode2d:
+				cam.fov = maxf(30.0, cam.fov - 3.5)          # golpe de cámara (la FOV vuelve sola)
+				Polish.flash_burst(flashes, 3)
+			elif df != null and mgr != null:
+				stage.set_wear(df, Polish.wear_level(df, mgr.round_n, mgr.total_rounds))
 	elif kind == "block":
 		sfx.play("block_hit")
-		vfx.burst("block_puff", pos)
+		if not mode2d:
+			vfx.burst("block_puff", pos)
 	elif kind == "parry":
 		sfx.play("ui_confirm", -4.0, 1.4)
-		_shake("light")
-		var pd = extra.get("defender", null)
-		if pd != null:
-			Polish.hit_flash(pd, false)
+		if not mode2d:
+			_shake("light")
+			var pd = extra.get("defender", null)
+			if pd != null:
+				Polish.hit_flash(pd, false)
 	elif kind == "whoosh":
 		sfx.play("whoosh", -6.0, randf_range(0.9, 1.15))
 	elif kind == "knockdown":
 		sfx.play("knockdown_thud")
-		cam.fov = maxf(26.0, cam.fov - 9.0)
-		vfx.burst("dust", pos + Vector3(0, 0.1, 0))
-		_shake("knockdown")
+		if not mode2d:
+			cam.fov = maxf(26.0, cam.fov - 9.0)
+			vfx.burst("dust", pos + Vector3(0, 0.1, 0))
+			_shake("knockdown")
+			Polish.flash_burst(flashes, 8)
 		_excite(1.0, 3.0)
 		_slowmo("knockdown")
-		Polish.flash_burst(flashes, 8)
 		_capture_highlight()
 	elif kind == "bell_round_start":
 		sfx.play("bell_round_start")
 		if mgr != null and a != null and b != null:
-			Polish.wear(a, Polish.wear_level(a, mgr.round_n, mgr.total_rounds))
-			Polish.wear(b, Polish.wear_level(b, mgr.round_n, mgr.total_rounds))
+			if mode2d and stage != null:
+				stage.set_wear(a, Polish.wear_level(a, mgr.round_n, mgr.total_rounds))
+				stage.set_wear(b, Polish.wear_level(b, mgr.round_n, mgr.total_rounds))
+			else:
+				Polish.wear(a, Polish.wear_level(a, mgr.round_n, mgr.total_rounds))
+				Polish.wear(b, Polish.wear_level(b, mgr.round_n, mgr.total_rounds))
 	elif kind == "bell_round_end":
 		sfx.play("bell_round_end")
 	elif kind == "count_tick":
 		sfx.play("count_tick")
 	elif kind == "win":
-		vfx.burst("confetti", pos + Vector3(0, 1.5, 0))
-		Polish.flash_burst(flashes, 8)
+		if not mode2d:
+			vfx.burst("confetti", pos + Vector3(0, 1.5, 0))
+			Polish.flash_burst(flashes, 8)
 		_excite(1.0, 6.0)
 
 
@@ -435,6 +529,10 @@ func _on_jarvis_report() -> void:
 
 
 func _on_rope_bounce(bx, strength: float) -> void:
+	if mode2d and stage != null:
+		stage.rope_bounce(bx, strength)
+		sfx.play("block_hit", -10.0, 0.7)
+		return
 	if ropes.is_empty():
 		return
 	ArenaBuilder.shake_ropes(ropes, "z+" if bx.position.z > 0.0 else "z-", strength)
