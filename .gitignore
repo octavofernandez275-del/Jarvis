@@ -4,3 +4,4 @@ llama.cpp/
 local.properties
 app/src/main/jniLibs/
 *.apk
+boxeo/.godot/
