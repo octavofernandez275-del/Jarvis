@@ -1,6 +1,8 @@
 name: Compilar APK
 on:
   push:
+    paths-ignore:
+      - 'boxeo/**'          # el juego se compila aparte (boxeo.yml)
   workflow_dispatch:
 jobs:
   apk:
