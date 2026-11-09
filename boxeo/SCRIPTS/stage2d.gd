@@ -216,7 +216,7 @@ func _process(delta: float) -> void:
 	var vs := _vs()
 	if a == null or b == null:
 		return
-	var mid := (a.position.z + b.position.z) * 0.5
+	var mid: float = (a.position.z + b.position.z) * 0.5
 	cam_z = lerpf(cam_z, mid, clampf(delta * 5.0, 0.0, 1.0))
 	zoom_mul = lerpf(zoom_mul, ZOOMS[zoom_idx] + kick, clampf(delta * 4.0, 0.0, 1.0))
 	kick = move_toward(kick, 0.0, delta * 0.25)
@@ -398,7 +398,7 @@ func _draw_ropes_far(vs: Vector2) -> void:
 	var xa := _pz(-ROPE_HALF, 0.0).x
 	var xb := _pz(ROPE_HALF, 0.0).x
 	for i in range(3):
-		var y := yb - ROPE_H[i] * k * 0.95
+		var y: float = yb - ROPE_H[i] * k * 0.95
 		draw_line(Vector2(xa, y), Vector2(xb, y), OUTLINE, 0.05 * k)
 		draw_line(Vector2(xa, y), Vector2(xb, y), _rope_col(i).darkened(0.25), 0.036 * k)
 
@@ -423,7 +423,7 @@ func _draw_ropes_near(vs: Vector2) -> void:
 	var xa := _pz(-ROPE_HALF, 0.0).x
 	var xb := _pz(ROPE_HALF, 0.0).x
 	for i in range(3):
-		var y := yn - ROPE_H[i] * k * 1.08
+		var y: float = yn - ROPE_H[i] * k * 1.08
 		var c := _rope_col(i)
 		c.a = 0.4
 		draw_line(Vector2(xa, y), Vector2(xb, y), c, 0.045 * k)

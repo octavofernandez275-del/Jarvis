@@ -370,6 +370,7 @@ func show_result(res: Dictionary) -> void:
 	if res["winner"] == "a":
 		var tr := TextureRect.new()
 		tr.texture = Art.gear("trophy")
+		tr.material = Art.additive()
 		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		tr.custom_minimum_size = Vector2(90, 120)

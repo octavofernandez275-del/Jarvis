@@ -44,6 +44,9 @@ var anticipate_until := 0.0
 var behind_bonus := 0.0              # >0: va perdiendo y arriesga más
 
 
+var orbit_timer := 0.0            # footwork orbital: cada cuánto cambia de lado
+var orbit_dir := 1.0
+
 func setup(me_, foe_, profile_: Dictionary, skill_: float) -> void:
 	me = me_
 	foe = foe_
@@ -346,7 +349,7 @@ func _offense_and_movement(delta: float, dist: float) -> void:
 	orbit_timer -= delta
 	if orbit_timer <= 0.0:
 		orbit_timer = rng.randf_range(1.1, 2.6) * (1.25 - skill * 0.25)
-		var offset_x := me.position.x - foe.position.x
+		var offset_x: float = me.position.x - foe.position.x
 		if absf(offset_x) > 1.15:
 			orbit_dir = -signf(offset_x) # vuelve hacia el centro del ring
 		elif rng.randf() < 0.72:

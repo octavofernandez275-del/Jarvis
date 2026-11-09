@@ -7,7 +7,7 @@ const Art = preload("res://SCRIPTS/art.gd")
 
 
 func setup(fa: Dictionary, fb: Dictionary, arena_cfg: Dictionary, seconds: float = 3.0) -> void:
-	layer = 8
+	layer = 20
 	var root := Control.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -102,11 +102,11 @@ func _layout(root: Control) -> void:
 				else PackedVector2Array([Vector2(sz.x * 0.56, 0), Vector2(sz.x, 0), Vector2(sz.x, sz.y), Vector2(sz.x * 0.44, sz.y)])
 	for i in range(2):
 		var spr: TextureRect = parts["sprites"][i]
-		spr.size = Vector2(sz.x * 0.34, sz.y * 0.78)
+		spr.size = Vector2(sz.x * 0.34, sz.y * 0.68)
 		spr.position = Vector2(sz.x * (0.08 if i == 0 else 0.58), sz.y * 0.06)
 		var l: Label = parts["names"][i]
 		l.size = Vector2(sz.x * 0.4, 130)
-		l.position = Vector2(sz.x * (0.05 if i == 0 else 0.55), sz.y * 0.82)
+		l.position = Vector2(sz.x * (0.05 if i == 0 else 0.55), sz.y * 0.76)
 		l.add_theme_color_override("font_color", Color(1.0, 0.75, 0.75) if i == 0 else Color(0.75, 0.85, 1.0))
 	var vs: TextureRect = parts["vs"]
 	vs.size = Vector2(sz.y * 0.4, sz.y * 0.3)
