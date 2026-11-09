@@ -111,8 +111,8 @@ for i, (fid, pi, base) in enumerate(slots):
     if not fid:
         look['hair'] = hair_color(pi)
         look['shoes'] = "#111111"
-    look['shorts'] = sprite_shorts(used_sp[i]) if not fid or True else look['shorts']
-    look['gloves'] = gloves_pal[(i * 5 + 2) % len(gloves_pal)] if not fid else look['gloves']
+    look['shorts'] = M['sprites'][used_sp[i]].get('shorts_hex') or sprite_shorts(used_sp[i])
+    look['gloves'] = M['sprites'][used_sp[i]].get('glove_hex') or look.get('gloves', '#c62828')
     f['look'] = look
     out.append(f)
 # retratos de los 12 originales: el color de piel real sale del retrato

@@ -7,6 +7,7 @@ signal action_pressed(kind: String, id: String, pressed: bool)
 
 var player = null             # boxeador del jugador (para atenuar golpes sin aguante y marcar la parada)
 var buttons: Array = []
+var mode2d := false
 var touches := {}            # índice del dedo -> botón
 var active := {}             # id del botón -> true mientras está presionado
 
@@ -24,7 +25,14 @@ func _process(_delta: float) -> void:
 
 func _center(b: Dictionary) -> Vector2:
 	var sz := get_viewport_rect().size
+	if b.has("edge"):                      # anclado al borde (en unidades de altura): se adapta a cualquier proporción
+		var dx := float(b["dx"]) * sz.y
+		return Vector2(dx if b["edge"] == "l" else sz.x - dx, float(b["y"]) * sz.y)
 	return Vector2(float(b["x"]) * sz.x, float(b["y"]) * sz.y)
+
+
+func _shown(b: Dictionary) -> bool:
+	return not (mode2d and b.get("only3d", false))
 
 
 func _radius(b: Dictionary) -> float:
@@ -33,7 +41,7 @@ func _radius(b: Dictionary) -> float:
 
 func _hit(pos: Vector2) -> Dictionary:
 	for b in buttons:
-		if pos.distance_to(_center(b)) <= _radius(b) * 1.15:
+		if _shown(b) and pos.distance_to(_center(b)) <= _radius(b) * 1.15:
 			return b
 	return {}
 
@@ -72,6 +80,8 @@ const COLORES := {
 func _draw() -> void:
 	var font := ThemeDB.fallback_font
 	for b in buttons:
+		if not _shown(b):
+			continue
 		var c := _center(b)
 		var on: bool = active.has(b["id"])
 		var r := _radius(b) * (0.92 if on else 1.0)

@@ -26,8 +26,8 @@
    "look": {
     "skin": "#ad714d",
     "hair": "#14100c",
-    "shorts": "#12201d",
-    "gloves": "#c62828",
+    "shorts": "#142623",
+    "gloves": "#1c1c1c",
     "shoes": "#111111"
    },
    "record": {
@@ -65,8 +65,8 @@
    "look": {
     "skin": "#9c6347",
     "hair": "#0d0d0d",
-    "shorts": "#04060a",
-    "gloves": "#e0e0e0",
+    "shorts": "#200f0b",
+    "gloves": "#1c1c1c",
     "shoes": "#111111"
    },
    "record": {
@@ -104,8 +104,8 @@
    "look": {
     "skin": "#be7f5e",
     "hair": "#2a1a10",
-    "shorts": "#011b8d",
-    "gloves": "#ffffff",
+    "shorts": "#011c90",
+    "gloves": "#1c1c1c",
     "shoes": "#111111"
    },
    "record": {
@@ -143,8 +143,8 @@
    "look": {
     "skin": "#bf846a",
     "hair": "#4a3a20",
-    "shorts": "#35161a",
-    "gloves": "#1f1f1f",
+    "shorts": "#21131c",
+    "gloves": "#1c1c1c",
     "shoes": "#111111"
    },
    "record": {
@@ -182,8 +182,8 @@
    "look": {
     "skin": "#a26347",
     "hair": "#000000",
-    "shorts": "#091324",
-    "gloves": "#f5f5f5",
+    "shorts": "#0a162f",
+    "gloves": "#1c1c1c",
     "shoes": "#111111"
    },
    "record": {
@@ -221,8 +221,8 @@
    "look": {
     "skin": "#c18469",
     "hair": "#0a0a0a",
-    "shorts": "#032345",
-    "gloves": "#ffffff",
+    "shorts": "#032244",
+    "gloves": "#1c1c1c",
     "shoes": "#111111"
    },
    "record": {
@@ -260,8 +260,8 @@
    "look": {
     "skin": "#c78a75",
     "hair": "#7a5a2a",
-    "shorts": "#060a11",
-    "gloves": "#d4af37",
+    "shorts": "#221515",
+    "gloves": "#1c1c1c",
     "shoes": "#111111"
    },
    "record": {
@@ -299,8 +299,8 @@
    "look": {
     "skin": "#9c6752",
     "hair": "#1a0f08",
-    "shorts": "#021d85",
-    "gloves": "#212121",
+    "shorts": "#021e7e",
+    "gloves": "#1c1c1c",
     "shoes": "#111111"
    },
    "record": {
@@ -338,8 +338,8 @@
    "look": {
     "skin": "#b27962",
     "hair": "#120c08",
-    "shorts": "#05080f",
-    "gloves": "#fafafa",
+    "shorts": "#05090f",
+    "gloves": "#c62828",
     "shoes": "#111111"
    },
    "record": {
@@ -377,8 +377,8 @@
    "look": {
     "skin": "#c88974",
     "hair": "#c8a860",
-    "shorts": "#031c93",
-    "gloves": "#ffffff",
+    "shorts": "#011ca3",
+    "gloves": "#1565c0",
     "shoes": "#111111"
    },
    "record": {
@@ -416,8 +416,8 @@
    "look": {
     "skin": "#a76e53",
     "hair": "#0f0a06",
-    "shorts": "#653c19",
-    "gloves": "#ffd600",
+    "shorts": "#874723",
+    "gloves": "#f2f2f2",
     "shoes": "#111111"
    },
    "record": {
@@ -455,8 +455,8 @@
    "look": {
     "skin": "#c2826a",
     "hair": "#6b4a2a",
-    "shorts": "#900d0c",
-    "gloves": "#b71c1c",
+    "shorts": "#910c0c",
+    "gloves": "#c62828",
     "shoes": "#111111"
    },
    "record": {
@@ -495,8 +495,8 @@
     "skin": "#b1745f",
     "hair": "#241720",
     "shoes": "#111111",
-    "shorts": "#3d0b0e",
-    "gloves": "#1c1c1c"
+    "shorts": "#4b0a0d",
+    "gloves": "#c62828"
    },
    "record": {
     "w": 17,
@@ -534,7 +534,7 @@
     "skin": "#a96e58",
     "hair": "#020207",
     "shoes": "#111111",
-    "shorts": "#011f79",
+    "shorts": "#011f7d",
     "gloves": "#1565c0"
    },
    "record": {
@@ -573,7 +573,7 @@
     "skin": "#a76b58",
     "hair": "#030512",
     "shoes": "#111111",
-    "shorts": "#a60605",
+    "shorts": "#a60606",
     "gloves": "#c62828"
    },
    "record": {
@@ -612,8 +612,8 @@
     "skin": "#a8745e",
     "hair": "#010105",
     "shoes": "#111111",
-    "shorts": "#ab0407",
-    "gloves": "#7b1fa2"
+    "shorts": "#ae0408",
+    "gloves": "#1c1c1c"
    },
    "record": {
     "w": 28,
@@ -651,8 +651,8 @@
     "skin": "#bf785c",
     "hair": "#0d080a",
     "shoes": "#111111",
-    "shorts": "#011b8d",
-    "gloves": "#d4af37"
+    "shorts": "#011c90",
+    "gloves": "#1c1c1c"
    },
    "record": {
     "w": 17,
@@ -691,7 +691,7 @@
     "hair": "#0d0808",
     "shoes": "#111111",
     "shorts": "#04142a",
-    "gloves": "#f2f2f2"
+    "gloves": "#c62828"
    },
    "record": {
     "w": 24,
@@ -729,8 +729,8 @@
     "skin": "#bf8269",
     "hair": "#4b3531",
     "shoes": "#111111",
-    "shorts": "#02186a",
-    "gloves": "#1c1c1c"
+    "shorts": "#021867",
+    "gloves": "#c62828"
    },
    "record": {
     "w": 23,
@@ -769,7 +769,7 @@
     "hair": "#0c0a0e",
     "shoes": "#111111",
     "shorts": "#3b150e",
-    "gloves": "#1565c0"
+    "gloves": "#1c1c1c"
    },
    "record": {
     "w": 18,
@@ -807,8 +807,8 @@
     "skin": "#be826c",
     "hair": "#0c0a0f",
     "shoes": "#111111",
-    "shorts": "#a60411",
-    "gloves": "#c62828"
+    "shorts": "#a90411",
+    "gloves": "#1c1c1c"
    },
    "record": {
     "w": 22,
@@ -847,7 +847,7 @@
     "hair": "#1a1012",
     "shoes": "#111111",
     "shorts": "#071438",
-    "gloves": "#7b1fa2"
+    "gloves": "#c62828"
    },
    "record": {
     "w": 22,
@@ -885,8 +885,8 @@
     "skin": "#b5795b",
     "hair": "#070505",
     "shoes": "#111111",
-    "shorts": "#011b8d",
-    "gloves": "#d4af37"
+    "shorts": "#011c90",
+    "gloves": "#1c1c1c"
    },
    "record": {
     "w": 15,
@@ -924,8 +924,8 @@
     "skin": "#a76847",
     "hair": "#020202",
     "shoes": "#111111",
-    "shorts": "#0b0f15",
-    "gloves": "#f2f2f2"
+    "shorts": "#3c2222",
+    "gloves": "#1c1c1c"
    },
    "record": {
     "w": 33,
@@ -964,7 +964,7 @@
     "hair": "#060404",
     "shoes": "#111111",
     "shorts": "#011733",
-    "gloves": "#1c1c1c"
+    "gloves": "#c62828"
    },
    "record": {
     "w": 34,
@@ -1002,8 +1002,8 @@
     "skin": "#b6795f",
     "hair": "#040406",
     "shoes": "#111111",
-    "shorts": "#011b8d",
-    "gloves": "#1565c0"
+    "shorts": "#011c90",
+    "gloves": "#1c1c1c"
    },
    "record": {
     "w": 24,
@@ -1041,8 +1041,8 @@
     "skin": "#bb7961",
     "hair": "#020101",
     "shoes": "#111111",
-    "shorts": "#011b8d",
-    "gloves": "#c62828"
+    "shorts": "#011c90",
+    "gloves": "#1c1c1c"
    },
    "record": {
     "w": 23,
@@ -1081,7 +1081,7 @@
     "hair": "#010102",
     "shoes": "#111111",
     "shorts": "#022169",
-    "gloves": "#7b1fa2"
+    "gloves": "#1c1c1c"
    },
    "record": {
     "w": 33,
@@ -1119,8 +1119,8 @@
     "skin": "#bc7f60",
     "hair": "#070a16",
     "shoes": "#111111",
-    "shorts": "#011b8d",
-    "gloves": "#d4af37"
+    "shorts": "#011c90",
+    "gloves": "#1c1c1c"
    },
    "record": {
     "w": 33,
@@ -1158,8 +1158,8 @@
     "skin": "#b87957",
     "hair": "#020203",
     "shoes": "#111111",
-    "shorts": "#011b8d",
-    "gloves": "#f2f2f2"
+    "shorts": "#011c90",
+    "gloves": "#1c1c1c"
    },
    "record": {
     "w": 14,
@@ -1197,7 +1197,7 @@
     "skin": "#a7694b",
     "hair": "#1a1212",
     "shoes": "#111111",
-    "shorts": "#522c17",
+    "shorts": "#693a27",
     "gloves": "#1c1c1c"
    },
    "record": {
@@ -1236,8 +1236,8 @@
     "skin": "#b2745c",
     "hair": "#040305",
     "shoes": "#111111",
-    "shorts": "#011b8d",
-    "gloves": "#1565c0"
+    "shorts": "#011c90",
+    "gloves": "#1c1c1c"
    },
    "record": {
     "w": 33,
@@ -1276,7 +1276,7 @@
     "hair": "#070403",
     "shoes": "#111111",
     "shorts": "#c67e27",
-    "gloves": "#c62828"
+    "gloves": "#1c1c1c"
    },
    "record": {
     "w": 20,

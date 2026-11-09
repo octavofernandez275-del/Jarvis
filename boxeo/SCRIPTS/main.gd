@@ -211,6 +211,7 @@ func start_fight(config: Dictionary) -> void:
 	add_child(touch_layer)
 	touch = Touch.new()
 	touch_layer.add_child(touch)
+	touch.mode2d = mode2d
 	touch.setup(layout)
 	touch.player = a
 	touch.action_pressed.connect(_on_touch)

@@ -43,7 +43,10 @@ func _ready() -> void:
 func with_vest(f: Dictionary) -> Dictionary:
 	var c: Dictionary = f.duplicate(true)
 	for k in vest:
-		c["look"][k] = vest[k]
+		if k == "sprite":
+			c["sprite"] = vest[k]
+		else:
+			c["look"][k] = vest[k]
 	return c
 
 
@@ -175,26 +178,38 @@ func show_main() -> void:
 func show_vestuario() -> void:
 	var v := _reset()
 	v.add_child(_label("Vestuario", 44, Color(1.0, 0.82, 0.4)))
-	v.add_child(_label("Se aplica a tu boxeador en combate rápido y en la carrera.", 18, Color(0.85, 0.9, 1.0)))
-	for sec in [["Guantes", "gloves", Art.GLOVES], ["Pantalón", "shorts", Art.SHORTS], ["Botas", "shoes", Art.BOOTS]]:
-		v.add_child(_label(sec[0], 24, Color(0.15, 0.82, 1.0)))
-		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 10)
-		v.add_child(row)
-		for icon in sec[2]:
-			var hexc: String = sec[2][icon]
-			var bt := Button.new()
-			bt.icon = Art.gear(icon)
-			bt.expand_icon = true
-			bt.custom_minimum_size = Vector2(96, 96)
-			bt.toggle_mode = true
-			bt.button_pressed = String(vest.get(sec[1], "")) == hexc
-			var key: String = sec[1]
-			bt.pressed.connect(func():
-				vest[key] = hexc
-				_save_vest()
-				show_vestuario())
-			row.add_child(bt)
+	v.add_child(_label("Elige la equipación de tu boxeador (se usa en combate rápido y en la carrera).", 18, Color(0.85, 0.9, 1.0)))
+	var meta := {}
+	var fa := FileAccess.open("res://ART/sprites.json", FileAccess.READ)
+	if fa:
+		var j = JSON.parse_string(fa.get_as_text())
+		if j is Dictionary:
+			meta = j
+	var sc := ScrollContainer.new()
+	sc.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	v.add_child(sc)
+	var grid := GridContainer.new()
+	grid.columns = 9
+	grid.add_theme_constant_override("h_separation", 6)
+	grid.add_theme_constant_override("v_separation", 6)
+	sc.add_child(grid)
+	var names: Array = meta.keys()
+	names.sort()
+	for nm in names:
+		var path := "res://ART/sprites/%s.png" % nm
+		var bt := Button.new()
+		bt.icon = Art.tex(path)
+		bt.expand_icon = true
+		bt.custom_minimum_size = Vector2(92, 150)
+		bt.toggle_mode = true
+		bt.button_pressed = String(vest.get("sprite", "")) == path
+		var col: Dictionary = meta[nm]
+		bt.pressed.connect(func():
+			vest = {"sprite": path, "shorts": col["shorts"], "gloves": col["gloves"]}
+			_save_vest()
+			show_vestuario())
+		grid.add_child(bt)
 	var row2 := HBoxContainer.new()
 	row2.add_theme_constant_override("separation", 14)
 	v.add_child(row2)

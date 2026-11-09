@@ -1,7 +1,7 @@
 extends Node2D
-## Escenario 2D: dibuja el combate de lado con los fondos de ART/, el ring, las cuerdas y los boxeadores como muñecos
-## articulados que siguen los huesos del esqueleto 3D (toda la lógica, animaciones e IA siguen siendo las mismas).
-## Cabeza = cara del retrato. Efectos = sprites de ART/fx con mezcla aditiva.
+## Escenario 2D por capas: fondo/público -> luces -> lona del ring -> cuerdas traseras -> boxeadores (sprites de ART/sprites,
+## animados con transformaciones según el estado del combate) -> postes y cuerdas de los extremos -> efectos -> HUD/controles.
+## La lógica, la IA y las animaciones siguen en el esqueleto 3D (solo se leen los huesos para ubicar el brazo que golpea).
 
 const Art = preload("res://SCRIPTS/art.gd")
 const Boxer = preload("res://SCRIPTS/boxer.gd")
@@ -12,14 +12,15 @@ const ROPE_H := [0.55, 0.95, 1.35]
 const OUTLINE := Color(0.04, 0.04, 0.07)
 const BONES := ["Hips", "Spine", "Chest", "Neck", "Head", "UpperArm_L", "Forearm_L", "Hand_L", "UpperArm_R", "Forearm_R", "Hand_R",
 	"Thigh_L", "Shin_L", "Foot_L", "Thigh_R", "Shin_R", "Foot_R"]
-const ZOOMS := [1.0, 1.28, 0.82]
+const ZOOMS := [1.0, 1.15, 0.85]
+const BODY_M := 2.2               # altura del sprite en metros (para 182 cm)
 
 var mgr
 var a
 var b
 var referee = null
 var boxers: Array = []
-var rig: Dictionary = {}                 # boxeador -> {skel, idx, face, colors}
+var rig: Dictionary = {}                 # boxeador -> {skel, idx, face, col}
 var ref_rig: Dictionary = {}
 var backdrop: Texture2D
 var accent := Color(0.1, 0.4, 0.9)
@@ -42,6 +43,28 @@ var flashes: Array = []                  # destellos de cámara en el público
 var confetti: Array = []
 var confetti_on := false
 var seated := [false, false]
+var sprites: Array = [null, null]        # texturas de los sprites
+var glove_tex: Array = [null, null]
+var skin_col: Array = [Color(0.7, 0.5, 0.4), Color(0.7, 0.5, 0.4)]
+var an: Array = []                       # animación suavizada de cada boxeador
+var trail: Array = [[], []]
+var spot_tex: Texture2D
+
+
+func _new_an() -> Dictionary:
+	return {"off": Vector2.ZERO, "rot": 0.0, "sx": 1.0, "sy": 1.0, "squash": 0.0}
+
+
+func _nearest_glove(hexc: String) -> Texture2D:
+	var c := Color.html(hexc)
+	var best := "glove_red"
+	var bd := 9.0
+	for key in Art.GLOVES:
+		var d := absf(c.r - Color.html(Art.GLOVES[key]).r) + absf(c.g - Color.html(Art.GLOVES[key]).g) + absf(c.b - Color.html(Art.GLOVES[key]).b)
+		if d < bd:
+			bd = d
+			best = key
+	return Art.gear(best)
 
 
 func setup(mgr_, a_, b_, arena_cfg: Dictionary, ref_ = null) -> bool:
@@ -54,11 +77,22 @@ func setup(mgr_, a_, b_, arena_cfg: Dictionary, ref_ = null) -> bool:
 	accent = Color.html(String(arena_cfg.get("accent", "#1b5ae0")))
 	logo = Art.ui("logo_alpha")
 	arena_name = String(arena_cfg.get("name", ""))
-	for bx in boxers:
+	an = [_new_an(), _new_an()]
+	for i in range(2):
+		var bx = boxers[i]
 		var r := _make_rig(bx, bx.visual, bx.data.get("look", {}), String(bx.data.get("portrait", "")), false)
 		if r.is_empty():
 			return false
 		rig[bx] = r
+		sprites[i] = Art.tex(String(bx.data.get("sprite", "")))
+		glove_tex[i] = _nearest_glove(String(bx.data.get("look", {}).get("gloves", "#c62828")))
+		skin_col[i] = Color.html(String(bx.data.get("look", {}).get("skin", "#b07a55")))
+		if sprites[i] != null:
+			var img := (sprites[i] as Texture2D).get_image()
+			if img != null and not img.is_empty():
+				var px := img.get_pixel(int(img.get_width() * 0.5), int(img.get_height() * 0.27))
+				if px.a > 0.5:
+					skin_col[i] = px
 	if referee != null:
 		ref_rig = _make_rig(referee, referee.visual, {"skin": "#c9a487", "shorts": "#15151a", "gloves": "#c9a487", "shoes": "#111111", "hair": "#2b2018"}, "", true)
 	for bx in boxers:
@@ -67,11 +101,24 @@ func setup(mgr_, a_, b_, arena_cfg: Dictionary, ref_ = null) -> bool:
 		s.material = Art.additive()
 		s.visible = false
 		s.z_index = 20
-		s.scale = Vector2(0.9, 0.9)
 		add_child(s)
 		stars[bx] = s
+	spot_tex = _make_spot()
 	z_index = 0
 	return true
+
+
+func _make_spot() -> Texture2D:
+	var g := Gradient.new()
+	g.colors = PackedColorArray([Color(1, 1, 1, 0.55), Color(1, 1, 1, 0.0)])
+	var gt := GradientTexture2D.new()
+	gt.gradient = g
+	gt.fill = GradientTexture2D.FILL_RADIAL
+	gt.fill_from = Vector2(0.5, 0.5)
+	gt.fill_to = Vector2(1.0, 0.5)
+	gt.width = 128
+	gt.height = 128
+	return gt
 
 
 func _make_rig(owner_node, visual: Node, look: Dictionary, portrait: String, is_ref: bool) -> Dictionary:
@@ -211,52 +258,6 @@ func _pz(z: float, y: float) -> Vector2:
 	return Vector2(vs.x * 0.5 + (z - cam_z) * k, gy - y * k)
 
 
-func _process(delta: float) -> void:
-	t += delta
-	var vs := _vs()
-	if a == null or b == null:
-		return
-	var mid: float = (a.position.z + b.position.z) * 0.5
-	cam_z = lerpf(cam_z, mid, clampf(delta * 5.0, 0.0, 1.0))
-	zoom_mul = lerpf(zoom_mul, ZOOMS[zoom_idx] + kick, clampf(delta * 4.0, 0.0, 1.0))
-	kick = move_toward(kick, 0.0, delta * 0.25)
-	var dist := absf(a.position.z - b.position.z)
-	var target_k := clampf(vs.x / (dist + 4.6), vs.y * 0.22, vs.y * 0.34) * zoom_mul
-	k = lerpf(k, target_k, clampf(delta * 5.0, 0.0, 1.0))
-	gy = vs.y * 0.80
-	shake = move_toward(shake, 0.0, delta * 40.0)
-	position = Vector2(randf_range(-shake, shake), randf_range(-shake, shake))
-	for s in rope_amp.keys():
-		rope_amp[s] = move_toward(rope_amp[s], 0.0, delta * 1.6)
-	for i in range(2):
-		tint[i] = maxf(0.0, tint[i] - delta)
-	for f in flashes:
-		f["t"] -= delta
-		if f["t"] <= 0.0:
-			f["life"] += delta
-	flashes = flashes.filter(func(f): return f["life"] < 0.18)
-	if confetti_on:
-		for c in confetti:
-			c["p"] += c["v"] * delta
-			c["p"].x += sin(t * 3.0 + c["r"]) * 20.0 * delta
-			c["r"] += delta * 5.0
-			if c["p"].y > vs.y + 20.0:
-				c["p"].y = -10.0
-	for bx in boxers:
-		var s: Sprite2D = stars[bx]
-		if s.texture == null:
-			continue
-		var dizzy: bool = bx.state == Boxer.S.STAGGER or bx.state == Boxer.S.DOWN
-		s.visible = dizzy
-		if dizzy:
-			var hp := _joint_head_pos(bx)
-			s.position = hp + Vector2(0, -0.32 * k)
-			s.rotation = t * 2.5
-			var base := (k * 0.9) / maxf(float(s.texture.get_width()), 1.0)
-			s.scale = Vector2(base, base * 0.5)
-	queue_redraw()
-
-
 func _joint_head_pos(bx) -> Vector2:
 	var j := _joints(bx, rig[bx])
 	return j["Head"]["p"] if j.has("Head") else Vector2.ZERO
@@ -306,143 +307,8 @@ func _seated(bx) -> Dictionary:
 
 # ---------------- dibujo ----------------
 
-func _draw() -> void:
-	var vs := _vs()
-	_draw_backdrop(vs)
-	_draw_floor(vs)
-	_draw_ropes_far(vs)
-	if not ref_rig.is_empty() and referee != null:
-		_draw_figure(referee, ref_rig, 0.0, 1.0, Color.WHITE)
-	if mgr != null and mgr.phase == Manager.Phase.REST:
-		for i in range(2):
-			_draw_stool(i)
-	for i in range(2):
-		var bx = boxers[i]
-		_shadow(bx.position.z)
-		_draw_figure(bx, rig[bx], wear[i], 1.0, tint_col[i].lerp(Color.WHITE, 1.0 - clampf(tint[i] / 0.28, 0.0, 1.0)) if tint[i] > 0.0 else Color.WHITE)
-	_draw_ropes_near(vs)
-	_draw_confetti()
-
-
-func _draw_backdrop(vs: Vector2) -> void:
-	draw_rect(Rect2(Vector2(-60, -60), vs + Vector2(120, 120)), Color(0.03, 0.04, 0.08))
-	if backdrop != null:
-		var tw := float(backdrop.get_width())
-		var th := float(backdrop.get_height())
-		var sc := maxf(vs.x * 1.1 / tw, vs.y * 0.9 / th)
-		var sz := Vector2(tw, th) * sc
-		var off := clampf(-cam_z * k * 0.05, -vs.x * 0.04, vs.x * 0.04)
-		draw_texture_rect(backdrop, Rect2(Vector2((vs.x - sz.x) * 0.5 + off, (vs.y * 0.80 - sz.y) * 0.5 - 6), sz), false, Color(0.82, 0.82, 0.9))
-	# oscurecer arriba y abajo para que los boxeadores resalten
-	var c0 := Color(0, 0, 0, 0.55)
-	var c1 := Color(0, 0, 0, 0.0)
-	draw_polygon(PackedVector2Array([Vector2(-60, -60), Vector2(vs.x + 60, -60), Vector2(vs.x + 60, vs.y * 0.3), Vector2(-60, vs.y * 0.3)]), PackedColorArray([c0, c0, c1, c1]))
-	for f in flashes:
-		if f["t"] <= 0.0:
-			var p := Vector2(float(f["x"]) * vs.x, float(f["y"]) * vs.y)
-			var a_ := 1.0 - float(f["life"]) / 0.18
-			draw_circle(p, 26.0 * a_ + 6.0, Color(1, 1, 1, 0.35 * a_))
-			draw_line(p - Vector2(40, 0) * a_, p + Vector2(40, 0) * a_, Color(1, 1, 1, 0.8 * a_), 2.0)
-			draw_line(p - Vector2(0, 40) * a_, p + Vector2(0, 40) * a_, Color(1, 1, 1, 0.8 * a_), 2.0)
-
-
-func _draw_floor(vs: Vector2) -> void:
-	var top := gy - 0.20 * k
-	var mid := gy + 0.12 * k
-	var cv := Color(0.12, 0.14, 0.24).lerp(accent, 0.22)
-	draw_polygon(PackedVector2Array([Vector2(-60, top), Vector2(vs.x + 60, top), Vector2(vs.x + 60, mid), Vector2(-60, mid)]),
-		PackedColorArray([cv.lightened(0.12), cv.lightened(0.12), cv, cv]))
-	draw_line(Vector2(-60, top), Vector2(vs.x + 60, top), Color(1, 1, 1, 0.35), 2.0)
-	# juntas de la lona
-	var step := 1.0 * k
-	var x0 := fmod(vs.x * 0.5 - cam_z * k, step)
-	var xx := x0 - step
-	while xx < vs.x + step:
-		draw_line(Vector2(xx, top), Vector2(xx - 0.35 * k, mid), Color(0, 0, 0, 0.12), 1.5)
-		xx += step
-	# faldón del ring con el color de la arena y el logo
-	draw_rect(Rect2(Vector2(-60, mid), Vector2(vs.x + 120, vs.y - mid + 60)), accent.darkened(0.45))
-	draw_rect(Rect2(Vector2(-60, mid), Vector2(vs.x + 120, 5.0)), accent.lightened(0.25))
-	if logo != null:
-		var lh := minf(vs.y - mid - 14.0, 0.7 * k)
-		if lh > 20.0:
-			var lw := lh * float(logo.get_width()) / float(logo.get_height())
-			var sp := lw * 1.8
-			var lx := fmod(vs.x * 0.5 - cam_z * k * 1.0, sp) - sp
-			while lx < vs.x + sp:
-				draw_texture_rect(logo, Rect2(Vector2(lx, mid + 10.0), Vector2(lw, lh)), false, Color(1, 1, 1, 0.8))
-				lx += sp
-
-
-func _shadow(z: float) -> void:
-	var p := _pz(z, 0.0)
-	draw_set_transform(p + Vector2(0, 4), 0.0, Vector2(1.0, 0.16))
-	draw_circle(Vector2.ZERO, 0.42 * k, Color(0, 0, 0, 0.35))
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-
-
 func _rope_col(i: int) -> Color:
 	return [Color(0.92, 0.18, 0.22), Color(0.96, 0.96, 0.96), Color(0.2, 0.45, 0.98)][i]
-
-
-func _draw_ropes_far(vs: Vector2) -> void:
-	var yb := gy - 0.20 * k
-	for s in [-1, 1]:
-		var px := _pz(float(s) * ROPE_HALF, 0.0).x
-		var amp: float = rope_amp[s]
-		var sway := sin(t * 28.0) * amp * 0.05 * k
-		# poste lejano
-		draw_line(Vector2(px, yb), Vector2(px, yb - 1.5 * k), Color(0.15, 0.15, 0.2), 0.09 * k)
-		draw_rect(Rect2(Vector2(px - 0.07 * k, yb - 1.45 * k), Vector2(0.14 * k, 1.0 * k)), (Color(0.9, 0.15, 0.2) if s < 0 else Color(0.15, 0.4, 0.95)).darkened(0.2))
-	# cuerdas largas del fondo, de poste a poste
-	var xa := _pz(-ROPE_HALF, 0.0).x
-	var xb := _pz(ROPE_HALF, 0.0).x
-	for i in range(3):
-		var y: float = yb - ROPE_H[i] * k * 0.95
-		draw_line(Vector2(xa, y), Vector2(xb, y), OUTLINE, 0.05 * k)
-		draw_line(Vector2(xa, y), Vector2(xb, y), _rope_col(i).darkened(0.25), 0.036 * k)
-
-
-func _draw_ropes_near(vs: Vector2) -> void:
-	var yn := gy + 0.12 * k
-	for s in [-1, 1]:
-		var px := _pz(float(s) * ROPE_HALF, 0.0).x
-		var amp: float = rope_amp[s]
-		var sway := sin(t * 30.0) * amp * 0.06 * k
-		var pcol := Color(0.9, 0.15, 0.2) if s < 0 else Color(0.15, 0.4, 0.95)
-		# cuerdas de los extremos: del poste cercano al lejano (profundidad)
-		for i in range(3):
-			var h: float = ROPE_H[i]
-			var p0 := Vector2(px, yn - h * k * 1.08 + sway)
-			var p1 := Vector2(px, gy - 0.20 * k - h * k * 0.95 + sway)
-			draw_line(p0, p1, _rope_col(i).darkened(0.1), 0.04 * k)
-		draw_rect(Rect2(Vector2(px - 0.09 * k, yn - 1.5 * k), Vector2(0.18 * k, 1.5 * k)), Color(0.12, 0.12, 0.16))
-		draw_rect(Rect2(Vector2(px - 0.12 * k, yn - 1.42 * k), Vector2(0.24 * k, 1.0 * k)), pcol.darkened(0.15))
-		draw_rect(Rect2(Vector2(px - 0.12 * k, yn - 1.42 * k), Vector2(0.06 * k, 1.0 * k)), pcol.lightened(0.25))
-	# cuerda cercana (semitransparente para no tapar la acción)
-	var xa := _pz(-ROPE_HALF, 0.0).x
-	var xb := _pz(ROPE_HALF, 0.0).x
-	for i in range(3):
-		var y: float = yn - ROPE_H[i] * k * 1.08
-		var c := _rope_col(i)
-		c.a = 0.4
-		draw_line(Vector2(xa, y), Vector2(xb, y), c, 0.045 * k)
-
-
-func _draw_stool(i: int) -> void:
-	var z: float = (-2.2 if i == 0 else 2.2)
-	var p := _pz(z, 0.0)
-	var c := Color(0.8, 0.12, 0.14) if i == 0 else Color(0.14, 0.32, 0.85)
-	for dx in [-0.17, 0.17]:
-		draw_line(p + Vector2(dx * k, 0), p + Vector2(dx * 0.7 * k, -0.5 * k), OUTLINE, 0.06 * k)
-		draw_line(p + Vector2(dx * k, 0), p + Vector2(dx * 0.7 * k, -0.5 * k), c.darkened(0.2), 0.04 * k)
-	draw_rect(Rect2(p + Vector2(-0.23 * k, -0.54 * k), Vector2(0.46 * k, 0.06 * k)), c)
-	draw_rect(Rect2(p + Vector2(-0.23 * k, -0.54 * k), Vector2(0.46 * k, 0.015 * k)), c.lightened(0.4))
-	# cubo y toalla del entrenador
-	var tw := Art.gear("towel")
-	if tw != null:
-		var sx := 0.34 * k
-		draw_texture_rect(tw, Rect2(p + Vector2((0.5 if i == 0 else -0.8) * k, -0.5 * k), Vector2(sx * 0.7, sx)), false, Color(1, 1, 1, 0.9))
 
 
 func _draw_confetti() -> void:
@@ -452,6 +318,425 @@ func _draw_confetti() -> void:
 		draw_set_transform(c["p"], c["r"], Vector2.ONE)
 		draw_rect(Rect2(Vector2(-c["w"] * 0.5, -2), Vector2(c["w"], 4)), c["c"])
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+
+func _process(delta: float) -> void:
+	t += delta
+	var vs := _vs()
+	if a == null or b == null:
+		return
+	var mid: float = (a.position.z + b.position.z) * 0.5
+	cam_z = lerpf(cam_z, mid, clampf(delta * 5.0, 0.0, 1.0))
+	zoom_mul = lerpf(zoom_mul, ZOOMS[zoom_idx] + kick, clampf(delta * 4.0, 0.0, 1.0))
+	kick = move_toward(kick, 0.0, delta * 0.25)
+	var dist := absf(a.position.z - b.position.z)
+	var target_k := clampf(vs.x / (dist + 4.6), vs.y * 0.21, vs.y * 0.29) * zoom_mul
+	k = lerpf(k, target_k, clampf(delta * 5.0, 0.0, 1.0))
+	gy = vs.y * 0.74
+	shake = move_toward(shake, 0.0, delta * 40.0)
+	position = Vector2(randf_range(-shake, shake), randf_range(-shake, shake))
+	for s in rope_amp.keys():
+		rope_amp[s] = move_toward(rope_amp[s], 0.0, delta * 1.6)
+	for i in range(2):
+		tint[i] = maxf(0.0, tint[i] - delta)
+		_animate(i, delta)
+	for f in flashes:
+		f["t"] -= delta
+		if f["t"] <= 0.0:
+			f["life"] += delta
+	flashes = flashes.filter(func(f): return f["life"] < 0.18)
+	if confetti_on:
+		for c in confetti:
+			c["p"] += c["v"] * delta
+			c["p"].x += sin(t * 3.0 + c["r"]) * 20.0 * delta
+			c["r"] += delta * 5.0
+			if c["p"].y > vs.y + 20.0:
+				c["p"].y = -10.0
+	for i in range(2):
+		var bx = boxers[i]
+		var s: Sprite2D = stars[bx]
+		if s.texture == null:
+			continue
+		var dizzy: bool = bx.state == Boxer.S.STAGGER or bx.state == Boxer.S.DOWN
+		s.visible = dizzy
+		if dizzy:
+			var hp := _sprite_head(i)
+			s.position = hp + Vector2(0, -0.08 * k)
+			s.rotation = t * 2.5
+			var base := (k * 0.9) / maxf(float(s.texture.get_width()), 1.0)
+			s.scale = Vector2(base, base * 0.5)
+	queue_redraw()
+
+
+# ---------------- animación de los sprites ----------------
+
+func _height_px(i: int) -> float:
+	var hm: float = float(boxers[i].data.get("height_cm", 182)) / 182.0
+	return BODY_M * hm * k
+
+
+func _sprite_head(i: int) -> Vector2:
+	var bx = boxers[i]
+	var foot := _pz(bx.position.z, 0.0)
+	return _xf(i, foot + Vector2(0, -0.93 * _height_px(i)), foot)
+
+
+## Aplica la pose animada (desplazamiento, giro y escala alrededor de los pies) a un punto de pantalla.
+func _xf(i: int, p: Vector2, foot: Vector2) -> Vector2:
+	var d: Dictionary = an[i]
+	var rel := (p - foot) * Vector2(float(d["sx"]), float(d["sy"]))
+	return foot + d["off"] + rel.rotated(float(d["rot"]))
+
+
+func _animate(i: int, delta: float) -> void:
+	var bx = boxers[i]
+	var f: float = bx.facing
+	var H := _height_px(i)
+	var o := Vector2.ZERO
+	var rot := 0.0
+	var sx := 1.0
+	var sy := 1.0
+	var rate := 16.0
+	var ph := t * 3.2 + float(i) * 1.7
+	match bx.state:
+		Boxer.S.IDLE:
+			sy = 1.0 + sin(ph) * 0.012
+			o.x = sin(ph * 0.5) * 0.008 * H
+			rot = sin(ph * 0.5) * 0.012
+		Boxer.S.MOVE:
+			var sp := t * 9.0 + float(i)
+			o.y = -absf(sin(sp)) * 0.020 * H
+			rot = f * clampf(float(bx.move_cur), -1.0, 1.0) * 0.05
+			sy = 1.0 - absf(sin(sp)) * 0.012
+		Boxer.S.ATTACK:
+			rate = 26.0
+			var at: Dictionary = bx.table["attacks"][bx.cur_attack]
+			var su: float = float(at["startup"])
+			var ac: float = float(at["active"])
+			var rc: float = float(at["recovery"])
+			var tt: float = float(bx.attack_t)
+			var kind := String(bx.cur_attack)
+			var body := String(at.get("target", "head")) == "body"
+			var up := kind.contains("upper")
+			var hook := kind.contains("hook") or kind.contains("overhand")
+			var w := 0.0              # 0 = sin golpe, 1 = golpe a fondo
+			var pre := 0.0            # carga previa
+			if tt < su:
+				pre = clampf(tt / maxf(su, 0.01), 0.0, 1.0)
+			elif tt < su + ac:
+				w = 1.0
+			else:
+				w = clampf(1.0 - (tt - su - ac) / maxf(rc, 0.01), 0.0, 1.0)
+			var lunge := 0.24
+			var lean := 0.14
+			if hook:
+				lunge = 0.13
+				lean = 0.20
+			if up:
+				lunge = 0.07
+				lean = 0.07
+			o.x = f * (lunge * H * w - 0.035 * H * pre)
+			rot = f * (lean * w - 0.045 * pre)
+			if body:
+				sy = 1.0 - 0.10 * maxf(w, pre)
+				rot = f * (0.20 * w - 0.03 * pre)
+				o.y = 0.0
+			if up:
+				sy = 1.0 - 0.09 * pre + 0.06 * w
+				o.y = -0.02 * H * w
+			elif hook:
+				sx = 1.0 + 0.03 * w
+		Boxer.S.BLOCK:
+			o.x = -f * 0.025 * H
+			rot = -f * 0.035
+			sx = 0.97
+			sy = 0.985
+		Boxer.S.DODGE:
+			rate = 24.0
+			var dt: float = clampf(float(bx.dodge_t) / 0.35, 0.0, 1.0)
+			var cur := String(bx.last_clip)
+			var k2 := sin(dt * PI)
+			sy = 1.0 - 0.14 * k2
+			o.x = -f * 0.10 * H * k2 * (1.0 if cur.ends_with("left") else -1.0 if cur.ends_with("right") else 1.0)
+			rot = -f * 0.10 * k2
+		Boxer.S.HIT:
+			rate = 30.0
+			o.x = -f * 0.075 * H
+			rot = -f * 0.13
+			sy = 0.985
+		Boxer.S.STAGGER:
+			o.x = -f * 0.04 * H + sin(t * 12.0) * 0.012 * H
+			rot = -f * 0.10 + sin(t * 11.0) * 0.045
+		Boxer.S.DOWN:
+			rate = 9.0
+			rot = -f * (PI * 0.5 - 0.08)
+			o.y = -0.30 * (H * 0.5)
+			o.x = -f * 0.05 * H
+		Boxer.S.GETUP:
+			rate = 7.0
+			rot = -f * 0.55
+			o.y = -0.10 * H
+			sy = 0.93
+		Boxer.S.WIN:
+			o.y = -absf(sin(t * 5.0 + float(i))) * 0.05 * H
+			sy = 1.02
+		Boxer.S.LOSE:
+			rot = f * 0.16
+			sy = 0.94
+			o.x = f * 0.02 * H
+	var d: Dictionary = an[i]
+	var w2 := 1.0 - exp(-rate * delta)
+	d["off"] = (d["off"] as Vector2).lerp(o, w2)
+	d["rot"] = lerpf(float(d["rot"]), rot, w2)
+	d["sx"] = lerpf(float(d["sx"]), sx, w2)
+	d["sy"] = lerpf(float(d["sy"]), sy, w2)
+	# estela de movimiento durante los golpes
+	var tr: Array = trail[i]
+	if bx.state == Boxer.S.ATTACK and bx.attack_phase() != "startup":
+		tr.append({"off": d["off"], "rot": d["rot"], "life": 0.12})
+	for e in tr:
+		e["life"] -= delta
+	trail[i] = tr.filter(func(e): return e["life"] > 0.0)
+
+
+# ---------------- dibujo por capas ----------------
+
+func _draw() -> void:
+	var vs := _vs()
+	_draw_backdrop(vs)            # 1. fondo y público
+	_draw_lights(vs)              # 2. iluminación
+	_draw_floor(vs)               # 3. lona y faldón del ring
+	_draw_ropes_back(vs)          # 4. cuerdas y postes traseros
+	if mgr != null and mgr.phase == Manager.Phase.REST:
+		pass
+	_draw_ropes_front(vs)         # 5. postes y cuerdas de los extremos (detrás de los boxeadores para no taparlos)
+	var order := [0, 1]
+	if boxers[1].position.z < boxers[0].position.z:
+		order = [1, 0]
+	for i in order:                # 5. boxeadores
+		_draw_fighter(i)           # 6. boxeadores
+	_draw_confetti()
+	_draw_corner_logo(vs)         # un solo logotipo discreto
+
+
+func _draw_backdrop(vs: Vector2) -> void:
+	draw_rect(Rect2(Vector2(-60, -60), vs + Vector2(120, 120)), Color(0.03, 0.04, 0.08))
+	if backdrop != null:
+		var tw := float(backdrop.get_width())
+		var th := float(backdrop.get_height())
+		var sc := maxf(vs.x * 1.06 / tw, (gy + 10.0) / th)
+		var sz := Vector2(tw, th) * sc
+		var off := clampf(-cam_z * k * 0.04, -vs.x * 0.025, vs.x * 0.025)
+		draw_texture_rect(backdrop, Rect2(Vector2((vs.x - sz.x) * 0.5 + off, gy - sz.y + 24.0), sz), false, Color(0.80, 0.80, 0.86))
+	# contraste: vignette superior e inferior
+	var c0 := Color(0, 0, 0, 0.50)
+	var c1 := Color(0, 0, 0, 0.0)
+	draw_polygon(PackedVector2Array([Vector2(-60, -60), Vector2(vs.x + 60, -60), Vector2(vs.x + 60, vs.y * 0.34), Vector2(-60, vs.y * 0.34)]), PackedColorArray([c0, c0, c1, c1]))
+	var sd := Color(0, 0, 0, 0.35)
+	draw_polygon(PackedVector2Array([Vector2(-60, gy - 0.5 * k), Vector2(vs.x + 60, gy - 0.5 * k), Vector2(vs.x + 60, gy), Vector2(-60, gy)]), PackedColorArray([c1, c1, sd, sd]))
+	for f in flashes:
+		if f["t"] <= 0.0:
+			var p := Vector2(float(f["x"]) * vs.x, float(f["y"]) * vs.y * 0.8)
+			var a_ := 1.0 - float(f["life"]) / 0.18
+			draw_circle(p, 22.0 * a_ + 5.0, Color(1, 1, 1, 0.35 * a_))
+			draw_line(p - Vector2(36, 0) * a_, p + Vector2(36, 0) * a_, Color(1, 1, 1, 0.8 * a_), 2.0)
+			draw_line(p - Vector2(0, 36) * a_, p + Vector2(0, 36) * a_, Color(1, 1, 1, 0.8 * a_), 2.0)
+
+
+func _draw_lights(vs: Vector2) -> void:
+	if spot_tex == null:
+		return
+	# cono de luz cenital sobre el ring (aditivo, muy suave)
+	var cx := vs.x * 0.5
+	var glow := accent.lerp(Color.WHITE, 0.65)
+	glow.a = 0.07
+	for s in [-0.28, 0.0, 0.28]:
+		var top := Vector2(cx + s * vs.x, -10.0)
+		var foot := Vector2(cx + s * vs.x * 0.55, gy - 0.1 * k)
+		draw_colored_polygon(PackedVector2Array([top - Vector2(30, 0), top + Vector2(30, 0), foot + Vector2(0.55 * k, 0), foot - Vector2(0.55 * k, 0)]), glow)
+	# charco de luz sobre la lona bajo los boxeadores
+	for i in range(2):
+		var p := _pz(boxers[i].position.z, 0.0)
+		draw_set_transform(p, 0.0, Vector2(1.0, 0.22))
+		draw_texture_rect(spot_tex, Rect2(Vector2(-0.9 * k, -0.9 * k), Vector2(1.8 * k, 1.8 * k)), false, Color(1, 0.95, 0.85, 0.30))
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+func _draw_floor(vs: Vector2) -> void:
+	var top := gy - 0.28 * k
+	var mid := gy + 0.14 * k
+	var cv := Color(0.14, 0.16, 0.26).lerp(accent, 0.20)
+	draw_polygon(PackedVector2Array([Vector2(-60, top), Vector2(vs.x + 60, top), Vector2(vs.x + 60, mid), Vector2(-60, mid)]),
+		PackedColorArray([cv.lightened(0.14), cv.lightened(0.14), cv, cv]))
+	draw_line(Vector2(-60, top), Vector2(vs.x + 60, top), Color(1, 1, 1, 0.28), 2.0)
+	var step := 1.0 * k
+	var x0 := fmod(vs.x * 0.5 - cam_z * k, step)
+	var xx := x0 - step
+	while xx < vs.x + step:
+		draw_line(Vector2(xx, top), Vector2(xx - 0.30 * k, mid), Color(0, 0, 0, 0.10), 1.5)
+		xx += step
+	# faldón con el color de la arena (sin logotipos repetidos)
+	var ap := accent.darkened(0.5)
+	draw_polygon(PackedVector2Array([Vector2(-60, mid), Vector2(vs.x + 60, mid), Vector2(vs.x + 60, vs.y + 60), Vector2(-60, vs.y + 60)]),
+		PackedColorArray([ap.lightened(0.10), ap.lightened(0.10), ap.darkened(0.35), ap.darkened(0.35)]))
+	draw_rect(Rect2(Vector2(-60, mid), Vector2(vs.x + 120, 4.0)), accent.lightened(0.3))
+
+
+func _draw_corner_logo(vs: Vector2) -> void:
+	if logo == null:
+		return
+	var h := vs.y * 0.10
+	var w := h * float(logo.get_width()) / float(logo.get_height())
+	draw_set_transform(-position, 0.0, Vector2.ONE)
+	draw_texture_rect(logo, Rect2(Vector2(vs.x - w - 16.0, vs.y * 0.155), Vector2(w, h)), false, Color(1, 1, 1, 0.55))
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+func _draw_ropes_back(vs: Vector2) -> void:
+	var yb := gy - 0.28 * k
+	var xa := _pz(-ROPE_HALF, 0.0).x
+	var xb := _pz(ROPE_HALF, 0.0).x
+	for s in [-1, 1]:
+		var px := _pz(float(s) * ROPE_HALF, 0.0).x
+		var pc := Color(0.82, 0.14, 0.18) if s < 0 else Color(0.14, 0.36, 0.88)
+		draw_line(Vector2(px, yb), Vector2(px, yb - 1.55 * k), Color(0.10, 0.10, 0.14), 0.085 * k)
+		draw_rect(Rect2(Vector2(px - 0.06 * k, yb - 1.45 * k), Vector2(0.12 * k, 1.0 * k)), pc.darkened(0.25))
+	for i in range(3):
+		var y: float = yb - ROPE_H[i] * k * 0.95
+		draw_line(Vector2(xa, y), Vector2(xb, y), OUTLINE, 0.048 * k)
+		draw_line(Vector2(xa, y), Vector2(xb, y), _rope_col(i).darkened(0.15), 0.032 * k)
+		draw_line(Vector2(xa, y - 0.008 * k), Vector2(xb, y - 0.008 * k), _rope_col(i).lightened(0.35), 0.008 * k)
+
+
+func _draw_ropes_front(vs: Vector2) -> void:
+	# solo los postes y las cuerdas de los extremos (no cruzan a los boxeadores)
+	var yn := gy + 0.14 * k
+	var yb := gy - 0.28 * k
+	for s in [-1, 1]:
+		var px := _pz(float(s) * ROPE_HALF, 0.0).x
+		var amp: float = rope_amp[s]
+		var sway := sin(t * 30.0) * amp * 0.06 * k
+		var pcol := Color(0.82, 0.14, 0.18) if s < 0 else Color(0.14, 0.36, 0.88)
+		for i in range(3):
+			var h: float = ROPE_H[i]
+			var p0 := Vector2(px, yn - h * k * 1.08 + sway)
+			var p1 := Vector2(px, yb - h * k * 0.95 + sway)
+			draw_line(p0, p1, OUTLINE, 0.05 * k)
+			draw_line(p0, p1, _rope_col(i).darkened(0.1), 0.034 * k)
+		draw_rect(Rect2(Vector2(px - 0.085 * k, yn - 1.55 * k), Vector2(0.17 * k, 1.55 * k)), Color(0.10, 0.10, 0.14))
+		draw_rect(Rect2(Vector2(px - 0.115 * k, yn - 1.45 * k), Vector2(0.23 * k, 1.0 * k)), pcol.darkened(0.12))
+		draw_rect(Rect2(Vector2(px - 0.115 * k, yn - 1.45 * k), Vector2(0.06 * k, 1.0 * k)), pcol.lightened(0.28))
+
+
+func _draw_referee() -> void:
+	# figura de fondo, más lejos y más tenue, para que no compita con los boxeadores
+	var k0 := k
+	var gy0 := gy
+	k = k0 * 0.82
+	gy = gy0 - 0.20 * k0
+	_draw_figure(referee, ref_rig, 0.0, 1.0, Color(0.58, 0.60, 0.74))
+	k = k0
+	gy = gy0
+
+
+## Boxeador = sprite de cuerpo entero con pose animada + brazo/guante que sigue al golpe.
+func _draw_fighter(i: int) -> void:
+	var bx = boxers[i]
+	var tex: Texture2D = sprites[i]
+	if tex == null:
+		_draw_figure(bx, rig[bx], wear[i], 1.0, Color.WHITE)
+		return
+	var f: float = bx.facing
+	var H := _height_px(i)
+	var W := H * float(tex.get_width()) / float(tex.get_height())
+	var foot := _pz(bx.position.z, 0.0) + Vector2(0, 0.05 * H)
+	var d: Dictionary = an[i]
+	var seat: bool = mgr != null and mgr.phase == Manager.Phase.REST and bx.visual.position.y < -0.15
+	# sombra de contacto
+	var lying: bool = bx.state == Boxer.S.DOWN
+	draw_set_transform(foot + Vector2(0, -0.012 * H), 0.0, Vector2(1.0, 0.14))
+	draw_circle(Vector2.ZERO, (0.26 * H if not lying else 0.5 * H), Color(0, 0, 0, 0.5))
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	var col := Color.WHITE
+	if tint[i] > 0.0:
+		col = tint_col[i].lerp(Color.WHITE, 1.0 - clampf(tint[i] / 0.28, 0.0, 1.0))
+	if seat:
+		_draw_seated(i, tex, foot, H, W, f, col)
+		return
+	var flip := -1.0 if f < 0.0 else 1.0
+	# estela
+	for e in trail[i]:
+		var al := clampf(float(e["life"]) / 0.12, 0.0, 1.0) * 0.22
+		draw_set_transform(foot + e["off"], float(e["rot"]), Vector2(flip * float(d["sx"]), float(d["sy"])))
+		draw_texture_rect(tex, Rect2(Vector2(-W * 0.5, -H), Vector2(W, H)), false, Color(1, 1, 1, al))
+	draw_set_transform(foot + d["off"], float(d["rot"]), Vector2(flip * float(d["sx"]), float(d["sy"])))
+	draw_texture_rect(tex, Rect2(Vector2(-W * 0.5, -H), Vector2(W, H)), false, col)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	if bx.state == Boxer.S.BLOCK:
+		var hp := _sprite_head(i)
+		draw_arc(hp + Vector2(f * 0.10 * H, 0.04 * H), 0.12 * H, -1.2, 1.2 if f > 0.0 else 1.2, 12, Color(0.4, 0.85, 1.0, 0.35), 0.012 * H)
+	if bx.state == Boxer.S.ATTACK and bx.attack_phase() != "startup":
+		_draw_punch(i, foot, H)
+	elif bx.state == Boxer.S.ATTACK:
+		_draw_punch(i, foot, H)
+
+
+func _draw_seated(i: int, tex: Texture2D, foot: Vector2, H: float, W: float, f: float, col: Color) -> void:
+	var seat_h := 0.46 * k
+	var cut := 0.60
+	var flip := -1.0 if f < 0.0 else 1.0
+	var dst_h := H * cut
+	draw_set_transform(Vector2(foot.x, foot.y - seat_h) + Vector2(0, sin(t * 2.0 + float(i)) * 0.004 * H), 0.0, Vector2(flip, 1.0))
+	draw_texture_rect_region(tex, Rect2(Vector2(-W * 0.5, -dst_h), Vector2(W, dst_h)), Rect2(Vector2(0, 0), Vector2(tex.get_width(), tex.get_height() * cut)), col)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	# banqueta de esquina
+	var c := Color(0.8, 0.12, 0.14) if i == 0 else Color(0.14, 0.32, 0.85)
+	var sw := 0.62 * k
+	draw_rect(Rect2(Vector2(foot.x - sw * 0.5, foot.y - seat_h), Vector2(sw, seat_h)), c.darkened(0.45))
+	draw_rect(Rect2(Vector2(foot.x - sw * 0.5, foot.y - seat_h - 0.05 * k), Vector2(sw, 0.09 * k)), c)
+	draw_rect(Rect2(Vector2(foot.x - sw * 0.5, foot.y - seat_h - 0.05 * k), Vector2(sw, 0.02 * k)), c.lightened(0.4))
+	var tw := Art.gear("towel")
+	if tw != null:
+		var sx := 0.34 * k
+		draw_texture_rect(tw, Rect2(Vector2(foot.x + f * 0.55 * k - sx * 0.35, foot.y - seat_h - 0.25 * k), Vector2(sx * 0.7, sx)), false, Color(1, 1, 1, 0.9))
+
+
+## Golpe: estela de velocidad (sprite aditivo) desde el hombro hasta donde llega la mano del esqueleto (misma lógica del impacto).
+func _draw_punch(i: int, foot: Vector2, H: float) -> void:
+	var bx = boxers[i]
+	if bx.attack_phase() == "startup":
+		return
+	var f: float = bx.facing
+	var J := _joints(bx, rig[bx])
+	var chest: Vector2 = J["Chest"]["p"]
+	var best := ""
+	var ext := 0.0
+	for s in ["L", "R"]:
+		var hp: Vector2 = J["Hand_" + s]["p"]
+		var e := (hp.x - chest.x) * f / k
+		if e > ext:
+			ext = e
+			best = s
+	if best == "" or ext < 0.30:
+		return
+	var hand: Vector2 = _xf(i, J["Hand_" + best]["p"], foot)
+	var sh: Vector2 = _xf(i, foot + Vector2(f * 0.03 * H, -0.80 * H), foot)
+	var dir := hand - sh
+	if dir.length() < 6.0:
+		return
+	var n := dir.normalized()
+	var tex := Art.fx("fx_red_swoosh" if i == 0 else "fx_blue_swoosh")
+	var col := Color(1, 1, 1, 0.85)
+	if tex != null:
+		var len := dir.length() * 1.25
+		var wd := len * float(tex.get_height()) / maxf(float(tex.get_width()), 1.0) * 1.2
+		draw_set_transform(sh + dir * 0.55, dir.angle(), Vector2.ONE)
+		draw_texture_rect(tex, Rect2(Vector2(-len * 0.5, -wd * 0.5), Vector2(len, wd)), false, col)
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	# destello en el puño
+	draw_circle(hand, 0.05 * H, Color(1, 1, 1, 0.55))
+	draw_circle(hand, 0.09 * H, Color(1, 0.9, 0.6, 0.18))
 
 
 # ---- muñeco ----
