@@ -46,6 +46,8 @@ var behind_bonus := 0.0              # >0: va perdiendo y arriesga más
 
 var orbit_timer := 0.0            # footwork orbital: cada cuánto cambia de lado
 var orbit_dir := 1.0
+var fw_timer := 0.0              # juego de pies adelante/atrás en guardia
+var fw_dir := 0.0
 
 func setup(me_, foe_, profile_: Dictionary, skill_: float) -> void:
 	me = me_
@@ -342,6 +344,13 @@ func _offense_and_movement(delta: float, dist: float) -> void:
 		mv = 1.0
 	elif dist < desired - 0.2 and (pressure < 0.7 or rest_mode):
 		mv = -1.0
+	if mv == 0.0 and not rest_mode:
+		# en distancia de combate no se queda clavado: entra y sale con pasos cortos
+		fw_timer -= delta
+		if fw_timer <= 0.0:
+			fw_timer = rng.randf_range(0.45, 1.1)
+			fw_dir = [-1.0, 1.0, 1.0, 0.0][rng.randi() % 4]
+		mv = fw_dir
 	me.cmd_move(mv)
 
 	# Footwork orbital: el rival deja de perseguir en línea recta y cambia el ángulo.

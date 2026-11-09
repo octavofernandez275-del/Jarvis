@@ -13,7 +13,7 @@ const OUTLINE := Color(0.04, 0.04, 0.07)
 const BONES := ["Hips", "Spine", "Chest", "Neck", "Head", "UpperArm_L", "Forearm_L", "Hand_L", "UpperArm_R", "Forearm_R", "Hand_R",
 	"Thigh_L", "Shin_L", "Foot_L", "Thigh_R", "Shin_R", "Foot_R"]
 const ZOOMS := [1.0, 1.15, 0.85]
-const BODY_M := 2.2               # altura del sprite en metros (para 182 cm)
+const BODY_M := 1.85               # altura del sprite en metros (para 182 cm)
 
 var mgr
 var a
@@ -49,6 +49,34 @@ var skin_col: Array = [Color(0.7, 0.5, 0.4), Color(0.7, 0.5, 0.4)]
 var an: Array = []                       # animación suavizada de cada boxeador
 var trail: Array = [[], []]
 var spot_tex: Texture2D
+# --- animación por fotogramas (lámina maestra) ---
+const ANIM_DIR := "res://ART/anim/"
+const IMPACT := {"jab": 3, "cross": 1, "hook_l": 2, "hook_r": 2, "upper": 2}
+const CLIP_SHADER := "shader_type canvas_item;
+uniform sampler2D mask : filter_linear;
+uniform vec4 shorts_c : source_color;
+uniform vec4 glove_c : source_color;
+uniform vec4 skin_t : source_color;
+void fragment() {
+	vec4 c = texture(TEXTURE, UV);
+	vec3 m = texture(mask, UV).rgb;
+	float l = dot(c.rgb, vec3(0.3, 0.59, 0.11));
+	vec3 r = c.rgb;
+	r = mix(r, shorts_c.rgb * (0.30 + l * 1.5), m.r * 0.75);
+	r = mix(r, glove_c.rgb * (0.30 + l * 1.5), m.g * 0.8);
+	r = mix(r, r * skin_t.rgb, m.b * 0.0);
+	COLOR = vec4(min(r * 1.12, vec3(1.0)), c.a) * COLOR;
+}"
+var clips_ok := false
+var clip_meta: Dictionary = {}
+var clip_tex: Dictionary = {}
+var clip_mask: Dictionary = {}
+var fig_h := 250.0
+var spr: Array = [null, null]
+var st_prev := [-1, -1]
+var st_t := [0.0, 0.0]
+var cur_clip := ["idle", "idle"]
+var cur_frame := [0, 0]
 
 
 func _new_an() -> Dictionary:
@@ -104,8 +132,123 @@ func setup(mgr_, a_, b_, arena_cfg: Dictionary, ref_ = null) -> bool:
 		add_child(s)
 		stars[bx] = s
 	spot_tex = _make_spot()
+	_load_clips()
 	z_index = 0
 	return true
+
+
+func _load_clips() -> void:
+	var jf := FileAccess.open(ANIM_DIR + "anim.json", FileAccess.READ)
+	if jf == null:
+		return
+	var meta = JSON.parse_string(jf.get_as_text())
+	if typeof(meta) != TYPE_DICTIONARY:
+		return
+	clip_meta = meta["clips"]
+	fig_h = float(meta.get("fig_h", 250.0))
+	for nm in clip_meta.keys():
+		var t1 = load(ANIM_DIR + nm + ".png")
+		var t2 = load(ANIM_DIR + nm + "_m.png")
+		if t1 == null or t2 == null:
+			return
+		clip_tex[nm] = t1
+		clip_mask[nm] = t2
+	var sh := Shader.new()
+	sh.code = CLIP_SHADER
+	for i in range(2):
+		var sp := Sprite2D.new()
+		sp.centered = false
+		sp.region_enabled = true
+		sp.z_index = 2
+		var mat := ShaderMaterial.new()
+		mat.shader = sh
+		var lk: Dictionary = boxers[i].data.get("look", {})
+		mat.set_shader_parameter("shorts_c", Color.html(String(lk.get("shorts", "#c62828"))))
+		mat.set_shader_parameter("glove_c", Color.html(String(lk.get("gloves", "#c62828"))))
+		var sk: Color = skin_col[i]
+		var ref := Color(0.78, 0.52, 0.40)
+		mat.set_shader_parameter("skin_t", Color(clampf(sk.r / ref.r, 0.4, 1.4), clampf(sk.g / ref.g, 0.4, 1.4), clampf(sk.b / ref.b, 0.4, 1.4)))
+		sp.material = mat
+		sp.visible = false
+		add_child(sp)
+		spr[i] = sp
+	clips_ok = true
+
+
+## Elige clip y fotograma según el estado real del boxeador (máquina de estados del combate).
+func _pick_clip(i: int) -> Array:
+	var bx = boxers[i]
+	var st_s: float = st_t[i]
+	var clip := "idle"
+	var idx := 0
+	var f: float = bx.facing
+	match bx.state:
+		Boxer.S.IDLE:
+			clip = "idle"
+			idx = int(t * 6.0 + float(i) * 3.0)
+		Boxer.S.MOVE:
+			var fwd: bool = float(bx.move_cur) * f >= 0.0 or true
+			var mc: float = float(bx.move_cur)
+			if absf(mc) > 0.55:
+				clip = "run"
+				idx = int(t * 11.0)
+			else:
+				clip = "walk"
+				idx = int(t * 7.0)
+			if mc < 0.0:
+				idx = int(clip_meta[clip]["n"]) - 1 - (idx % int(clip_meta[clip]["n"]))
+		Boxer.S.ATTACK:
+			var at: Dictionary = bx.table["attacks"][bx.cur_attack]
+			var kind := String(bx.cur_attack)
+			var hand := String(at.get("hand", "L"))
+			if kind.contains("upper"):
+				clip = "upper"
+			elif kind.contains("hook") or kind.contains("overhand"):
+				clip = "hook_l" if hand == "L" else "hook_r"
+			else:
+				clip = "jab" if hand == "L" else "cross"
+			var n: int = int(clip_meta[clip]["n"])
+			var p: int = mini(int(IMPACT.get(clip, 2)), n - 1)
+			var su: float = float(at["startup"])
+			var ac: float = float(at["active"])
+			var rc: float = float(at["recovery"])
+			var tt: float = float(bx.attack_t)
+			if tt < su:
+				idx = int(roundf(lerpf(0.0, float(maxi(p - 1, 0)), clampf(tt / maxf(su, 0.01), 0.0, 1.0))))
+			elif tt < su + ac:
+				idx = p
+			else:
+				var r := clampf((tt - su - ac) / maxf(rc, 0.01), 0.0, 1.0)
+				idx = p + 1 + int(r * float(n - 2 - p))
+		Boxer.S.BLOCK:
+			clip = "block"
+			idx = mini(int(st_s * 16.0), 2)
+		Boxer.S.DODGE:
+			clip = "dodge"
+			idx = int(clampf(st_s / 0.35, 0.0, 0.99) * float(clip_meta[clip]["n"]))
+		Boxer.S.HIT:
+			clip = "hit"
+			idx = mini(int(st_s * 16.0), int(clip_meta[clip]["n"]) - 1)
+		Boxer.S.STAGGER:
+			clip = "stagger"
+			idx = int(t * 5.0)
+		Boxer.S.DOWN:
+			clip = "down"
+			idx = mini(int(st_s / 0.12), int(clip_meta[clip]["n"]) - 1)
+		Boxer.S.GETUP:
+			clip = "down"
+			var nn: int = int(clip_meta[clip]["n"])
+			idx = nn - 1 - mini(int(st_s / 0.12), nn - 1)
+		Boxer.S.WIN:
+			clip = "win"
+			idx = int(t * 5.0)
+		Boxer.S.LOSE:
+			clip = "lose"
+			idx = mini(int(st_s / 0.2), int(clip_meta[clip]["n"]) - 1)
+	var cnt: int = int(clip_meta[clip]["n"])
+	idx = clampi(idx % cnt if bx.state in [Boxer.S.IDLE, Boxer.S.MOVE, Boxer.S.STAGGER, Boxer.S.WIN] else idx, 0, cnt - 1)
+	return [clip, idx]
+
 
 
 func _make_spot() -> Texture2D:
@@ -391,6 +534,10 @@ func _xf(i: int, p: Vector2, foot: Vector2) -> Vector2:
 
 func _animate(i: int, delta: float) -> void:
 	var bx = boxers[i]
+	if st_prev[i] != bx.state:
+		st_prev[i] = bx.state
+		st_t[i] = 0.0
+	st_t[i] += delta
 	var f: float = bx.facing
 	var H := _height_px(i)
 	var o := Vector2.ZERO
@@ -485,6 +632,19 @@ func _animate(i: int, delta: float) -> void:
 			rot = f * 0.16
 			sy = 0.94
 			o.x = f * 0.02 * H
+	if clips_ok:
+		# la postura la dan los fotogramas; aquí solo queda desplazamiento físico (avance, retroceso, empuje)
+		rot *= 0.25
+		sx = 1.0 + (sx - 1.0) * 0.2
+		sy = 1.0 + (sy - 1.0) * 0.2
+		if bx.state == Boxer.S.DOWN or bx.state == Boxer.S.GETUP or bx.state == Boxer.S.LOSE:
+			rot = 0.0
+			o.y = 0.0
+			sy = 1.0
+		if bx.state == Boxer.S.IDLE:        # juego de pies en guardia: balanceo y cambio de peso
+			o.x += sin(t * 1.7 + float(i) * 2.0) * 0.035 * H
+		if bx.state == Boxer.S.DOWN:
+			o.x = -f * 0.10 * H
 	var d: Dictionary = an[i]
 	var w2 := 1.0 - exp(-rate * delta)
 	d["off"] = (d["off"] as Vector2).lerp(o, w2)
@@ -493,7 +653,7 @@ func _animate(i: int, delta: float) -> void:
 	d["sy"] = lerpf(float(d["sy"]), sy, w2)
 	# estela de movimiento durante los golpes
 	var tr: Array = trail[i]
-	if bx.state == Boxer.S.ATTACK and bx.attack_phase() != "startup":
+	if not clips_ok and bx.state == Boxer.S.ATTACK and bx.attack_phase() != "startup":
 		tr.append({"off": d["off"], "rot": d["rot"], "life": 0.12})
 	for e in tr:
 		e["life"] -= delta
@@ -650,7 +810,7 @@ func _draw_fighter(i: int) -> void:
 	var f: float = bx.facing
 	var H := _height_px(i)
 	var W := H * float(tex.get_width()) / float(tex.get_height())
-	var foot := _pz(bx.position.z, 0.0) + Vector2(0, 0.05 * H)
+	var foot := _pz(bx.position.z, 0.0) + Vector2(0, 0.05 * H + clampf(bx.position.x, -1.6, 1.6) * 0.05 * k)
 	var d: Dictionary = an[i]
 	var seat: bool = mgr != null and mgr.phase == Manager.Phase.REST and bx.visual.position.y < -0.15
 	# sombra de contacto
@@ -662,9 +822,14 @@ func _draw_fighter(i: int) -> void:
 	if tint[i] > 0.0:
 		col = tint_col[i].lerp(Color.WHITE, 1.0 - clampf(tint[i] / 0.28, 0.0, 1.0))
 	if seat:
+		if clips_ok:
+			(spr[i] as Sprite2D).visible = false
 		_draw_seated(i, tex, foot, H, W, f, col)
 		return
 	var flip := -1.0 if f < 0.0 else 1.0
+	if clips_ok:
+		_place_clip(i, foot, H, flip, col)
+		return
 	# estela
 	for e in trail[i]:
 		var al := clampf(float(e["life"]) / 0.12, 0.0, 1.0) * 0.22
@@ -676,10 +841,29 @@ func _draw_fighter(i: int) -> void:
 	if bx.state == Boxer.S.BLOCK:
 		var hp := _sprite_head(i)
 		draw_arc(hp + Vector2(f * 0.10 * H, 0.04 * H), 0.12 * H, -1.2, 1.2 if f > 0.0 else 1.2, 12, Color(0.4, 0.85, 1.0, 0.35), 0.012 * H)
-	if bx.state == Boxer.S.ATTACK and bx.attack_phase() != "startup":
-		_draw_punch(i, foot, H)
-	elif bx.state == Boxer.S.ATTACK:
-		_draw_punch(i, foot, H)
+
+
+func _place_clip(i: int, foot: Vector2, H: float, flip: float, col: Color) -> void:
+	var pk := _pick_clip(i)
+	var clip := String(pk[0])
+	var idx := int(pk[1])
+	cur_clip[i] = clip
+	cur_frame[i] = idx
+	var sp: Sprite2D = spr[i]
+	var d: Dictionary = an[i]
+	var cw: float = float(clip_meta[clip]["cw"])
+	var ch: float = float(clip_meta[clip]["ch"])
+	sp.texture = clip_tex[clip]
+	(sp.material as ShaderMaterial).set_shader_parameter("mask", clip_mask[clip])
+	sp.region_rect = Rect2(float(idx) * cw, 0.0, cw, ch)
+	sp.offset = Vector2(-cw * 0.36, -(ch - 6.0))
+	var sc := H / fig_h
+	sp.scale = Vector2(flip * sc * float(d["sx"]), sc * float(d["sy"]))
+	sp.position = foot + d["off"]
+	sp.rotation = float(d["rot"]) * flip
+	sp.modulate = col
+	sp.z_index = 3 if boxers[i].position.z > boxers[1 - i].position.z else 2
+	sp.visible = true
 
 
 func _draw_seated(i: int, tex: Texture2D, foot: Vector2, H: float, W: float, f: float, col: Color) -> void:
