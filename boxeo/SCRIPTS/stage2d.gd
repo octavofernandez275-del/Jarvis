@@ -51,7 +51,13 @@ var trail: Array = [[], []]
 var spot_tex: Texture2D
 # --- animación por fotogramas (lámina maestra) ---
 const ANIM_DIR := "res://ART/anim/"
-const IMPACT := {"jab": 3, "cross": 1, "hook_l": 2, "hook_r": 2, "upper": 2}
+## Estados en los que se dibuja el sprite propio de cada boxeador (un solo cuerpo coherente) en vez de los fotogramas de la lámina,
+## cuyas filas mezclan boxeadores distintos. Golpes, impactos y caídas sí usan los clips.
+func _static_body(bx) -> bool:
+	return bx.state == Boxer.S.IDLE or bx.state == Boxer.S.MOVE or bx.state == Boxer.S.BLOCK
+
+
+const IMPACT := {"jab": 3, "cross": 3, "hook_l": 2, "hook_r": 2, "upper": 2}
 const CLIP_SHADER := "shader_type canvas_item;
 uniform sampler2D mask : filter_linear;
 uniform vec4 shorts_c : source_color;
@@ -634,9 +640,10 @@ func _animate(i: int, delta: float) -> void:
 			o.x = f * 0.02 * H
 	if clips_ok:
 		# la postura la dan los fotogramas; aquí solo queda desplazamiento físico (avance, retroceso, empuje)
-		rot *= 0.25
-		sx = 1.0 + (sx - 1.0) * 0.2
-		sy = 1.0 + (sy - 1.0) * 0.2
+		if not _static_body(bx):
+			rot *= 0.25
+			sx = 1.0 + (sx - 1.0) * 0.2
+			sy = 1.0 + (sy - 1.0) * 0.2
 		if bx.state == Boxer.S.DOWN or bx.state == Boxer.S.GETUP or bx.state == Boxer.S.LOSE:
 			rot = 0.0
 			o.y = 0.0
@@ -827,9 +834,12 @@ func _draw_fighter(i: int) -> void:
 		_draw_seated(i, tex, foot, H, W, f, col)
 		return
 	var flip := -1.0 if f < 0.0 else 1.0
-	if clips_ok:
+	if clips_ok and not _static_body(bx):
 		_place_clip(i, foot, H, flip, col)
 		return
+	if clips_ok:
+		(spr[i] as Sprite2D).visible = false
+		cur_clip[i] = "idle"
 	# estela
 	for e in trail[i]:
 		var al := clampf(float(e["life"]) / 0.12, 0.0, 1.0) * 0.22

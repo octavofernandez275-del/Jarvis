@@ -146,3 +146,6 @@ for r, name in enumerate(meta):
     at = Image.open(f'ART/anim/{name}.png').resize((CW * meta[name]['n'] // 2, CH // 2))
     sheet.paste(at, (0, r * CH // 2), at)
 sheet.convert('RGB').save('/tmp/claude-0/-home-claude/878bb875-8c92-53dc-911f-ae6043e8c55f/scratchpad/art/anim_sheet.png')
+
+# --- posproceso manual aplicado en V4b (ver CONTINUAR_V4.md): cross se reordena a [4,3,2,0,2,3] y su IMPACT es 3;
+#     las filas de la lámina mezclan boxeadores, por eso idle/walk/run/block usan el sprite propio (ART/sprites/sNN.png).

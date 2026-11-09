@@ -1,1 +1,130 @@
-{"s00": {"shorts": "#ae0408", "gloves": "#1c1c1c"}, "s01": {"shorts": "#693a27", "gloves": "#1c1c1c"}, "s02": {"shorts": "#011733", "gloves": "#c62828"}, "s03": {"shorts": "#04142a", "gloves": "#c62828"}, "s04": {"shorts": "#a90411", "gloves": "#1c1c1c"}, "s05": {"shorts": "#3c2222", "gloves": "#1c1c1c"}, "s06": {"shorts": "#3b150e", "gloves": "#1c1c1c"}, "s07": {"shorts": "#021e7e", "gloves": "#1c1c1c"}, "s08": {"shorts": "#071438", "gloves": "#c62828"}, "s09": {"shorts": "#022169", "gloves": "#1c1c1c"}, "s10": {"shorts": "#142623", "gloves": "#1c1c1c"}, "s11": {"shorts": "#0a162f", "gloves": "#1c1c1c"}, "s12": {"shorts": "#a60606", "gloves": "#c62828"}, "s13": {"shorts": "#874723", "gloves": "#f2f2f2"}, "s14": {"shorts": "#200f0b", "gloves": "#1c1c1c"}, "s15": {"shorts": "#21131c", "gloves": "#1c1c1c"}, "s16": {"shorts": "#011ca3", "gloves": "#1565c0"}, "s17": {"shorts": "#910c0c", "gloves": "#c62828"}, "s18": {"shorts": "#05090f", "gloves": "#c62828"}, "s19": {"shorts": "#221515", "gloves": "#1c1c1c"}, "s20": {"shorts": "#4b0a0d", "gloves": "#c62828"}, "s21": {"shorts": "#032244", "gloves": "#1c1c1c"}, "s22": {"shorts": "#021867", "gloves": "#c62828"}, "s23": {"shorts": "#c67e27", "gloves": "#1c1c1c"}, "s24": {"shorts": "#011c90", "gloves": "#1c1c1c"}, "s25": {"shorts": "#011f7d", "gloves": "#1565c0"}}
+{
+"s00": {
+"shorts": "#d05043",
+"gloves": "#ba482f"
+},
+"s01": {
+"shorts": "#d8bf53",
+"gloves": "#aa6a40"
+},
+"s02": {
+"shorts": "#6fa5cb",
+"gloves": "#c95c43"
+},
+"s03": {
+"shorts": "#e3f0e1",
+"gloves": "#bb503f"
+},
+"s04": {
+"shorts": "#e4e2e2",
+"gloves": "#934e33"
+},
+"s05": {
+"shorts": "#1a89df",
+"gloves": "#8d675c"
+},
+"s06": {
+"shorts": "#e63a32",
+"gloves": "#a7492f"
+},
+"s07": {
+"shorts": "#f9db52",
+"gloves": "#cc5b35"
+},
+"s08": {
+"shorts": "#e7a6ac",
+"gloves": "#797794"
+},
+"s09": {
+"shorts": "#b39022",
+"gloves": "#a46344"
+},
+"s10": {
+"shorts": "#6a21b0",
+"gloves": "#884b58"
+},
+"s11": {
+"shorts": "#70379e",
+"gloves": "#975a98"
+},
+"s12": {
+"shorts": "#f0f1f2",
+"gloves": "#7981a0"
+},
+"s13": {
+"shorts": "#c04927",
+"gloves": "#b9503b"
+},
+"s14": {
+"shorts": "#35c87a",
+"gloves": "#8e5137"
+},
+"s15": {
+"shorts": "#eb9798",
+"gloves": "#e06f62"
+},
+"s16": {
+"shorts": "#604c3f",
+"gloves": "#a47560"
+},
+"s17": {
+"shorts": "#e99d9e",
+"gloves": "#826978"
+},
+"s18": {
+"shorts": "#57be7a",
+"gloves": "#8c6b40"
+},
+"s19": {
+"shorts": "#dbbb5c",
+"gloves": "#a9683a"
+},
+"s20": {
+"shorts": "#d96838",
+"gloves": "#ba533a"
+},
+"s21": {
+"shorts": "#c48679",
+"gloves": "#c36655"
+},
+"s22": {
+"shorts": "#f3f4f4",
+"gloves": "#676e97"
+},
+"s23": {
+"shorts": "#a89995",
+"gloves": "#8e5035"
+},
+"s24": {
+"shorts": "#aab4c9",
+"gloves": "#7185ad"
+},
+"s25": {
+"shorts": "#ca4a25",
+"gloves": "#b3513b"
+},
+"s26": {
+"shorts": "#718eba",
+"gloves": "#905f57"
+},
+"s27": {
+"shorts": "#d52318",
+"gloves": "#b97761"
+},
+"s28": {
+"shorts": "#7a6d61",
+"gloves": "#90563c"
+},
+"s29": {
+"shorts": "#edeae3",
+"gloves": "#937467"
+},
+"s30": {
+"shorts": "#108de9",
+"gloves": "#70626a"
+},
+"s31": {
+"shorts": "#e8bd35",
+"gloves": "#cc8749"
+}
+}

@@ -26,8 +26,8 @@
    "look": {
     "skin": "#ad714d",
     "hair": "#14100c",
-    "shorts": "#142623",
-    "gloves": "#1c1c1c",
+    "shorts": "#6a21b0",
+    "gloves": "#884b58",
     "shoes": "#111111"
    },
    "record": {
@@ -65,8 +65,8 @@
    "look": {
     "skin": "#9c6347",
     "hair": "#0d0d0d",
-    "shorts": "#200f0b",
-    "gloves": "#1c1c1c",
+    "shorts": "#35c87a",
+    "gloves": "#8e5137",
     "shoes": "#111111"
    },
    "record": {
@@ -104,8 +104,8 @@
    "look": {
     "skin": "#be7f5e",
     "hair": "#2a1a10",
-    "shorts": "#011c90",
-    "gloves": "#1c1c1c",
+    "shorts": "#aab4c9",
+    "gloves": "#7185ad",
     "shoes": "#111111"
    },
    "record": {
@@ -143,8 +143,8 @@
    "look": {
     "skin": "#bf846a",
     "hair": "#4a3a20",
-    "shorts": "#21131c",
-    "gloves": "#1c1c1c",
+    "shorts": "#eb9798",
+    "gloves": "#e06f62",
     "shoes": "#111111"
    },
    "record": {
@@ -182,8 +182,8 @@
    "look": {
     "skin": "#a26347",
     "hair": "#000000",
-    "shorts": "#0a162f",
-    "gloves": "#1c1c1c",
+    "shorts": "#70379e",
+    "gloves": "#975a98",
     "shoes": "#111111"
    },
    "record": {
@@ -221,8 +221,8 @@
    "look": {
     "skin": "#c18469",
     "hair": "#0a0a0a",
-    "shorts": "#032244",
-    "gloves": "#1c1c1c",
+    "shorts": "#c48679",
+    "gloves": "#c36655",
     "shoes": "#111111"
    },
    "record": {
@@ -260,8 +260,8 @@
    "look": {
     "skin": "#c78a75",
     "hair": "#7a5a2a",
-    "shorts": "#221515",
-    "gloves": "#1c1c1c",
+    "shorts": "#dbbb5c",
+    "gloves": "#a9683a",
     "shoes": "#111111"
    },
    "record": {
@@ -299,8 +299,8 @@
    "look": {
     "skin": "#9c6752",
     "hair": "#1a0f08",
-    "shorts": "#021e7e",
-    "gloves": "#1c1c1c",
+    "shorts": "#f9db52",
+    "gloves": "#cc5b35",
     "shoes": "#111111"
    },
    "record": {
@@ -338,8 +338,8 @@
    "look": {
     "skin": "#b27962",
     "hair": "#120c08",
-    "shorts": "#05090f",
-    "gloves": "#c62828",
+    "shorts": "#57be7a",
+    "gloves": "#8c6b40",
     "shoes": "#111111"
    },
    "record": {
@@ -377,8 +377,8 @@
    "look": {
     "skin": "#c88974",
     "hair": "#c8a860",
-    "shorts": "#011ca3",
-    "gloves": "#1565c0",
+    "shorts": "#604c3f",
+    "gloves": "#a47560",
     "shoes": "#111111"
    },
    "record": {
@@ -416,8 +416,8 @@
    "look": {
     "skin": "#a76e53",
     "hair": "#0f0a06",
-    "shorts": "#874723",
-    "gloves": "#f2f2f2",
+    "shorts": "#c04927",
+    "gloves": "#b9503b",
     "shoes": "#111111"
    },
    "record": {
@@ -455,8 +455,8 @@
    "look": {
     "skin": "#c2826a",
     "hair": "#6b4a2a",
-    "shorts": "#910c0c",
-    "gloves": "#c62828",
+    "shorts": "#e99d9e",
+    "gloves": "#826978",
     "shoes": "#111111"
    },
    "record": {
@@ -495,8 +495,8 @@
     "skin": "#b1745f",
     "hair": "#241720",
     "shoes": "#111111",
-    "shorts": "#4b0a0d",
-    "gloves": "#c62828"
+    "shorts": "#d96838",
+    "gloves": "#ba533a"
    },
    "record": {
     "w": 17,
@@ -534,8 +534,8 @@
     "skin": "#a96e58",
     "hair": "#020207",
     "shoes": "#111111",
-    "shorts": "#011f7d",
-    "gloves": "#1565c0"
+    "shorts": "#ca4a25",
+    "gloves": "#b3513b"
    },
    "record": {
     "w": 34,
@@ -573,8 +573,8 @@
     "skin": "#a76b58",
     "hair": "#030512",
     "shoes": "#111111",
-    "shorts": "#a60606",
-    "gloves": "#c62828"
+    "shorts": "#f0f1f2",
+    "gloves": "#7981a0"
    },
    "record": {
     "w": 19,
@@ -612,8 +612,8 @@
     "skin": "#a8745e",
     "hair": "#010105",
     "shoes": "#111111",
-    "shorts": "#ae0408",
-    "gloves": "#1c1c1c"
+    "shorts": "#d05043",
+    "gloves": "#ba482f"
    },
    "record": {
     "w": 28,
@@ -651,8 +651,8 @@
     "skin": "#bf785c",
     "hair": "#0d080a",
     "shoes": "#111111",
-    "shorts": "#011c90",
-    "gloves": "#1c1c1c"
+    "shorts": "#718eba",
+    "gloves": "#905f57"
    },
    "record": {
     "w": 17,
@@ -661,7 +661,7 @@
    },
    "bio": "Boxeo limpio y preciso: gana los rounds con el jab y los ángulos.",
    "portrait": "res://ART/portraits/p11.jpg",
-   "sprite": "res://ART/sprites/s24.png",
+   "sprite": "res://ART/sprites/s26.png",
    "female": true
   },
   {
@@ -690,8 +690,8 @@
     "skin": "#c28264",
     "hair": "#0d0808",
     "shoes": "#111111",
-    "shorts": "#04142a",
-    "gloves": "#c62828"
+    "shorts": "#e3f0e1",
+    "gloves": "#bb503f"
    },
    "record": {
     "w": 24,
@@ -729,8 +729,8 @@
     "skin": "#bf8269",
     "hair": "#4b3531",
     "shoes": "#111111",
-    "shorts": "#021867",
-    "gloves": "#c62828"
+    "shorts": "#f3f4f4",
+    "gloves": "#676e97"
    },
    "record": {
     "w": 23,
@@ -768,8 +768,8 @@
     "skin": "#b07560",
     "hair": "#0c0a0e",
     "shoes": "#111111",
-    "shorts": "#3b150e",
-    "gloves": "#1c1c1c"
+    "shorts": "#e63a32",
+    "gloves": "#a7492f"
    },
    "record": {
     "w": 18,
@@ -807,8 +807,8 @@
     "skin": "#be826c",
     "hair": "#0c0a0f",
     "shoes": "#111111",
-    "shorts": "#a90411",
-    "gloves": "#1c1c1c"
+    "shorts": "#e4e2e2",
+    "gloves": "#934e33"
    },
    "record": {
     "w": 22,
@@ -846,8 +846,8 @@
     "skin": "#c38464",
     "hair": "#1a1012",
     "shoes": "#111111",
-    "shorts": "#071438",
-    "gloves": "#c62828"
+    "shorts": "#e7a6ac",
+    "gloves": "#797794"
    },
    "record": {
     "w": 22,
@@ -885,8 +885,8 @@
     "skin": "#b5795b",
     "hair": "#070505",
     "shoes": "#111111",
-    "shorts": "#011c90",
-    "gloves": "#1c1c1c"
+    "shorts": "#d52318",
+    "gloves": "#b97761"
    },
    "record": {
     "w": 15,
@@ -895,7 +895,7 @@
    },
    "bio": "Aguanta lo que le echen y responde con golpes pesados al cuerpo.",
    "portrait": "res://ART/portraits/p19.jpg",
-   "sprite": "res://ART/sprites/s24.png",
+   "sprite": "res://ART/sprites/s27.png",
    "female": false
   },
   {
@@ -924,8 +924,8 @@
     "skin": "#a76847",
     "hair": "#020202",
     "shoes": "#111111",
-    "shorts": "#3c2222",
-    "gloves": "#1c1c1c"
+    "shorts": "#1a89df",
+    "gloves": "#8d675c"
    },
    "record": {
     "w": 33,
@@ -963,8 +963,8 @@
     "skin": "#b16d4e",
     "hair": "#060404",
     "shoes": "#111111",
-    "shorts": "#011733",
-    "gloves": "#c62828"
+    "shorts": "#6fa5cb",
+    "gloves": "#c95c43"
    },
    "record": {
     "w": 34,
@@ -1002,8 +1002,8 @@
     "skin": "#b6795f",
     "hair": "#040406",
     "shoes": "#111111",
-    "shorts": "#011c90",
-    "gloves": "#1c1c1c"
+    "shorts": "#7a6d61",
+    "gloves": "#90563c"
    },
    "record": {
     "w": 24,
@@ -1012,7 +1012,7 @@
    },
    "bio": "Espera el error y lo castiga con un contragolpe seco.",
    "portrait": "res://ART/portraits/p23.jpg",
-   "sprite": "res://ART/sprites/s24.png",
+   "sprite": "res://ART/sprites/s28.png",
    "female": false
   },
   {
@@ -1041,8 +1041,8 @@
     "skin": "#bb7961",
     "hair": "#020101",
     "shoes": "#111111",
-    "shorts": "#011c90",
-    "gloves": "#1c1c1c"
+    "shorts": "#edeae3",
+    "gloves": "#937467"
    },
    "record": {
     "w": 23,
@@ -1051,7 +1051,7 @@
    },
    "bio": "Estudia al rival y cambia el plan según cómo vaya el combate.",
    "portrait": "res://ART/portraits/p24.jpg",
-   "sprite": "res://ART/sprites/s24.png",
+   "sprite": "res://ART/sprites/s29.png",
    "female": false
   },
   {
@@ -1080,8 +1080,8 @@
     "skin": "#b0765c",
     "hair": "#010102",
     "shoes": "#111111",
-    "shorts": "#022169",
-    "gloves": "#1c1c1c"
+    "shorts": "#b39022",
+    "gloves": "#a46344"
    },
    "record": {
     "w": 33,
@@ -1119,8 +1119,8 @@
     "skin": "#bc7f60",
     "hair": "#070a16",
     "shoes": "#111111",
-    "shorts": "#011c90",
-    "gloves": "#1c1c1c"
+    "shorts": "#108de9",
+    "gloves": "#70626a"
    },
    "record": {
     "w": 33,
@@ -1129,7 +1129,7 @@
    },
    "bio": "Cierra la guardia, esquiva y contesta solo cuando está seguro.",
    "portrait": "res://ART/portraits/p27.jpg",
-   "sprite": "res://ART/sprites/s24.png",
+   "sprite": "res://ART/sprites/s30.png",
    "female": true
   },
   {
@@ -1158,8 +1158,8 @@
     "skin": "#b87957",
     "hair": "#020203",
     "shoes": "#111111",
-    "shorts": "#011c90",
-    "gloves": "#1c1c1c"
+    "shorts": "#e8bd35",
+    "gloves": "#cc8749"
    },
    "record": {
     "w": 14,
@@ -1168,7 +1168,7 @@
    },
    "bio": "Sale a buscar el nocaut desde el primer campanazo y no da respiro.",
    "portrait": "res://ART/portraits/p28.jpg",
-   "sprite": "res://ART/sprites/s24.png",
+   "sprite": "res://ART/sprites/s31.png",
    "female": false
   },
   {
@@ -1197,8 +1197,8 @@
     "skin": "#a7694b",
     "hair": "#1a1212",
     "shoes": "#111111",
-    "shorts": "#693a27",
-    "gloves": "#1c1c1c"
+    "shorts": "#d8bf53",
+    "gloves": "#aa6a40"
    },
    "record": {
     "w": 26,
@@ -1236,8 +1236,8 @@
     "skin": "#b2745c",
     "hair": "#040305",
     "shoes": "#111111",
-    "shorts": "#011c90",
-    "gloves": "#1c1c1c"
+    "shorts": "#aab4c9",
+    "gloves": "#7185ad"
    },
    "record": {
     "w": 33,
@@ -1275,8 +1275,8 @@
     "skin": "#c28363",
     "hair": "#070403",
     "shoes": "#111111",
-    "shorts": "#c67e27",
-    "gloves": "#1c1c1c"
+    "shorts": "#a89995",
+    "gloves": "#8e5035"
    },
    "record": {
     "w": 20,
