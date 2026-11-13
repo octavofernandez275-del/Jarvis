@@ -56,22 +56,29 @@ const CLIP_SHADER := "shader_type canvas_item;
 uniform sampler2D mask : filter_linear;
 uniform vec4 shorts_c : source_color;
 uniform vec4 glove_c : source_color;
-uniform vec4 skin_t : source_color;
+uniform sampler2D hmask : filter_linear;
+uniform vec4 skin_c : source_color;
+uniform float ref_l = 0.5;
+uniform vec4 hair_c : source_color;
 void fragment() {
 	vec4 c = texture(TEXTURE, UV);
 	vec3 m = texture(mask, UV).rgb;
+	float hm = texture(hmask, UV).r;
 	float l = dot(c.rgb, vec3(0.3, 0.59, 0.11));
 	vec3 r = c.rgb;
 	r = mix(r, shorts_c.rgb * (0.30 + l * 1.5), m.r * 0.75);
 	r = mix(r, glove_c.rgb * (0.30 + l * 1.5), m.g * 0.8);
-	r = mix(r, r * skin_t.rgb, m.b * 0.0);
+	r = mix(r, skin_c.rgb * clamp(l / ref_l, 0.0, 1.7), m.b * 0.85);
+	r = mix(r, hair_c.rgb * (0.4 + l * 1.4), hm * 0.85);
 	COLOR = vec4(min(r * 1.0, vec3(1.0)), c.a) * COLOR;
 }"
 var clips_ok := false
 var clip_meta: Dictionary = {}
 var clip_tex: Dictionary = {}
 var clip_mask: Dictionary = {}
+var clip_hmask: Dictionary = {}
 var fig_h := 250.0
+var skin_ref: Array = [0.78, 0.52, 0.40]
 var spr: Array = [null, null]
 var st_prev := [-1, -1]
 var st_t := [0.0, 0.0]
@@ -146,13 +153,16 @@ func _load_clips() -> void:
 		return
 	clip_meta = meta["clips"]
 	fig_h = float(meta.get("fig_h", 250.0))
+	skin_ref = meta.get("skin_ref", skin_ref)
 	for nm in clip_meta.keys():
 		var t1 = load(ANIM_DIR + nm + ".png")
 		var t2 = load(ANIM_DIR + nm + "_m.png")
-		if t1 == null or t2 == null:
+		var t3 = load(ANIM_DIR + nm + "_h.png")
+		if t1 == null or t2 == null or t3 == null:
 			return
 		clip_tex[nm] = t1
 		clip_mask[nm] = t2
+		clip_hmask[nm] = t3
 	var sh := Shader.new()
 	sh.code = CLIP_SHADER
 	for i in range(2):
@@ -165,9 +175,12 @@ func _load_clips() -> void:
 		var lk: Dictionary = boxers[i].data.get("look", {})
 		mat.set_shader_parameter("shorts_c", Color.html(String(lk.get("shorts", "#c62828"))))
 		mat.set_shader_parameter("glove_c", Color.html(String(lk.get("gloves", "#c62828"))))
-		var sk: Color = skin_col[i]
-		var ref := Color(0.78, 0.52, 0.40)
-		mat.set_shader_parameter("skin_t", Color(clampf(sk.r / ref.r, 0.4, 1.4), clampf(sk.g / ref.g, 0.4, 1.4), clampf(sk.b / ref.b, 0.4, 1.4)))
+		var sk: Color = Color.html(String(lk.get("skin", "#b07a55")))
+		var sr: Array = skin_ref
+		sk = Color(0.70, 0.47, 0.38).lerp(sk, 3.0).clamp()   # las fichas tienen tonos muy parecidos: se acentúa la diferencia entre boxeadores
+		mat.set_shader_parameter("skin_c", sk)
+		mat.set_shader_parameter("ref_l", 0.3 * float(sr[0]) + 0.59 * float(sr[1]) + 0.11 * float(sr[2]))
+		mat.set_shader_parameter("hair_c", Color.html(String(lk.get("hair", "#14100c"))))
 		sp.material = mat
 		sp.visible = false
 		add_child(sp)
@@ -854,6 +867,7 @@ func _place_clip(i: int, foot: Vector2, H: float, flip: float, col: Color) -> vo
 	var ch: float = float(clip_meta[clip]["ch"])
 	sp.texture = clip_tex[clip]
 	(sp.material as ShaderMaterial).set_shader_parameter("mask", clip_mask[clip])
+	(sp.material as ShaderMaterial).set_shader_parameter("hmask", clip_hmask[clip])
 	sp.region_rect = Rect2(float(idx) * cw, 0.0, cw, ch)
 	sp.offset = Vector2(-cw * 0.36, -(ch - 6.0))
 	var sc := H / fig_h

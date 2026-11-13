@@ -37,6 +37,16 @@ for ci, name in enumerate(NAMES):
     runs = segment(cell)
     prof_ = (cell[int((y1 - y0) * TITLE):] > 45).sum(axis=0).astype(float)
     N = 5 if name == "jab" else 4
+    if len(runs) == 1:                        # todos pegados: N cortes iguales ajustados al valle más cercano
+        a, b = runs[0]
+        wN = (b - a) / float(N)
+        cuts_ = [a]
+        for k in range(1, N):
+            ideal = a + k * wN
+            lo, hi = int(ideal - 0.3 * wN), int(ideal + 0.3 * wN)
+            cuts_.append(lo + int(np.argmin(prof_[lo:hi])))
+        cuts_.append(b)
+        runs = [(cuts_[q], cuts_[q + 1]) for q in range(N)]
     while len(runs) < N:                      # fotogramas pegados: partir el tramo más ancho por el valle central
         runs.sort(key=lambda t: t[0])
         j = max(range(len(runs)), key=lambda q: runs[q][1] - runs[q][0])
@@ -74,6 +84,7 @@ for cr in frames_by["idle"]:
 S = 250.0 / float(np.median(hs))
 print("escala", S)
 meta = {}
+skin_acc = np.zeros(3); skin_n = 0
 for name in NAMES:
     items = []
     for crop in frames_by[name]:
@@ -89,11 +100,16 @@ for name in NAMES:
         yy = (np.arange(crop.shape[0])[:, None] - top) / hh
         sh = fg & (yy > 0.50) & (yy < 0.72) & ~skin
         gl = fg & (yy > 0.12) & (yy < 0.56) & ~skin & ~sh & ((Ss > 0.45) | (Vv < 0.22) | ((Ss < 0.18) & (Vv > 0.75)))
+        hair = fg & (yy < 0.16) & ~skin & (Vv < 0.35)
+        if name == "idle" or name == "walk":
+            skin_acc += crop[skin].sum(axis=0); skin_n += int(skin.sum())
         mk = np.dstack([sh, gl, skin]).astype(np.uint8) * 255
+        hk = (hair * 255).astype(np.uint8)
         rgba = Image.fromarray(np.dstack([crop, alpha]).astype(np.uint8))
         w2, h2 = int(crop.shape[1] * S), int(crop.shape[0] * S)
         fr = rgba.resize((w2, h2), Image.LANCZOS).filter(ImageFilter.UnsharpMask(1.2, 35, 3))
         mi = Image.fromarray(mk).resize((w2, h2), Image.BILINEAR)
+        hi_ = Image.fromarray(hk).resize((w2, h2), Image.BILINEAR)
         # ancla: torso (mediana x de la franja 25-60%) y pies abajo
         ys, xs = np.where(fg)
         torso = (ys > top + 0.25 * hh) & (ys < top + 0.6 * hh)
@@ -102,17 +118,21 @@ for name in NAMES:
         ox = int(CW * AX - cx * S)
         ox = min(max(ox, 4 - int(lx * S)), CW - 4 - int(rx * S))
         oy = int(CH - 6 - bot * S)
-        items.append((fr, mi, ox, oy))
+        items.append((fr, mi, ox, oy, hi_))
     n = len(items)
     atlas = Image.new('RGBA', (CW * n, CH), (0, 0, 0, 0))
     mask = Image.new('RGB', (CW * n, CH), (0, 0, 0))
-    for i, (fr, mi, ox, oy) in enumerate(items):
+    hmask = Image.new('L', (CW * n, CH), 0)
+    for i, (fr, mi, ox, oy, hi_) in enumerate(items):
         atlas.alpha_composite(fr, (max(i * CW + ox, 0), max(oy, 0))) if False else atlas.paste(fr, (i * CW + ox, oy), fr)
         mask.paste(mi, (i * CW + ox, oy))
+        hmask.paste(hi_, (i * CW + ox, oy))
     atlas.save(f'ART/anim/{name}.png')
     mask.save(f'ART/anim/{name}_m.png')
+    hmask.save(f'ART/anim/{name}_h.png')
     meta[name] = {"n": n, "cw": CW, "ch": CH}
-json.dump({"cell": [CW, CH], "anchor_x": AX, "fig_h": 250.0, "clips": meta}, open('ART/anim/anim.json', 'w'))
+sk = (skin_acc / max(skin_n, 1) / 255.0).tolist()
+json.dump({"cell": [CW, CH], "anchor_x": AX, "fig_h": 250.0, "skin_ref": sk, "clips": meta}, open('ART/anim/anim.json', 'w'))
 sheet = Image.new('RGBA', (CW * 6 // 2, CH * len(meta) // 2), (70, 80, 100, 255))
 for r, name in enumerate(meta):
     at = Image.open(f'ART/anim/{name}.png')
