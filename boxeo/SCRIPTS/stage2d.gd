@@ -62,6 +62,8 @@ uniform vec4 skin_c : source_color;
 uniform float ref_l = 0.5;
 uniform vec4 hair_c : source_color;
 uniform float shirt_on = 0.0;
+uniform float bald = 0.0;
+uniform float beard_on = 1.0;
 uniform vec4 shirt_c : source_color;
 uniform vec4 pants_c : source_color;
 void fragment() {
@@ -74,10 +76,13 @@ void fragment() {
 	r = mix(r, shorts_c.rgb * (0.30 + l * 1.5), m.r * 0.75);
 	r = mix(r, glove_c.rgb * (0.30 + l * 1.5), m.g * 0.8);
 	r = mix(r, skin_c.rgb * clamp(l / ref_l, 0.0, 1.7), m.b * 0.85);
-	r = mix(r, hair_c.rgb * (0.4 + l * 1.4), hm * 0.85);
+	vec3 hcol = mix(hair_c.rgb * (0.4 + l * 1.4), skin_c.rgb * (0.88 + 0.12 * clamp(l / ref_l, 0.0, 1.3)), bald);
+	r = mix(r, hcol, hm * 0.9);
+	vec3 bcol = mix(skin_c.rgb * (0.88 + 0.12 * clamp(l / ref_l, 0.0, 1.3)), hair_c.rgb * (0.4 + l * 1.4), beard_on);
+	r = mix(r, bcol, h3.b * 0.9 * (1.0 - shirt_on));
 	if (shirt_on > 0.5) {
 		float band = h3.g;
-		float low = h3.b;
+		float low = 0.0;
 		r = mix(r, shirt_c.rgb * mix(0.88, clamp(l / ref_l, 0.55, 1.15), 0.22), m.b * band * 0.97);
 		r = mix(r, pants_c.rgb * (0.7 + 0.3 * l), m.b * low * 0.97);
 	}
@@ -189,10 +194,11 @@ func _load_clips() -> void:
 		mat.set_shader_parameter("glove_c", Color.html(String(lk.get("gloves", "#c62828"))))
 		var sk: Color = Color.html(String(lk.get("skin", "#b07a55")))
 		var sr: Array = skin_ref
-		sk = Color(0.70, 0.47, 0.38).lerp(sk, 3.0).clamp()   # las fichas tienen tonos muy parecidos: se acentúa la diferencia entre boxeadores
 		mat.set_shader_parameter("skin_c", sk)
 		mat.set_shader_parameter("ref_l", 0.3 * float(sr[0]) + 0.59 * float(sr[1]) + 0.11 * float(sr[2]))
 		mat.set_shader_parameter("hair_c", Color.html(String(lk.get("hair", "#14100c"))))
+		mat.set_shader_parameter("bald", 1.0 if bool(lk.get("bald", false)) else 0.0)
+		mat.set_shader_parameter("beard_on", 1.0 if bool(lk.get("beard", false)) else 0.0)
 		sp.material = mat
 		sp.visible = false
 		add_child(sp)

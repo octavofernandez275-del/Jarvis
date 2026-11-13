@@ -100,13 +100,13 @@ for name in NAMES:
         yy = (np.arange(crop.shape[0])[:, None] - top) / hh
         sh = fg & (yy > 0.50) & (yy < 0.72) & ~skin
         gl = fg & (yy > 0.12) & (yy < 0.56) & ~skin & ~sh & ((Ss > 0.45) | (Vv < 0.22) | ((Ss < 0.18) & (Vv > 0.75)))
-        hair = fg & (yy < 0.16) & ~skin & (Vv < 0.35)
+        hair = fg & (yy < 0.075) & ~skin & (Vv < 0.35)
+        beard = fg & (yy >= 0.075) & (yy < 0.16) & ~skin & (Vv < 0.35)
         if name == "idle" or name == "walk":
             skin_acc += crop[skin].sum(axis=0); skin_n += int(skin.sum())
         mk = np.dstack([sh, gl, skin]).astype(np.uint8) * 255
         zone = skin & (yy > 0.17) & (yy < 0.56)
-        legs = skin & (yy >= 0.56)
-        hk = np.dstack([hair, zone, legs]).astype(np.uint8) * 255
+        hk = np.dstack([hair, zone, beard]).astype(np.uint8) * 255
         rgba = Image.fromarray(np.dstack([crop, alpha]).astype(np.uint8))
         w2, h2 = int(crop.shape[1] * S), int(crop.shape[0] * S)
         fr = rgba.resize((w2, h2), Image.LANCZOS).filter(ImageFilter.UnsharpMask(1.2, 35, 3))

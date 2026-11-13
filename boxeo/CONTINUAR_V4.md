@@ -33,3 +33,8 @@ cd ~/JARVIS-FINAL && git fetch origin && git reset --hard origin/bloques-1-4 && 
 - Shader por boxeador: pantalón, guantes, piel (tono acentuado) y pelo (máscara `_h.png`) desde `fighters.json`.
 - Se eliminó el parche `_static_body` del commit df7cc88 (ya no hace falta: todo sale del mismo cuerpo). Se conservan sus sprites y fichas.
 - Jab: fotogramas separados en 5 cortes iguales. Pendiente: uppercut sin fotograma de recuperación.
+
+## Ajuste a los retratos de selección
+- `tools/sync_look_from_portraits.py` lee cada retrato y actualiza `fighters.json`: piel, color de pelo, calvo, barba y color de guantes (el pantalón sigue siendo el de la ficha: no se ve en el retrato).
+- El shader (`stage2d.gd`) aplica piel, pelo/calvo y barba/sin barba sobre el cuerpo único. No cambia peinados largos, tatuajes ni rasgos de la cara.
+- Árbitro 2D desactivado (REFEREE_2D=false) hasta tener un dibujo propio.
