@@ -51,7 +51,7 @@ var trail: Array = [[], []]
 var spot_tex: Texture2D
 # --- animación por fotogramas (lámina maestra) ---
 const ANIM_DIR := "res://ART/anim/"
-const IMPACT := {"jab": 3, "cross": 1, "hook_l": 2, "hook_r": 2, "upper": 2}
+const IMPACT := {"jab": 3, "cross": 2, "hook_l": 2, "hook_r": 2, "upper": 2}
 const CLIP_SHADER := "shader_type canvas_item;
 uniform sampler2D mask : filter_linear;
 uniform vec4 shorts_c : source_color;
@@ -65,7 +65,7 @@ void fragment() {
 	r = mix(r, shorts_c.rgb * (0.30 + l * 1.5), m.r * 0.75);
 	r = mix(r, glove_c.rgb * (0.30 + l * 1.5), m.g * 0.8);
 	r = mix(r, r * skin_t.rgb, m.b * 0.0);
-	COLOR = vec4(min(r * 1.12, vec3(1.0)), c.a) * COLOR;
+	COLOR = vec4(min(r * 1.0, vec3(1.0)), c.a) * COLOR;
 }"
 var clips_ok := false
 var clip_meta: Dictionary = {}
@@ -236,9 +236,8 @@ func _pick_clip(i: int) -> Array:
 			clip = "down"
 			idx = mini(int(st_s / 0.12), int(clip_meta[clip]["n"]) - 1)
 		Boxer.S.GETUP:
-			clip = "down"
-			var nn: int = int(clip_meta[clip]["n"])
-			idx = nn - 1 - mini(int(st_s / 0.12), nn - 1)
+			clip = "getup"
+			idx = mini(int(st_s / 0.16), int(clip_meta[clip]["n"]) - 1)
 		Boxer.S.WIN:
 			clip = "win"
 			idx = int(t * 5.0)

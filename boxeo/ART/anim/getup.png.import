@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bkutmjcoiusj1"
-path="res://.godot/imported/counter.png-34f1d8234e17e4b437078f14eb0ef4fd.ctex"
+uid="uid://oyudvrkuhd1w"
+path="res://.godot/imported/getup.png-8104553fb11baad5d5ae38b35fd90fcd.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://ART/anim/counter.png"
-dest_files=["res://.godot/imported/counter.png-34f1d8234e17e4b437078f14eb0ef4fd.ctex"]
+source_file="res://ART/anim/getup.png"
+dest_files=["res://.godot/imported/getup.png-8104553fb11baad5d5ae38b35fd90fcd.ctex"]
 
 [params]
 
