@@ -45,6 +45,7 @@ func _caption(who: String, texto: String, seg: float) -> void:
 
 func _process(delta: float) -> void:
 	clock += delta
+	_live(delta)
 
 
 func _exit_tree() -> void:
@@ -66,6 +67,15 @@ func _libre() -> bool:
 
 func _on_round(n: int, total: int) -> void:
 	decir("pres", "Round %d de %d." % [n, total], true)
+	lull = 0.0
+	if n == 1:
+		decir("a", "Suena la campana. %s, esquina roja, contra %s, esquina azul." % [_nom(a), _nom(b)])
+	elif mgr.landed[0] > mgr.landed[1]:
+		decir("b", "%s viene mejor. %s tiene que cambiar de plan." % [_nom(a), _nom(b)])
+	else:
+		decir("b", "%s manda en la pelea. %s debe salir a buscarlo." % [_nom(b), _nom(a)])
+	if n == total:
+		decir("a", "¡Último round! Todo se define aquí.", true)
 
 
 func _on_announce(text: String, _s: float) -> void:
@@ -79,24 +89,117 @@ func _on_announce(text: String, _s: float) -> void:
 		decir("ref", "¡Arriba! Continúen.", false, false)
 
 
+var ultimo := {}           # última frase usada por categoría (evita repetir)
+var aviso_t := 0.0
+var flags := {}
+var lull := 0.0
+
+
+func _pick(cat: String, opciones: Array) -> String:
+	var t: String = String(opciones[randi() % opciones.size()])
+	var n := 0
+	while t == String(ultimo.get(cat, "")) and n < 6:
+		t = String(opciones[randi() % opciones.size()])
+		n += 1
+	ultimo[cat] = t
+	return t
+
+
+func _nom(bx) -> String:
+	var full := String(bx.data["name"])
+	var parts := full.split(" ")
+	return String(parts[parts.size() - 1]) if parts.size() > 1 else full
+
+
+func _foe(bx):
+	return b if bx == a else a
+
+
+## Comentario de relleno y avisos del estado de la pelea (tiempo, cansancio, daño, ritmo).
+func _live(delta: float) -> void:
+	if mgr == null or mgr.phase != 1:
+		return
+	aviso_t += delta
+	lull += delta
+	if aviso_t < 1.0:
+		return
+	aviso_t = 0.0
+	var key := "r%d" % mgr.round_n
+	if mgr.time_left < 11.0 and not flags.has(key + "t"):
+		flags[key + "t"] = true
+		if _libre():
+			last_live = clock
+			decir("pres", _pick("t", ["Diez segundos para el final del round.", "Se acaba el round, ¡diez segundos!"]))
+	for bx in [a, b]:
+		var k2: String = key + String(bx.data["name"])
+		if bx.health < 30.0 and not flags.has(k2 + "h"):
+			flags[k2 + "h"] = true
+			if _libre():
+				last_live = clock
+				decir("b", _pick("h", ["%s está muy tocado, ojo a la guardia.", "%s no está bien: las piernas ya no responden.", "Cuidado con %s, ese castigo se acumula."]) % _nom(bx))
+		if bx.stamina < 18.0 and not flags.has(k2 + "s"):
+			flags[k2 + "s"] = true
+			if _libre():
+				last_live = clock
+				decir("b", _pick("s", ["A %s se le acaba el aire.", "%s respira por la boca, está agotado.", "Mucho desgaste en %s, necesita descansar."]) % _nom(bx))
+	if lull > 9.0 and _libre():
+		lull = 0.0
+		last_live = clock
+		var d: float = absf(a.position.z - b.position.z)
+		var frases: Array = []
+		if d > 1.6:
+			frases = ["Se estudian a distancia, nadie quiere arriesgar.", "Mucho tanteo en el centro del ring.", "%s y %s miden la distancia." % [_nom(a), _nom(b)]]
+		elif mgr.landed[0] > mgr.landed[1] + 3:
+			frases = ["%s va ganando la pelea con la ventaja en golpes limpios." % _nom(a), "El ritmo lo marca %s, y %s no encuentra respuesta." % [_nom(a), _nom(b)]]
+		elif mgr.landed[1] > mgr.landed[0] + 3:
+			frases = ["%s domina el intercambio, y %s necesita reaccionar." % [_nom(b), _nom(a)], "Jarvis está leyendo muy bien a %s." % _nom(a)]
+		else:
+			frases = ["Pelea muy pareja, cualquiera puede llevarse el round.", "Intercambio parejo, el público está de pie."]
+		decir("a" if randi() % 2 == 0 else "b", _pick("lull", frases))
+
+
 func _on_fx(kind: String, _pos: Vector3, extra: Dictionary) -> void:
+	var df = extra.get("defender", null)
+	var at = _foe(df) if df != null else null
+	var nd := _nom(df) if df != null else "el rival"
+	var na := _nom(at) if at != null else "su rival"
 	match kind:
 		"knockdown":
 			last_live = clock
-			decir("a", ["¡Al suelo! ¡Qué golpe tan limpio!", "¡Cayó! ¡Esto es increíble!"][randi() % 2], true)
+			lull = 0.0
+			decir("a", _pick("kd", ["¡Al suelo %s! ¡Qué golpe tan limpio de %s!" % [nd, na], "¡Cayó %s! ¡Esto es increíble!" % nd, "¡Derribo! %s lo mandó a la lona." % na]), true)
+			decir("b", _pick("kd2", ["Ese golpe venía preparado desde hace rato.", "Se descuidó la guardia y lo pagó caro.", "Fíjate cómo cargó el cuerpo en ese golpe."]))
 		"hit_heavy":
 			if _libre():
 				last_live = clock
-				decir("a", ["¡Qué derechazo!", "¡Golpe durísimo!", "¡Eso tiene que doler!"][randi() % 3])
+				lull = 0.0
+				decir("a", _pick("hh", ["¡Qué derechazo de %s!" % na, "¡Golpe durísimo a %s!" % nd, "¡Eso tiene que doler, %s lo sintió!" % nd, "¡Impacto limpio de %s!" % na]))
 		"hit_light":
 			hits += 1
+			lull = 0.0
 			if _libre() and hits % 4 == 0:
 				last_live = clock
-				decir("b", ["Buen jab, bien medido.", "Sigue sumando puntos.", "Castiga con la distancia."][randi() % 3])
+				decir("b", _pick("hl", ["Buen jab de %s, bien medido." % na, "%s sigue sumando puntos." % na, "%s castiga con la distancia." % na, "Gran trabajo de pies de %s." % na]))
 		"block":
 			if _libre() and randi() % 4 == 0:
 				last_live = clock
-				decir("b", "Se cubre bien, no deja pasar nada.")
+				decir("b", _pick("bl", ["%s se cubre bien, no deja pasar nada." % nd, "Guardia cerrada de %s." % nd, "%s lee el golpe y lo bloquea." % nd]))
+		"slip":
+			if _libre() and randi() % 3 == 0:
+				last_live = clock
+				decir("a", _pick("sl", ["¡Qué esquiva de %s!" % nd, "%s ni se despeina, ¡qué reflejos!" % nd, "El golpe de %s se pierde en el aire." % na]))
+		"parry":
+			if _libre():
+				last_live = clock
+				decir("b", _pick("pa", ["¡Contragolpe de %s!" % nd, "%s desvía y responde, muy inteligente." % nd]))
+		"combo":
+			var n := int(extra.get("count", 3))
+			var ow = extra.get("owner", null)
+			if n >= 3 and _libre():
+				last_live = clock
+				lull = 0.0
+				var nm := _nom(ow) if ow != null else "El peleador"
+				decir("a", _pick("cb", ["¡Combinación de %d golpes de %s!" % [n, nm], "¡%s se enciende! ¡%d seguidos!" % [nm, n], "¡No para %s! Lleva %d golpes en racha." % [nm, n]]))
 		"count_tick":
 			pass
 

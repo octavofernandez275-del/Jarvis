@@ -51,6 +51,7 @@ var trail: Array = [[], []]
 var spot_tex: Texture2D
 # --- animación por fotogramas (lámina maestra) ---
 const ANIM_DIR := "res://ART/anim/"
+const REFEREE_2D := false     # desactivado: el árbitro recoloreado desde un boxeador no se ve bien; falta un dibujo propio
 const IMPACT := {"jab": 3, "cross": 2, "hook_l": 2, "hook_r": 2, "upper": 2}
 const CLIP_SHADER := "shader_type canvas_item;
 uniform sampler2D mask : filter_linear;
@@ -60,19 +61,30 @@ uniform sampler2D hmask : filter_linear;
 uniform vec4 skin_c : source_color;
 uniform float ref_l = 0.5;
 uniform vec4 hair_c : source_color;
+uniform float shirt_on = 0.0;
+uniform vec4 shirt_c : source_color;
+uniform vec4 pants_c : source_color;
 void fragment() {
 	vec4 c = texture(TEXTURE, UV);
 	vec3 m = texture(mask, UV).rgb;
-	float hm = texture(hmask, UV).r;
+	vec3 h3 = texture(hmask, UV).rgb;
+	float hm = h3.r;
 	float l = dot(c.rgb, vec3(0.3, 0.59, 0.11));
 	vec3 r = c.rgb;
 	r = mix(r, shorts_c.rgb * (0.30 + l * 1.5), m.r * 0.75);
 	r = mix(r, glove_c.rgb * (0.30 + l * 1.5), m.g * 0.8);
 	r = mix(r, skin_c.rgb * clamp(l / ref_l, 0.0, 1.7), m.b * 0.85);
 	r = mix(r, hair_c.rgb * (0.4 + l * 1.4), hm * 0.85);
+	if (shirt_on > 0.5) {
+		float band = h3.g;
+		float low = h3.b;
+		r = mix(r, shirt_c.rgb * mix(0.88, clamp(l / ref_l, 0.55, 1.15), 0.22), m.b * band * 0.97);
+		r = mix(r, pants_c.rgb * (0.7 + 0.3 * l), m.b * low * 0.97);
+	}
 	COLOR = vec4(min(r * 1.0, vec3(1.0)), c.a) * COLOR;
 }"
 var clips_ok := false
+var ref_spr: Sprite2D = null
 var clip_meta: Dictionary = {}
 var clip_tex: Dictionary = {}
 var clip_mask: Dictionary = {}
@@ -185,6 +197,26 @@ func _load_clips() -> void:
 		sp.visible = false
 		add_child(sp)
 		spr[i] = sp
+	if referee != null and REFEREE_2D:
+		ref_spr = Sprite2D.new()
+		ref_spr.centered = false
+		ref_spr.region_enabled = true
+		ref_spr.z_index = 1
+		var rm := ShaderMaterial.new()
+		rm.shader = sh
+		var rsk := Color("#c9a487")
+		var sr2: Array = skin_ref
+		rm.set_shader_parameter("skin_c", rsk)
+		rm.set_shader_parameter("ref_l", 0.3 * float(sr2[0]) + 0.59 * float(sr2[1]) + 0.11 * float(sr2[2]))
+		rm.set_shader_parameter("hair_c", Color("#2b2018"))
+		rm.set_shader_parameter("shorts_c", Color("#15151a"))
+		rm.set_shader_parameter("glove_c", rsk)
+		rm.set_shader_parameter("shirt_on", 1.0)
+		rm.set_shader_parameter("shirt_c", Color("#f2f2f2"))
+		rm.set_shader_parameter("pants_c", Color("#16161c"))
+		ref_spr.material = rm
+		ref_spr.visible = false
+		add_child(ref_spr)
 	clips_ok = true
 
 
@@ -496,6 +528,7 @@ func _process(delta: float) -> void:
 	for i in range(2):
 		tint[i] = maxf(0.0, tint[i] - delta)
 		_animate(i, delta)
+	_place_referee()
 	for f in flashes:
 		f["t"] -= delta
 		if f["t"] <= 0.0:
@@ -748,6 +781,16 @@ func _draw_floor(vs: Vector2) -> void:
 	while xx < vs.x + step:
 		draw_line(Vector2(xx, top), Vector2(xx - 0.30 * k, mid), Color(0, 0, 0, 0.10), 1.5)
 		xx += step
+	# marcas de la lona: círculo central y franja de borde (vectorial, sin logotipos)
+	var cxs := _pz(0.0, 0.0).x
+	draw_set_transform(Vector2(cxs, (top + mid) * 0.5 + 0.02 * k), 0.0, Vector2(1.0, 0.16))
+	draw_arc(Vector2.ZERO, 1.55 * k, 0.0, TAU, 64, Color(accent.r, accent.g, accent.b, 0.30), 0.10 * k, true)
+	draw_arc(Vector2.ZERO, 1.25 * k, 0.0, TAU, 64, Color(1, 1, 1, 0.10), 0.03 * k, true)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	if spot_tex != null:                                  # foco de luz sobre el centro del ring
+		var sw := 5.2 * k
+		draw_texture_rect(spot_tex, Rect2(Vector2(cxs - sw * 0.5, top - 0.35 * k), Vector2(sw, 1.15 * k)), false, Color(1, 1, 1, 0.20))
+	draw_line(Vector2(-60, mid - 0.03 * k), Vector2(vs.x + 60, mid - 0.03 * k), Color(1, 1, 1, 0.55), 0.03 * k)
 	# faldón con el color de la arena (sin logotipos repetidos)
 	var ap := accent.darkened(0.5)
 	draw_polygon(PackedVector2Array([Vector2(-60, mid), Vector2(vs.x + 60, mid), Vector2(vs.x + 60, vs.y + 60), Vector2(-60, vs.y + 60)]),
@@ -765,6 +808,44 @@ func _draw_corner_logo(vs: Vector2) -> void:
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
+func _post(px: float, yb: float, pcol: Color, h: float) -> void:
+	var w := 0.24 * k
+	draw_rect(Rect2(Vector2(px - w * 0.5 - 0.02 * k, yb + 0.02 * k), Vector2(w + 0.04 * k, 0.05 * k)), Color(0, 0, 0, 0.35))   # sombra en la lona
+	draw_polygon(PackedVector2Array([Vector2(px - w * 0.5, yb - h), Vector2(px + w * 0.5, yb - h), Vector2(px + w * 0.5, yb), Vector2(px - w * 0.5, yb)]),
+		PackedColorArray([pcol.lightened(0.30), pcol.darkened(0.30), pcol.darkened(0.45), pcol.lightened(0.10)]))
+	draw_rect(Rect2(Vector2(px - w * 0.5, yb - h), Vector2(w * 0.22, h)), Color(1, 1, 1, 0.20))
+	draw_rect(Rect2(Vector2(px - w * 0.56, yb - h - 0.05 * k), Vector2(w * 1.12, 0.07 * k)), Color(0.75, 0.76, 0.8))    # tapa metálica
+	draw_rect(Rect2(Vector2(px - w * 0.56, yb - h - 0.05 * k), Vector2(w * 1.12, 0.02 * k)), Color(1, 1, 1, 0.6))
+	for i in range(3):                                                                                                       # tensores
+		var ty: float = yb - float(ROPE_H[i]) * k * 0.95
+		draw_circle(Vector2(px, ty), 0.034 * k, Color(0.12, 0.12, 0.15))
+		draw_circle(Vector2(px, ty), 0.024 * k, Color(0.8, 0.82, 0.86))
+		draw_circle(Vector2(px - 0.008 * k, ty - 0.008 * k), 0.008 * k, Color(1, 1, 1, 0.9))
+
+
+func _rope(xa: float, xb: float, y: float, col: Color, sag: float, width: float, sway := 0.0) -> void:
+	var pts := PackedVector2Array()
+	var n := 18
+	for j in range(n + 1):
+		var u := float(j) / float(n)
+		pts.append(Vector2(lerpf(xa, xb, u), y + sag * sin(u * PI) + sway * sin(u * PI)))
+	var sh := PackedVector2Array()
+	for q in pts:
+		sh.append(q + Vector2(0, 0.05 * k))
+	draw_polyline(sh, Color(0, 0, 0, 0.22), width * 1.2, true)       # sombra proyectada
+	draw_polyline(pts, OUTLINE, width * 1.35, true)
+	draw_polyline(pts, col.darkened(0.2), width, true)
+	var hi := PackedVector2Array()
+	for q in pts:
+		hi.append(q + Vector2(0, -width * 0.22))
+	draw_polyline(hi, col.lightened(0.4), width * 0.28, true)         # brillo
+	for j in range(1, n * 2):                                         # trenzado de la cuerda
+		var u2 := float(j) / float(n * 2)
+		var qx := lerpf(xa, xb, u2)
+		var qy := y + (sag + sway) * sin(u2 * PI)
+		draw_line(Vector2(qx, qy - width * 0.45), Vector2(qx + width * 0.5, qy + width * 0.45), Color(0, 0, 0, 0.18), maxf(1.0, width * 0.12))
+
+
 func _draw_ropes_back(vs: Vector2) -> void:
 	var yb := gy - 0.28 * k
 	var xa := _pz(-ROPE_HALF, 0.0).x
@@ -772,13 +853,10 @@ func _draw_ropes_back(vs: Vector2) -> void:
 	for s in [-1, 1]:
 		var px := _pz(float(s) * ROPE_HALF, 0.0).x
 		var pc := Color(0.82, 0.14, 0.18) if s < 0 else Color(0.14, 0.36, 0.88)
-		draw_line(Vector2(px, yb), Vector2(px, yb - 1.55 * k), Color(0.10, 0.10, 0.14), 0.085 * k)
-		draw_rect(Rect2(Vector2(px - 0.06 * k, yb - 1.45 * k), Vector2(0.12 * k, 1.0 * k)), pc.darkened(0.25))
+		_post(px, yb, pc, 1.55 * k)
 	for i in range(3):
-		var y: float = yb - ROPE_H[i] * k * 0.95
-		draw_line(Vector2(xa, y), Vector2(xb, y), OUTLINE, 0.048 * k)
-		draw_line(Vector2(xa, y), Vector2(xb, y), _rope_col(i).darkened(0.15), 0.032 * k)
-		draw_line(Vector2(xa, y - 0.008 * k), Vector2(xb, y - 0.008 * k), _rope_col(i).lightened(0.35), 0.008 * k)
+		var y: float = yb - float(ROPE_H[i]) * k * 0.95
+		_rope(xa, xb, y, _rope_col(i), 0.035 * k * float(3 - i) / 3.0 + 0.012 * k, 0.040 * k)
 
 
 func _draw_ropes_front(vs: Vector2) -> void:
@@ -794,11 +872,39 @@ func _draw_ropes_front(vs: Vector2) -> void:
 			var h: float = ROPE_H[i]
 			var p0 := Vector2(px, yn - h * k * 1.08 + sway)
 			var p1 := Vector2(px, yb - h * k * 0.95 + sway)
-			draw_line(p0, p1, OUTLINE, 0.05 * k)
-			draw_line(p0, p1, _rope_col(i).darkened(0.1), 0.034 * k)
-		draw_rect(Rect2(Vector2(px - 0.085 * k, yn - 1.55 * k), Vector2(0.17 * k, 1.55 * k)), Color(0.10, 0.10, 0.14))
-		draw_rect(Rect2(Vector2(px - 0.115 * k, yn - 1.45 * k), Vector2(0.23 * k, 1.0 * k)), pcol.darkened(0.12))
-		draw_rect(Rect2(Vector2(px - 0.115 * k, yn - 1.45 * k), Vector2(0.06 * k, 1.0 * k)), pcol.lightened(0.28))
+			draw_line(p0 + Vector2(0.025 * k, 0.04 * k), p1 + Vector2(0.025 * k, 0.04 * k), Color(0, 0, 0, 0.2), 0.05 * k)
+			draw_line(p0, p1, OUTLINE, 0.055 * k)
+			draw_line(p0, p1, _rope_col(i).darkened(0.1), 0.038 * k)
+			draw_line(p0 + Vector2(-0.01 * k, 0), p1 + Vector2(-0.01 * k, 0), _rope_col(i).lightened(0.4), 0.01 * k)
+		_post(px, yn, pcol, 1.55 * k)
+
+
+func _place_referee() -> void:
+	if ref_spr == null or referee == null or not is_instance_valid(referee):
+		return
+	var seated_any: bool = mgr != null and mgr.phase == Manager.Phase.REST
+	if seated_any:
+		ref_spr.visible = false
+		return
+	var counting: bool = mgr != null and mgr.phase == Manager.Phase.COUNT
+	var clip := "win" if counting else "lose"
+	var idx := (2 + int(t * 3.0) % 2) if counting else 0
+	var cw: float = float(clip_meta[clip]["cw"])
+	var ch: float = float(clip_meta[clip]["ch"])
+	ref_spr.texture = clip_tex[clip]
+	(ref_spr.material as ShaderMaterial).set_shader_parameter("mask", clip_mask[clip])
+	(ref_spr.material as ShaderMaterial).set_shader_parameter("hmask", clip_hmask[clip])
+	ref_spr.region_rect = Rect2(float(idx) * cw, 0.0, cw, ch)
+	ref_spr.offset = Vector2(-cw * 0.36, -(ch - 6.0))
+	var mid: float = (a.position.z + b.position.z) * 0.5
+	var rz: float = mid
+	var flip := -1.0 if a.position.z < b.position.z else 1.0
+	var sc := 0.78 * BODY_M * k / fig_h
+	var foot := _pz(rz, 0.0) + Vector2(0, -0.07 * k + sin(t * 1.6) * 0.004 * k)
+	ref_spr.scale = Vector2(flip * sc, sc)
+	ref_spr.position = foot
+	ref_spr.modulate = Color(0.9, 0.9, 0.95)
+	ref_spr.visible = true
 
 
 func _draw_referee() -> void:

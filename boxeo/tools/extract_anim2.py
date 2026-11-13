@@ -104,7 +104,9 @@ for name in NAMES:
         if name == "idle" or name == "walk":
             skin_acc += crop[skin].sum(axis=0); skin_n += int(skin.sum())
         mk = np.dstack([sh, gl, skin]).astype(np.uint8) * 255
-        hk = (hair * 255).astype(np.uint8)
+        zone = skin & (yy > 0.17) & (yy < 0.56)
+        legs = skin & (yy >= 0.56)
+        hk = np.dstack([hair, zone, legs]).astype(np.uint8) * 255
         rgba = Image.fromarray(np.dstack([crop, alpha]).astype(np.uint8))
         w2, h2 = int(crop.shape[1] * S), int(crop.shape[0] * S)
         fr = rgba.resize((w2, h2), Image.LANCZOS).filter(ImageFilter.UnsharpMask(1.2, 35, 3))
@@ -122,7 +124,7 @@ for name in NAMES:
     n = len(items)
     atlas = Image.new('RGBA', (CW * n, CH), (0, 0, 0, 0))
     mask = Image.new('RGB', (CW * n, CH), (0, 0, 0))
-    hmask = Image.new('L', (CW * n, CH), 0)
+    hmask = Image.new('RGB', (CW * n, CH), (0, 0, 0))
     for i, (fr, mi, ox, oy, hi_) in enumerate(items):
         atlas.alpha_composite(fr, (max(i * CW + ox, 0), max(oy, 0))) if False else atlas.paste(fr, (i * CW + ox, oy), fr)
         mask.paste(mi, (i * CW + ox, oy))
