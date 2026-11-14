@@ -67,9 +67,16 @@ for ci, name in enumerate(NAMES):
 
 # escala global: altura de un boxeador de pie (idle) -> 250 px
 def fig_bbox(crop):
-    l = crop.max(axis=2) > 40
+    l = crop.max(axis=2) > 32
     l = ndi.binary_opening(l, structure=np.ones((3, 1)))
     l = ndi.binary_closing(l, iterations=2)
+    hol = ndi.binary_fill_holes(l) & ~l                    # huecos cerrados (guantes/botas negros): se rellenan si son pequeños
+    hl, hk = ndi.label(hol)
+    if hk:
+        ha = ndi.sum(hol, hl, range(1, hk + 1))
+        for hi, hv in enumerate(ha):
+            if hv < 1200:
+                l |= hl == hi + 1
     lab, k = ndi.label(l)
     if k == 0:
         return None, None
