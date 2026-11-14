@@ -51,7 +51,7 @@ var trail: Array = [[], []]
 var spot_tex: Texture2D
 # --- animación por fotogramas (lámina maestra) ---
 const ANIM_DIR := "res://ART/anim/"
-const REFEREE_2D := false     # desactivado: el árbitro recoloreado desde un boxeador no se ve bien; falta un dibujo propio
+const REFEREE_2D := true      # árbitro dibujado con tools/make_referee.py (ART/anim/referee.png)
 const IMPACT := {"jab": 3, "cross": 2, "hook_l": 2, "hook_r": 2, "upper": 2}
 const CLIP_SHADER := "shader_type canvas_item;
 uniform sampler2D mask : filter_linear;
@@ -82,7 +82,7 @@ void fragment() {
 	r = mix(r, bcol, h3.b * 0.9 * (1.0 - shirt_on));
 	if (shirt_on > 0.5) {
 		float band = h3.g;
-		float low = 0.0;
+		float low = step(0.62, UV.y);
 		r = mix(r, shirt_c.rgb * mix(0.88, clamp(l / ref_l, 0.55, 1.15), 0.22), m.b * band * 0.97);
 		r = mix(r, pants_c.rgb * (0.7 + 0.3 * l), m.b * low * 0.97);
 	}
@@ -203,24 +203,12 @@ func _load_clips() -> void:
 		sp.visible = false
 		add_child(sp)
 		spr[i] = sp
-	if referee != null and REFEREE_2D:
+	if referee != null and REFEREE_2D and ResourceLoader.exists(ANIM_DIR + "referee.png"):
 		ref_spr = Sprite2D.new()
 		ref_spr.centered = false
 		ref_spr.region_enabled = true
+		ref_spr.texture = load(ANIM_DIR + "referee.png")
 		ref_spr.z_index = 1
-		var rm := ShaderMaterial.new()
-		rm.shader = sh
-		var rsk := Color("#c9a487")
-		var sr2: Array = skin_ref
-		rm.set_shader_parameter("skin_c", rsk)
-		rm.set_shader_parameter("ref_l", 0.3 * float(sr2[0]) + 0.59 * float(sr2[1]) + 0.11 * float(sr2[2]))
-		rm.set_shader_parameter("hair_c", Color("#2b2018"))
-		rm.set_shader_parameter("shorts_c", Color("#15151a"))
-		rm.set_shader_parameter("glove_c", rsk)
-		rm.set_shader_parameter("shirt_on", 1.0)
-		rm.set_shader_parameter("shirt_c", Color("#f2f2f2"))
-		rm.set_shader_parameter("pants_c", Color("#16161c"))
-		ref_spr.material = rm
 		ref_spr.visible = false
 		add_child(ref_spr)
 	clips_ok = true
@@ -893,23 +881,17 @@ func _place_referee() -> void:
 		ref_spr.visible = false
 		return
 	var counting: bool = mgr != null and mgr.phase == Manager.Phase.COUNT
-	var clip := "win" if counting else "lose"
-	var idx := (2 + int(t * 3.0) % 2) if counting else 0
-	var cw: float = float(clip_meta[clip]["cw"])
-	var ch: float = float(clip_meta[clip]["ch"])
-	ref_spr.texture = clip_tex[clip]
-	(ref_spr.material as ShaderMaterial).set_shader_parameter("mask", clip_mask[clip])
-	(ref_spr.material as ShaderMaterial).set_shader_parameter("hmask", clip_hmask[clip])
-	ref_spr.region_rect = Rect2(float(idx) * cw, 0.0, cw, ch)
-	ref_spr.offset = Vector2(-cw * 0.36, -(ch - 6.0))
+	var idx := (2 + int(t * 2.0) % 2) if counting else (int(t * 1.2) % 2)
+	ref_spr.region_rect = Rect2(float(idx) * 360.0, 0.0, 360.0, 330.0)
+	ref_spr.offset = Vector2(-360.0 * 0.36, -324.0)
 	var mid: float = (a.position.z + b.position.z) * 0.5
 	var rz: float = mid
 	var flip := -1.0 if a.position.z < b.position.z else 1.0
-	var sc := 0.78 * BODY_M * k / fig_h
-	var foot := _pz(rz, 0.0) + Vector2(0, -0.07 * k + sin(t * 1.6) * 0.004 * k)
+	var sc := 0.66 * BODY_M * k / fig_h
+	var foot := _pz(rz, 0.0) + Vector2(0, -0.12 * k + sin(t * 1.6) * 0.004 * k)
 	ref_spr.scale = Vector2(flip * sc, sc)
 	ref_spr.position = foot
-	ref_spr.modulate = Color(0.9, 0.9, 0.95)
+	ref_spr.modulate = Color(0.82, 0.82, 0.9)
 	ref_spr.visible = true
 
 

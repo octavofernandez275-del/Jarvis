@@ -15,7 +15,8 @@ CW, CH, AX = 360, 330, 0.36
 TITLE = 0.15
 os.makedirs('ART/anim', exist_ok=True)
 for f in os.listdir('ART/anim'):
-    os.remove('ART/anim/' + f)
+    if not f.startswith('referee'):
+        os.remove('ART/anim/' + f)
 cw0, ch0 = W0 / 4.0, H0 / 4.0
 
 def segment(cell):
