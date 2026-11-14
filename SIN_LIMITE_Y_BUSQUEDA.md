@@ -102,3 +102,10 @@ No se pudo compilar aquí (sin Kotlin/Android SDK). Ejecuta el workflow *Compila
 - `SCRIPTS/stage2d.gd`: combate de lado; los muñecos siguen los huesos del esqueleto (misma lógica, IA y animaciones), cara del retrato, ring con cuerdas que vibran, banquetas en el descanso, efectos de impacto, confeti y flashes. Botón de cámara = zoom. `MODO_2D := false` en `main.gd` vuelve al 3D.
 - `SCRIPTS/vs_screen.gd` pantalla VS; menú con logo y sprites, selección con retratos, arenas con miniaturas, Vestuario (guantes/pantalón/botas), HUD con retratos, resultado con ganador y trofeo, cinturones en la carrera.
 - Sin probar en Godot: solo validado el formato de datos y los recursos.
+
+## Boxeo V4b: animación por fotogramas, ring y narración
+- Combate 2D con clips de un solo boxeador (`boxeo/ART/anim`, extraídos con `boxeo/tools/extract_anim2.py`). Estado del Boxer → clip y fotograma en `stage2d.gd` (`_pick_clip`): guardia, caminar/correr, jab, directo, ganchos, uppercut, bloqueo, esquiva, golpeado, tambaleo, caída, levantarse, victoria, derrota. Ya no hay golpes superpuestos: el puño es parte del fotograma.
+- Piel, pelo (o calvo), barba y guantes de cada boxeador salen de su retrato (`boxeo/tools/sync_look_from_portraits.py`). El cuerpo y la cara siguen siendo los mismos para todos.
+- Ring: postes, cuerdas con sombra/trenzado/vibración, lona con círculo y foco. Narración con contexto (nombres, combos, cansancio, daño, últimos 10 s, relleno).
+- Árbitro 2D desactivado (`REFEREE_2D`): requiere un dibujo propio.
+- Probado con Godot real: pelea de 3 rounds completos contra la IA sin errores. Sin probar en teléfono: controles táctiles, caída/levantarse/victoria en pantalla.
