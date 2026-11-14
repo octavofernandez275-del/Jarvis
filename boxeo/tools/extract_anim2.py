@@ -66,10 +66,24 @@ for ci, name in enumerate(NAMES):
     print(name, len(frs), [b - a for a, b in runs])
 
 # escala global: altura de un boxeador de pie (idle) -> 250 px
+CUR = ''
+
+
 def fig_bbox(crop):
     l = crop.max(axis=2) > 32
     l = ndi.binary_opening(l, structure=np.ones((3, 1)))
     l = ndi.binary_closing(l, iterations=2)
+    # guantes abiertos (solo contorno): cierre morfológico amplio en la mitad superior del cuerpo
+    ys0 = np.where(l.any(axis=1))[0]
+    if len(ys0):
+        top0, bot0 = ys0.min(), ys0.max() + 1
+        yb = bot0 + 1 if CUR in ('down', 'getup', 'lose') else top0 + int(0.58 * (bot0 - top0))
+        rr = 6
+        yy_, xx_ = np.mgrid[-rr:rr + 1, -rr:rr + 1]
+        disk = (yy_ ** 2 + xx_ ** 2) <= rr * rr
+        big = ndi.binary_closing(np.pad(l, rr), structure=disk)[rr:-rr, rr:-rr]
+        big[yb:] = False
+        l = l | big
     hol = ndi.binary_fill_holes(l) & ~l                    # huecos cerrados (guantes/botas negros): se rellenan si son pequeños
     hl, hk = ndi.label(hol)
     if hk:
@@ -94,6 +108,7 @@ print("escala", S)
 meta = {}
 skin_acc = np.zeros(3); skin_n = 0
 for name in NAMES:
+    CUR = name
     items = []
     for crop in frames_by[name]:
         fg, bb = fig_bbox(crop)
