@@ -187,8 +187,8 @@ object Engine {
             }
         }
         if (!basico) {
-            // Los hilos no se quedan girando esperando trabajo entre un token y otro (menos calor y batería)
-            args.add("--poll"); args.add("0")
+            // (50 = el valor de llama.cpp: despierta más rápido entre token y token; con 0 cada token esperaba a que el hilo despertara)
+            args.add("--poll"); args.add("50")
             // Sin la página web integrada del servidor: menos memoria y nada expuesto (solo usamos la API)
             args.add("--no-webui")
             // Si la conversación llena el contexto, descarta lo más viejo y sigue escribiendo (respuestas sin límite)
@@ -207,15 +207,25 @@ object Engine {
         pb.redirectErrorStream(true)
         val p = pb.start()
         proc = p
-        // Prioridad baja (nice 9): la pantalla y el teclado siempre pasan primero. Se repite unos segundos
-        // porque el servidor va creando hilos; los que crea después heredan la prioridad del hilo principal.
-        if (Ajustes.prioridadBaja(ctx)) {
+        // Prioridad MÁXIMA permanente (nice -8) para todos los hilos del servidor, o la de antes si se pidió ("prioridad baja").
+        // El servidor crea hilos al cargar el modelo y otra vez al generar: se reaplica cada 0,5 s durante el primer minuto
+        // y cada 4 s mientras el proceso viva; además, cada respuesta la reaplica antes de empezar (ver Chat.stream).
+        val nice = when {
+            Ajustes.prioridadMaxima(ctx) -> Hilos.PRIORIDAD_MAX
+            Ajustes.prioridadBaja(ctx) -> 9
+            else -> null
+        }
+        if (nice != null) {
             Thread {
                 try {
-                    for (i in 1..30) { Thread.sleep(100); bajarPrioridad() }
+                    val t0 = System.currentTimeMillis()
+                    while (p.isAlive) {
+                        priorizar(p, nice)
+                        Thread.sleep(if (System.currentTimeMillis() - t0 < 60_000L) 500L else 4_000L)
+                    }
                 } catch (_: Exception) {
                 }
-            }.start()
+            }.also { it.isDaemon = true }.start()
         }
         Thread {
             // Al detener el servidor se cierra su salida y esta lectura lanza una excepción;
@@ -247,25 +257,26 @@ object Engine {
         return false
     }
 
-    /** Baja a nice 9 todos los hilos del servidor del modelo (solo ve y toca procesos de la propia app). */
-    fun bajarPrioridad() {
+    @Volatile private var niceActual: Int? = null
+
+    /** Aplica `nice` a TODOS los hilos del servidor (solo ve y toca procesos de la propia app). Lee solo /proc/<pid>/task: no recorre todo /proc. */
+    private fun priorizar(p: Process, nice: Int) {
         try {
-            File("/proc").listFiles()?.forEach { d ->
-                val pid = d.name.toIntOrNull() ?: return@forEach
-                if (pid == android.os.Process.myPid()) return@forEach
-                val cmd = try {
-                    File(d, "cmdline").inputStream().use { String(it.readBytes(), Charsets.ISO_8859_1) }
-                } catch (e: Exception) {
-                    return@forEach
-                }
-                if (!cmd.contains("libllama_server")) return@forEach
-                File(d, "task").listFiles()?.forEach { t ->
-                    val tid = t.name.toIntOrNull() ?: return@forEach
-                    try { android.os.Process.setThreadPriority(tid, 9) } catch (_: Exception) {}
-                }
+            niceActual = nice
+            val tareas = File("/proc/" + p.pid() + "/task").listFiles() ?: return
+            for (t in tareas) {
+                val tid = t.name.toIntOrNull() ?: continue
+                try { android.os.Process.setThreadPriority(tid, nice) } catch (_: Exception) {}
             }
         } catch (_: Exception) {
         }
+    }
+
+    /** Reaplica la prioridad al motor ya en marcha (la llama cada respuesta antes de empezar; no hace nada si no hay motor). */
+    fun reforzarPrioridad() {
+        val p = proc ?: return
+        val n = niceActual ?: return
+        if (p.isAlive) priorizar(p, n)
     }
 
     fun stop() { proc?.destroyForcibly(); proc = null }   // cierre inmediato: libera el puerto y la RAM al instante

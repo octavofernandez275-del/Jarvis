@@ -89,6 +89,7 @@ object Commands {
     private val rxMotorSiempre = Regex("""^(?:manten(?: el motor)? (?:encendido|prendido|activo)|manten el motor|no apagues(?: el motor)?|motor siempre encendido)$""")
     private val rxMotorTiempo = Regex("""^(?:apaga|apagar) el motor (?:tras|despues de|a los|en) (\d{1,3}) (?:minutos?|min)$""")
 
+    private val rxPrioridadMaxima = Regex("""^(?:usa |pon )?prioridad (?:maxima|alta)$""")
     private val rxPrioridadBaja = Regex("""^(?:usa |pon )?prioridad baja$""")
     private val rxPrioridadNormal = Regex("""^(?:usa |pon )?prioridad normal$""")
     private val rxNucleosRapidos = Regex("""^(?:usa |pon |fija )?(?:los )?nucleos rapidos$""")
@@ -309,12 +310,19 @@ object Commands {
     // ---------- Núcleos del procesador ----------
 
     private fun nucleos(ctx: Context, f: String): Reply? {
+        if (rxPrioridadMaxima.matches(f)) {
+            Ajustes.fijarPrioridadMaxima(ctx, true)
+            EngineManager.reiniciarYa(ctx)
+            return Reply("Listo: el modelo y la respuesta trabajan con prioridad máxima (es lo normal en Jarvis). $AVISO_REINICIO")
+        }
         if (rxPrioridadBaja.matches(f)) {
+            Ajustes.fijarPrioridadMaxima(ctx, false)
             Ajustes.fijarPrioridadBaja(ctx, true)
             EngineManager.reiniciarYa(ctx)
             return Reply("Listo: el modelo trabaja con prioridad baja, así la pantalla y el teclado van fluidos. $AVISO_REINICIO")
         }
         if (rxPrioridadNormal.matches(f)) {
+            Ajustes.fijarPrioridadMaxima(ctx, false)
             Ajustes.fijarPrioridadBaja(ctx, false)
             EngineManager.reiniciarYa(ctx)
             return Reply("Listo: el modelo trabaja con prioridad normal. Puede ser más rápido, pero el teclado se puede sentir lento. $AVISO_REINICIO")

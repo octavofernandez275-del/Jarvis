@@ -298,6 +298,7 @@ object Assistant {
         // 2) Todo lo demás lo contesta el modelo
         ocupado = true
         val miGen = ++genId
+        HandsFree.alEmpezarAHablar()                // apaga el micrófono mientras Jarvis piensa y habla
         val ticket = voiceOut.startReply()          // empieza una respuesta hablada nueva
         val vozEnVivo = Ajustes.vozEnVivo(app)
         // Por defecto la voz NO se prepara ni habla mientras el modelo escribe: así no le quita CPU
@@ -317,6 +318,7 @@ object Assistant {
         val buscarWeb = Ajustes.busquedaEnChat(app) && Web.necesitaInternet(text)
         val webListo = arrayOfNulls<Pair<String, List<String>>>(1)
         val hiloWeb = if (buscarWeb) Thread {
+            Hilos.maxima()
             try { webListo[0] = Web.contextoEnVivo(consultaWeb) } catch (_: Exception) {}
         }.also { it.isDaemon = true; it.start() } else null
         generando = true
@@ -324,6 +326,7 @@ object Assistant {
         renovarSueno()                              // CPU despierta mientras piensa
         EngineManager.retener()
         Thread {
+            Hilos.maxima()
             val reply = StringBuilder()
             var cancelado = false
             val t0 = SystemClock.elapsedRealtime()
@@ -334,7 +337,7 @@ object Assistant {
             try {
                 // Si el motor se apagó por inactividad, aquí se vuelve a encender
                 if (!EngineManager.asegurar(app) { estado(it) }) throw Exception("el motor no arrancó")
-                if (hiloWeb != null) { estado("Buscando en internet…"); try { hiloWeb.join(30_000) } catch (_: InterruptedException) {} }
+                if (hiloWeb != null) { estado("Buscando en internet…"); try { hiloWeb.join(15_000) } catch (_: InterruptedException) {} }
                 tListo = SystemClock.elapsedRealtime()
                 estado("Respondiendo…")
                 val web = webListo[0]
@@ -446,7 +449,8 @@ object Assistant {
         val hilos = Ajustes.hilosEfectivos(app).toString() + (if (tb > 0) "/$tb" else "") +
             (if (Ajustes.nucleosFijos(app)) " fijos" else "")
         val calor = if (Termico.nivel(app) >= Termico.TIBIO) " · " + Termico.descripcion(app) else ""
-        estado("Jarvis listo · primera palabra %.1f s · %.1f tok/s · hilos %s%s%s".format(esperaMs / 1000f, tps, hilos, motor, calor))
+        val prio = if (Ajustes.prioridadMaxima(app)) " · prioridad máx" else ""
+        estado("Jarvis listo · primera palabra %.1f s · %.1f tok/s · hilos %s%s%s%s".format(esperaMs / 1000f, tps, hilos, prio, motor, calor))
     }
 
     /** Botón "repetir" de una burbuja: vuelve a decir ese texto en voz alta. */
@@ -475,6 +479,7 @@ object Assistant {
     }
 
     private fun hablar(texto: String) {
+        HandsFree.alEmpezarAHablar()                // apaga el micrófono mientras Jarvis habla
         val t = voiceOut.startReply()
         voiceOut.feed(t, texto)
         voiceOut.endReply(t)

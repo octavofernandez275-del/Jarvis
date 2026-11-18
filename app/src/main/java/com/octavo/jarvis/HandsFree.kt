@@ -12,14 +12,16 @@ import android.os.Looper
  * Todo se usa desde el hilo principal.
  *
  * ESCUCHA ACTIVA (pulsación larga en el botón de manos libres): el reconocedor queda siempre escuchando y
- * solo reacciona si dices "Oye Jarvis" (o "Jarvis"), o dentro de 25 s de la última charla. Además puedes
- * cortar a Jarvis mientras habla diciendo "Jarvis", "para", "basta", "espera"... Cuesta batería (usa el
- * reconocedor de Android en bucle, no un detector local de palabra clave) y puede oírse a sí mismo por el
- * parlante, por eso solo la palabra de corte lo interrumpe, no cualquier ruido.
+ * solo reacciona si dices "Oye Jarvis" (o "Jarvis"), o dentro de 25 s de la última charla. El micrófono
+ * se APAGA mientras Jarvis piensa o habla (así no se oye a sí mismo por el parlante) y se reactiva solo al
+ * terminar. Para callarlo mientras habla, toca la pantalla/botón. Cuesta batería (usa el reconocedor de
+ * Android en bucle, no un detector local de palabra clave).
  */
 object HandsFree {
     private const val MAX_SILENCIOS = 2
     private const val ESPERA_ESCUCHAR_MS = 400L   // pequeña pausa tras hablar, para no captar el final de la voz
+    private const val ESPERA_TRAS_VOZ_VIGIA_MS = 1000L   // en escucha activa: más margen para que muera el eco del parlante
+    private var finHabla = 0L
 
     private val rxCierre = Regex(
         """^(?:adios|chau|chao|hasta luego|nada mas|eso es todo|desactiva(?: el)? manos libres|termina|detente|duermete|apagate)\b"""
@@ -37,6 +39,8 @@ object HandsFree {
     @Volatile var vigiaPedida = false
     private const val VENTANA_CONVERSACION_MS = 25_000L
     private const val MAX_ERRORES_VIGIA = 6
+    /** El micrófono ya se apaga mientras Jarvis habla; cortar por voz queda desactivado (evita el eco). */
+    private const val permitirCortarPorVoz = false
     private var ultimaInteraccion = 0L
     private var interrumpidoPorVoz = false
     private var errores = 0
@@ -91,7 +95,19 @@ object HandsFree {
         if (!activo) return
         if (cerrando) { desactivar(null); return }
         ultimaInteraccion = System.currentTimeMillis()   // sigue la charla sin repetir "Jarvis" durante un rato
-        escuchar()
+        finHabla = ultimaInteraccion
+        escuchar(if (vigia) ESPERA_TRAS_VOZ_VIGIA_MS else ESPERA_ESCUCHAR_MS)
+    }
+
+    /**
+     * Jarvis va a hablar: se APAGA el micrófono hasta que termine, para que no se capte a sí mismo
+     * (el parlante y el micrófono son el mismo teléfono). Se reactiva solo al terminar de hablar.
+     */
+    fun alEmpezarAHablar() {
+        if (!activo) return
+        main.removeCallbacks(arranque)
+        if (Assistant.voiceIn.isListening) Assistant.voiceIn.cancel()
+        Assistant.ui?.parcial("")   // limpia cualquier texto parcial captado
     }
 
     /**
@@ -138,6 +154,7 @@ object HandsFree {
     fun alParcial(parcial: String) {
         if (!activo || !vigia || interrumpidoPorVoz) return
         if (!Assistant.voiceOut.isSpeaking && !Assistant.ocupado) return
+        if (!permitirCortarPorVoz) return
         if (rxParar.containsMatchIn(Parsers.fold(parcial))) {
             interrumpidoPorVoz = true
             Assistant.interrupt()
@@ -199,8 +216,16 @@ object HandsFree {
         if (!activo || cerrando) return
         val a = Assistant
         if (a.voiceIn.isListening) return
-        // En escucha activa se escucha también mientras Jarvis piensa o habla (para poder cortarlo)
-        if (!vigia && (a.ocupado || a.voiceOut.isSpeaking)) return
+        // Nunca se escucha mientras Jarvis piensa o habla: el micrófono captaría su propia voz.
+        if (a.ocupado || a.voiceOut.isSpeaking) {
+            if (vigia) escuchar(700L)   // escucha activa: reintenta hasta que termine
+            return
+        }
+        // Margen tras la última palabra hablada (eco / reverberación del parlante)
+        if (vigia) {
+            val falta = ESPERA_TRAS_VOZ_VIGIA_MS - (System.currentTimeMillis() - finHabla)
+            if (falta > 0) { escuchar(falta); return }
+        }
         a.voiceIn.start()
     }
 }

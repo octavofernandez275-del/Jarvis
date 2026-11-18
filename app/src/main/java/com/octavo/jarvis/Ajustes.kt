@@ -5,7 +5,7 @@ import android.content.Context
 /**
  * Ajustes de rendimiento del motor que se cambian con comandos ("hilos 4"), sin recompilar.
  * Por defecto: reparto AUTOMÁTICO según el procesador (ver Cpu.perfil: pocos hilos para escribir la respuesta y más para
- * leer el prompt), PRIORIDAD BAJA (la pantalla y el teclado siempre tienen preferencia), sin fijar núcleos, y con
+ * leer el prompt), PRIORIDAD MÁXIMA permanente (ver Hilos; "prioridad baja" la quita), sin fijar núcleos, y con
  * menos hilos si el teléfono se calienta (ver Termico). Si eliges "hilos N" a mano, se respeta tal cual.
  * Los lee Engine.start() al arrancar el servidor.
  */
@@ -52,7 +52,7 @@ object Ajustes {
         val n = Termico.nivel(ctx)
         return when {
             n >= Termico.CRITICO -> 2
-            n >= Termico.CALIENTE || Termico.ahorroEnergia(ctx) -> 1
+            Termico.ahorroEnergia(ctx) -> 1      // el calor "caliente" ya no resta hilos: solo el crítico y el ahorro de energía
             else -> 0
         }
     }
@@ -96,8 +96,13 @@ object Ajustes {
     /** false (por defecto): Android reparte los hilos. true: se fijan a los núcleos más rápidos (puede dejar lenta la pantalla). */
     fun nucleosFijos(ctx: Context): Boolean = p(ctx).getBoolean("nucleos_fijos", false)
 
-    /** true (por defecto): el servidor del modelo trabaja con prioridad baja, así el teclado y la pantalla van fluidos. */
-    fun prioridadBaja(ctx: Context): Boolean = p(ctx).getBoolean("prioridad_baja", true)
+    /** true (por defecto): TODOS los hilos del modelo y de la respuesta trabajan con prioridad máxima, de forma permanente. */
+    fun prioridadMaxima(ctx: Context): Boolean = p(ctx).getBoolean("prioridad_max", true)
+
+    fun fijarPrioridadMaxima(ctx: Context, v: Boolean) { p(ctx).edit().putBoolean("prioridad_max", v).apply() }
+
+    /** false (por defecto): solo cuenta si se apagó la prioridad máxima; entonces true = prioridad baja (nice 9). */
+    fun prioridadBaja(ctx: Context): Boolean = p(ctx).getBoolean("prioridad_baja", false)
 
     fun fijarPrioridadBaja(ctx: Context, v: Boolean) { p(ctx).edit().putBoolean("prioridad_baja", v).apply() }
 

@@ -65,6 +65,8 @@ object Chat {
         messages: List<Pair<String, String>>, maxTokens: Int, temperatura: Double,
         esquema: JSONObject?, onToken: (String) -> Unit
     ) {
+        Hilos.maxima()                 // este hilo (el que espera y entrega la respuesta) con prioridad máxima
+        Engine.reforzarPrioridad()     // y los del motor otra vez, por si crearon hilos nuevos
         val arr = JSONArray()
         recortar(messages).forEach { arr.put(JSONObject().put("role", it.first).put("content", it.second)) }
         val body = JSONObject()
@@ -81,6 +83,7 @@ object Chat {
             c.requestMethod = "POST"
             c.doOutput = true
             c.connectTimeout = 10_000
+            c.useCaches = false
             c.readTimeout = 0   // sin tiempo límite: la respuesta puede ser tan larga como haga falta
             c.setRequestProperty("Content-Type", "application/json")
             c.setRequestProperty("Accept", "text/event-stream")

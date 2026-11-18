@@ -117,7 +117,7 @@ No se pudo compilar aquí (sin Kotlin/Android SDK). Ejecuta el workflow *Compila
 
 ## Escucha activa (pulsación larga en "Manos libres")
 - Reconocedor en bucle; solo reacciona a "Oye Jarvis"/"Jarvis" o dentro de 25 s de la última charla. Quita el nombre antes de mandar el texto al modelo.
-- Interrumpir hablando: mientras Jarvis habla o piensa, una palabra de corte al inicio ("Jarvis", "para", "basta", "espera", "silencio"...) lo calla. Cualquier otro texto captado en ese momento se descarta (eco).
+- (Reemplazado en v1.2: el micrófono se apaga mientras Jarvis piensa/habla y se reactiva ~1 s después; cortarlo por voz queda desactivado para evitar el eco. Cortar con el botón Callar.) Antes: mientras Jarvis habla o piensa, una palabra de corte al inicio ("Jarvis", "para", "basta", "espera", "silencio"...) lo calla. Cualquier otro texto captado en ese momento se descarta (eco).
 - Voz: "desactiva escucha activa" vuelve al manos libres normal; "adiós"/"chau" cierra todo. Tras 6 errores seguidos del reconocedor se apaga solo.
 - Límites: no es un detector local de palabra clave (usa el reconocedor de Android en bucle: más batería, posible pitido y datos si no hay paquete de voz offline en español). El eco del parlante puede colarse; mejor con auriculares. Sin probar en teléfono; no se pudo compilar aquí (CI).
 
@@ -132,3 +132,7 @@ No se pudo compilar aquí (sin Kotlin/Android SDK). Ejecuta el workflow *Compila
 - Precalentamiento: tras arrancar el motor se manda el prompt del sistema con 1 token para dejar ese prefijo en caché (la primera pregunta no lo lee de cero).
 - Comandos nuevos para probar: «lote 512/1024/2048/auto» (-ub) y «flash on/off/auto» (-fa on|off; el servidor se compila con llama.cpp reciente, donde auto ya es el valor por defecto). Por defecto no se tocan.
 - Logo propio (ícono adaptativo con el reactor), tema oscuro desde el primer cuadro (sin destello al abrir). versionCode 3 / versionName 1.0.
+
+## v1.2
+- Micrófono apagado mientras Jarvis piensa/habla (escucha activa): ya no copia su propia voz en la caja de texto. Cortar por voz desactivado (`permitirCortarPorVoz=false`); usar Callar.
+- Prioridad máxima permanente (nice -8) a los hilos del modelo y de la respuesta, `--poll 50`, el calor "caliente" ya no resta hilos (ver PRIORIDAD_Y_VELOCIDAD.md). Ojo: más calor/batería posibles; "prioridad baja" lo revierte.
