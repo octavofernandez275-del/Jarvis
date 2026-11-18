@@ -109,3 +109,8 @@ No se pudo compilar aquí (sin Kotlin/Android SDK). Ejecuta el workflow *Compila
 - Ring: postes, cuerdas con sombra/trenzado/vibración, lona con círculo y foco. Narración con contexto (nombres, combos, cansancio, daño, últimos 10 s, relleno).
 - Árbitro 2D desactivado (`REFEREE_2D`): requiere un dibujo propio.
 - Probado con Godot real: pelea de 3 rounds completos contra la IA sin errores. Sin probar en teléfono: controles táctiles, caída/levantarse/victoria en pantalla.
+
+## Optimización de respuesta (sin recortar prompts ni contexto)
+- El system prompt ahora es estable (SISTEMA + fecha); memoria del usuario y contexto web se pegan al ÚLTIMO mensaje de usuario (solo en la petición, no en el historial). Así la caché de prefijo de llama-server se reutiliza entre turnos.
+- `--cache-reuse 256` y `--mlock` (solo si la RAM libre > modelo*1.5 + 1.5 GB) dentro del bloque opcional: si el servidor los rechaza, el fallback existente arranca en modo básico.
+- No medido en el teléfono. Si la velocidad no mejora, revisar el log del servidor (cache-reuse puede no aplicar a Qwen3.5 híbrido).

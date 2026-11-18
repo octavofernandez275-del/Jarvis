@@ -151,6 +151,14 @@ object Engine {
         return true
     }
 
+    /** True si la RAM disponible supera con holgura el modelo + el caché de contexto (se deja >= 1.5 GB libre). */
+    private fun ramHolgada(ctx: Context): Boolean = try {
+        val mi = android.app.ActivityManager.MemoryInfo()
+        (ctx.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager).getMemoryInfo(mi)
+        val modelo = modelFile(ctx).length()
+        mi.availMem > modelo + (modelo / 2) + 1_500_000_000L
+    } catch (_: Exception) { false }
+
     fun start(ctx: Context) {
         if (proc?.isAlive == true) return
         val basico = opcionalesRechazados
@@ -185,6 +193,10 @@ object Engine {
             args.add("--no-webui")
             // Si la conversación llena el contexto, descarta lo más viejo y sigue escribiendo (respuestas sin límite)
             args.add("--context-shift")
+            // Reutiliza trozos de caché aunque el prefijo cambie un poco (menos relectura del prompt)
+            args.add("--cache-reuse"); args.add("256")
+            // RAM libre de sobra: fija el modelo en memoria para que Android no lo expulse (primer token sin esperas)
+            if (ramHolgada(ctx)) args.add("--mlock")
         }
         val pb = ProcessBuilder(args)
         pb.redirectErrorStream(true)

@@ -254,13 +254,12 @@ object Assistant {
 
     // ---------- Pregunta: primero comandos, luego el modelo ----------
 
-    /** Prompt del sistema: base + fecha de hoy + lo que el usuario pidió recordar. */
-    private fun systemPrompt(): String {
-        // Solo la FECHA (no la hora): así el prompt no cambia en cada pregunta y llama-server
-        // puede reutilizar su caché y no reprocesar todo (en el teléfono eso tarda).
-        val memoria = Memory.bloqueParaPrompt(app, history.lastOrNull { it.first == "user" }?.second.orEmpty())
-        return SISTEMA + " Hoy es ${Parsers.fechaHoy()}." + if (memoria.isEmpty()) "" else "\n\n$memoria"
-    }
+    /** Prompt del sistema ESTABLE (base + fecha): nunca cambia entre preguntas, así la caché de llama-server lo reutiliza. */
+    private fun systemPrompt(): String = SISTEMA + " Hoy es ${Parsers.fechaHoy()}."
+
+    /** Lo que sí cambia en cada pregunta (memoria del usuario): va al final, en el último mensaje, no al inicio. */
+    private fun memoriaDinamica(): String =
+        Memory.bloqueParaPrompt(app, history.lastOrNull { it.first == "user" }?.second.orEmpty())
 
     private fun ask(text: String) {
         // 1) Comandos del celular y memoria: sin gastar IA ni batería
@@ -325,7 +324,11 @@ object Assistant {
                 estado("Respondiendo…")
                 val web = webListo[0]
                 fuentesWeb = web?.second.orEmpty()
-                val msgs = listOf("system" to systemPrompt() + (web?.first ?: "")) + history
+                // Prefijo estable (sistema + historial) para reutilizar la caché; lo variable (memoria, web) va pegado al último mensaje.
+                val extra = memoriaDinamica().let { if (it.isEmpty()) "" else "\n\n[Datos del usuario]\n$it" } + (web?.first ?: "")
+                val hist = if (extra.isEmpty() || history.isEmpty() || history.last().first != "user") history
+                    else history.dropLast(1) + (history.last().first to history.last().second + extra)
+                val msgs = listOf("system" to systemPrompt()) + hist
                 Chat.stream(msgs) { t ->
                     if (miGen != genId) throw Cancelado()   // el usuario interrumpió
                     if (tokens == 0) tPrimero = SystemClock.elapsedRealtime()
