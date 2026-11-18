@@ -114,6 +114,7 @@ object HandsFree {
         if (!cortado && (Assistant.voiceOut.isSpeaking || Assistant.ocupado)) return null
         if (rxEscuchaOff.containsMatchIn(f)) {
             vigia = false
+            Assistant.ui?.manosLibres(true)
             Assistant.decir("Escucha activa desactivada. Sigo en manos libres.")
             return null
         }
@@ -156,6 +157,7 @@ object HandsFree {
         if (!activo) return
         vigia = on
         errores = 0
+        Assistant.ui?.manosLibres(true)   // repinta el botón (manos libres / escucha activa)
         Assistant.decir(if (on) "Escucha activa lista. Dime «Oye Jarvis» cuando me necesites." else "Escucha activa desactivada. Sigo en manos libres.")
     }
 

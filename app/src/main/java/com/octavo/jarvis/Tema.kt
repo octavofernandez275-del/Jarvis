@@ -26,12 +26,12 @@ object Tema {
     fun transparente(color: Int, alfa: Int) = Color.argb(alfa, Color.red(color), Color.green(color), Color.blue(color))
 
     /** Botón con borde de neón del color de acento. */
-    fun boton(b: Button, acento: Int) {
+    fun boton(b: Button, acento: Int, fuerza: Int = 35) {
         val ctx = b.context
         b.background = StateListDrawable().apply {
             addState(intArrayOf(-android.R.attr.state_enabled), caja(ctx, transparente(acento, 10), transparente(acento, 70)))
             addState(intArrayOf(android.R.attr.state_pressed), caja(ctx, transparente(acento, 120), ReactorView.AZUL_CLARO))
-            addState(intArrayOf(), caja(ctx, transparente(acento, 35), acento))
+            addState(intArrayOf(), caja(ctx, transparente(acento, fuerza), acento))
         }
         b.setTextColor(
             ColorStateList(
@@ -62,6 +62,25 @@ object Tema {
         b.maxLines = 1
         b.ellipsize = android.text.TextUtils.TruncateAt.END
         b.setPadding(dp(b.context, 12), 0, dp(b.context, 12), 0)
+    }
+
+    /** Pestaña de la barra inferior: ícono grande arriba y etiqueta chica abajo (texto de dos líneas "ícono\netiqueta"). */
+    fun pestana(b: Button, acento: Int) {
+        boton(b, acento)
+        b.setTextSize(android.util.TypedValue.COMPLEX_UNIT_DIP, 10.5f)
+        b.minHeight = 0; b.minimumHeight = 0; b.minWidth = 0; b.minimumWidth = 0
+        b.maxLines = 2
+        b.ellipsize = null
+        b.gravity = android.view.Gravity.CENTER
+        b.setLineSpacing(0f, 0.95f)
+        b.setPadding(dp(b.context, 2), dp(b.context, 3), dp(b.context, 2), dp(b.context, 3))
+    }
+
+    /** Arma el texto de una pestaña: la primera línea (ícono) más grande. */
+    fun textoPestana(icono: String, etiqueta: String): CharSequence {
+        val sp = android.text.SpannableString("$icono\n$etiqueta")
+        sp.setSpan(android.text.style.RelativeSizeSpan(1.75f), 0, icono.length, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        return sp
     }
 
     /** Botón redondo (micrófono, enviar, volver). */

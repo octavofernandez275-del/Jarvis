@@ -434,6 +434,13 @@ object Assistant {
         estado("Jarvis listo · primera palabra %.1f s · %.1f tok/s · hilos %s%s%s".format(esperaMs / 1000f, tps, hilos, motor, calor))
     }
 
+    /** Botón "repetir" de una burbuja: vuelve a decir ese texto en voz alta. */
+    fun repetirEnVoz(texto: String) {
+        if (texto.isBlank()) return
+        interrupt()
+        hablar(texto)
+    }
+
     /** Muestra y dice la respuesta de un comando local (no pasa por el modelo ni por el historial). */
     private fun responderLocal(usuario: String, r: Reply) {
         var texto = r.texto

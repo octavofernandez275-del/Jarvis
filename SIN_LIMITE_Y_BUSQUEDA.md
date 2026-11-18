@@ -120,3 +120,10 @@ No se pudo compilar aquí (sin Kotlin/Android SDK). Ejecuta el workflow *Compila
 - Interrumpir hablando: mientras Jarvis habla o piensa, una palabra de corte al inicio ("Jarvis", "para", "basta", "espera", "silencio"...) lo calla. Cualquier otro texto captado en ese momento se descarta (eco).
 - Voz: "desactiva escucha activa" vuelve al manos libres normal; "adiós"/"chau" cierra todo. Tras 6 errores seguidos del reconocedor se apaga solo.
 - Límites: no es un detector local de palabra clave (usa el reconocedor de Android en bucle: más batería, posible pitido y datos si no hay paquete de voz offline en español). El eco del parlante puede colarse; mejor con auriculares. Sin probar en teléfono; no se pudo compilar aquí (CI).
+
+## Interfaz (v. noviembre)
+- Barra inferior de 4 pestañas con ícono + etiqueta (no se cortan). Manos libres con 3 estados: azul apagado, rojo manos libres, verde "Escucha activa" (ambos latiendo).
+- Descarga del modelo: barra de progreso + tiempo estimado (se calcula a partir del ritmo medido tras 5 s).
+- Reactor se achica (112→68 dp) cuando hay conversación. Métrica "primera palabra / tok/s / hilos" en línea chica aparte.
+- Burbujas de Jarvis con Copiar / Repetir en voz / Callar. Atajos: primero según la hora, el resto ordenado por uso (SharedPreferences "atajos"). Mayor contraste en textos secundarios.
+- Sin probar en pantalla real; compilación por CI.

@@ -38,6 +38,12 @@ class MainActivity : Activity(), Assistant.Ui {
     private lateinit var handsBtn: Button
     private lateinit var batBtn: Button
     private var pidioNotificaciones = false
+    private lateinit var barra: ProgressBar
+    private lateinit var detalle: TextView
+    private lateinit var atajos: LinearLayout
+    private var pulsoManos: android.animation.ObjectAnimator? = null
+    private var descargaDesde = 0L
+    private var descargaPct0 = -1
 
     // Burbuja que se está escribiendo (la respuesta llega en fragmentos)
     private var burbuja: TextView? = null
@@ -83,10 +89,27 @@ class MainActivity : Activity(), Assistant.Ui {
             setPadding(dp(14), dp(5), dp(14), dp(5))
             background = Tema.pildora(this@MainActivity, ReactorView.AZUL)
         }
-        val estadoFila = LinearLayout(this).apply {
+        // Barra de progreso de la descarga del modelo (solo visible mientras se descarga)
+        barra = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
+            max = 100
+            visibility = View.GONE
+            progressTintList = ColorStateList.valueOf(Tema.AMBAR)
+            progressBackgroundTintList = ColorStateList.valueOf(Tema.transparente(Tema.AMBAR, 60))
+        }
+        detalle = TextView(this).apply {
+            textSize = 10.5f
+            typeface = Typeface.MONOSPACE
+            setTextColor(Color.argb(200, 159, 232, 255))
             gravity = Gravity.CENTER
+            visibility = View.GONE
+        }
+        val estadoFila = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
             setPadding(dp(16), dp(2), dp(16), dp(6))
             addView(status, LinearLayout.LayoutParams(-2, -2))
+            addView(barra, LinearLayout.LayoutParams(-1, dp(6)).apply { topMargin = dp(6) })
+            addView(detalle, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(3) })
         }
 
         // Conversación: lista de burbujas + pantalla de bienvenida con atajos cuando está vacía
@@ -112,7 +135,7 @@ class MainActivity : Activity(), Assistant.Ui {
             maxLines = 4
             textSize = 15.5f
             setTextColor(Color.WHITE)
-            setHintTextColor(Color.argb(140, 159, 232, 255))
+            setHintTextColor(Color.argb(185, 159, 232, 255))
             setPadding(dp(8), dp(10), dp(8), dp(10))
             background = null
         }
@@ -130,23 +153,23 @@ class MainActivity : Activity(), Assistant.Ui {
             addView(micBtn, LinearLayout.LayoutParams(dp(44), dp(44)).apply { leftMargin = dp(4) })
             addView(sendBtn, LinearLayout.LayoutParams(dp(44), dp(44)).apply { leftMargin = dp(6) })
         }
-        handsBtn = Button(this).apply { text = MANOS_OFF; isEnabled = false }
-        batBtn = Button(this).apply { text = "🔋 Batería" }
-        val tareasBtn = Button(this).apply { text = "📋 Tareas" }
-        val boxeoBtn = Button(this).apply { text = "🥊 Boxeo" }
-        listOf(handsBtn, tareasBtn, boxeoBtn, batBtn).forEach { it.textSize = 12f }
+        // Barra inferior: cuatro pestañas iguales, ícono arriba y etiqueta debajo (ya no se cortan los nombres)
+        handsBtn = Button(this).apply { text = Tema.textoPestana("🎧", "Manos libres"); isEnabled = false }
+        batBtn = Button(this).apply { text = Tema.textoPestana("🔋", "Batería") }
+        val tareasBtn = Button(this).apply { text = Tema.textoPestana("📋", "Tareas") }
+        val boxeoBtn = Button(this).apply { text = Tema.textoPestana("🥊", "Boxeo") }
         val fila2 = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             setPadding(dp(10), dp(8), dp(10), dp(10))
-            addView(handsBtn, LinearLayout.LayoutParams(0, dp(40), 1.5f).apply { rightMargin = dp(6) })
-            addView(tareasBtn, LinearLayout.LayoutParams(0, dp(40), 1f).apply { rightMargin = dp(6) })
-            addView(boxeoBtn, LinearLayout.LayoutParams(0, dp(40), 1f).apply { rightMargin = dp(6) })
-            addView(batBtn, LinearLayout.LayoutParams(0, dp(40), 1f))
+            addView(handsBtn, LinearLayout.LayoutParams(0, dp(54), 1f).apply { rightMargin = dp(6) })
+            addView(tareasBtn, LinearLayout.LayoutParams(0, dp(54), 1f).apply { rightMargin = dp(6) })
+            addView(boxeoBtn, LinearLayout.LayoutParams(0, dp(54), 1f).apply { rightMargin = dp(6) })
+            addView(batBtn, LinearLayout.LayoutParams(0, dp(54), 1f))
         }
-        estilo(handsBtn, ReactorView.AZUL)
-        estilo(batBtn, ReactorView.AZUL)
-        estilo(tareasBtn, ReactorView.AZUL)
-        estilo(boxeoBtn, ReactorView.ROJO)
+        Tema.pestana(handsBtn, ReactorView.AZUL)
+        Tema.pestana(batBtn, ReactorView.AZUL)
+        Tema.pestana(tareasBtn, ReactorView.AZUL)
+        Tema.pestana(boxeoBtn, ReactorView.ROJO)
         boxeoBtn.setOnClickListener { val r = Boxeo.abrir(this); r.despues?.invoke() ?: Toast.makeText(this, r.texto, Toast.LENGTH_LONG).show() }
 
         val root = LinearLayout(this).apply {
@@ -199,25 +222,57 @@ class MainActivity : Activity(), Assistant.Ui {
         col.addView(TextView(this).apply {
             text = "Escríbeme, háblame o toca un atajo"
             textSize = 13f
-            setTextColor(Color.argb(170, 159, 232, 255))
+            setTextColor(Color.argb(210, 159, 232, 255))
             gravity = Gravity.CENTER
             setPadding(0, dp(4), 0, dp(14))
         })
-        fun chip(texto: String, accion: () -> Unit) {
-            val b = Button(this).apply { text = texto; textSize = 13f }
-            Tema.boton(b, ReactorView.AZUL)
-            b.setOnClickListener { accion() }
-            col.addView(b, LinearLayout.LayoutParams(-1, -2).apply { setMargins(0, dp(3), 0, dp(3)) })
-        }
+        atajos = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        col.addView(atajos, LinearLayout.LayoutParams(-1, -2))
+        col.addView(TextView(this).apply {
+            text = "Tip: mantén pulsado 🎧 para la escucha activa («Oye Jarvis»)"
+            textSize = 11.5f
+            setTextColor(Color.argb(190, 159, 232, 255))
+            gravity = Gravity.CENTER
+            setPadding(0, dp(12), 0, 0)
+        })
+        return col
+    }
+
+    private fun prefsAtajos() = getSharedPreferences("atajos", MODE_PRIVATE)
+
+    /** Atajos de la bienvenida: el primero depende de la hora y el resto se ordena por los que más usas. */
+    private fun llenarAtajos() {
+        atajos.removeAllViews()
         fun enviar(t: String) {
             if (Assistant.modeloListo) Assistant.enviarTexto(t) else Toast.makeText(this, "Jarvis está arrancando, un momento…", Toast.LENGTH_SHORT).show()
         }
         fun escribir(t: String) { input.setText(t); input.setSelection(t.length); input.requestFocus() }
-        chip("📰  Noticias de hoy en Argentina") { enviar("¿Cuáles son las noticias de hoy en Argentina?") }
-        chip("🔎  Investiga un tema…") { escribir("Investiga ") }
-        chip("📊  Haz una presentación sobre…") { escribir("Haz una presentación sobre ") }
-        chip("🖼  Genera una imagen de…") { escribir("Genera una imagen de ") }
-        return col
+        val hora = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+        class Atajo(val id: String, val texto: String, val accion: () -> Unit)
+        val porHora = when {
+            hora in 5..11 -> Atajo("hora_manana", "☀️  Buenos días: resumen de mi día") {
+                enviar("Buenos días. Dame un resumen breve del día: la fecha, mis tareas pendientes y las noticias principales de Argentina.") }
+            hora in 12..19 -> Atajo("hora_tarde", "⏳  ¿Qué me queda pendiente hoy?") {
+                enviar("¿Qué tareas o recordatorios me quedan pendientes para hoy?") }
+            else -> Atajo("hora_noche", "🌙  Ayúdame a planificar mañana") { escribir("Ayúdame a planificar mañana: ") }
+        }
+        val fijos = listOf(
+            Atajo("noticias", "📰  Noticias de hoy en Argentina") { enviar("¿Cuáles son las noticias de hoy en Argentina?") },
+            Atajo("investiga", "🔎  Investiga un tema…") { escribir("Investiga ") },
+            Atajo("presentacion", "📊  Haz una presentación sobre…") { escribir("Haz una presentación sobre ") },
+            Atajo("imagen", "🖼  Genera una imagen de…") { escribir("Genera una imagen de ") }
+        )
+        val p = prefsAtajos()
+        val ordenados = fijos.sortedByDescending { p.getInt(it.id, 0) }   // sortedBy es estable: sin uso, queda el orden de siempre
+        (listOf(porHora) + ordenados).forEachIndexed { i, a ->
+            val b = Button(this).apply { text = a.texto; textSize = 13f }
+            Tema.boton(b, if (i == 0) Tema.VERDE else ReactorView.AZUL, if (i == 0) 60 else 35)
+            b.setOnClickListener {
+                p.edit().putInt(a.id, p.getInt(a.id, 0) + 1).apply()
+                a.accion()
+            }
+            atajos.addView(b, LinearLayout.LayoutParams(-1, -2).apply { setMargins(0, dp(3), 0, dp(3)) })
+        }
     }
 
     /** Botón con borde de neón del color de acento (azul o rojo). */
@@ -230,6 +285,13 @@ class MainActivity : Activity(), Assistant.Ui {
     }
 
     // ---------- Burbujas ----------
+
+    /** Con conversación en pantalla el reactor se achica para dar más lugar al chat. */
+    private fun ajustarReactor() {
+        val alto = dp(if (vacio.visibility == View.VISIBLE) 112 else 68)
+        val lp = reactor.layoutParams
+        if (lp != null && lp.height != alto) { lp.height = alto; reactor.layoutParams = lp }
+    }
 
     private fun cerrarBurbuja() {
         if (burbuja != null && burbujaTipo == SISTEMA && burbuja?.text.isNullOrBlank()) mensajes.removeView(burbujaCont)
@@ -269,10 +331,24 @@ class MainActivity : Activity(), Assistant.Ui {
                 setPadding(dp(8), 0, 0, dp(2))
             })
             addView(tv, LinearLayout.LayoutParams(-2, -2))
+            if (tipo == JARVIS) addView(LinearLayout(this@MainActivity).apply {
+                orientation = LinearLayout.HORIZONTAL
+                alpha = 0.8f
+                fun accion(t: String, f: () -> Unit) = addView(TextView(this@MainActivity).apply {
+                    text = t
+                    textSize = 11.5f
+                    setTextColor(ReactorView.AZUL_CLARO)
+                    setPadding(dp(8), dp(6), dp(10), dp(2))
+                    setOnClickListener { f() }
+                })
+                accion("📋 Copiar") { if (tv.text.isNotBlank()) copiar(tv.text) }
+                accion("🔊 Repetir") { Assistant.repetirEnVoz(tv.text.toString()) }
+                accion("⏹ Callar") { Assistant.interrupt() }
+            })
             visibility = if (tipo == SISTEMA) View.GONE else View.VISIBLE
         }
         mensajes.addView(cont, LinearLayout.LayoutParams(-1, -2).apply { setMargins(dp(10), dp(5), dp(10), dp(5)) })
-        if (tipo != SISTEMA) { Tema.aparecer(cont); vacio.visibility = View.GONE }
+        if (tipo != SISTEMA) { Tema.aparecer(cont); vacio.visibility = View.GONE; ajustarReactor() }
         while (mensajes.childCount > 80) mensajes.removeViewAt(0)
         burbuja = tv
         burbujaCont = cont
@@ -320,11 +396,35 @@ class MainActivity : Activity(), Assistant.Ui {
         return h.bottom - (scroll.height + scroll.scrollY) < dp(120)
     }
 
-    private fun pintarEstado(s: String) {
+    private fun pintarEstado(s0: String) {
+        var s = s0
+        var extra = ""
+        // "Jarvis listo · primera palabra 1.2 s · 8.5 tok/s · hilos…": la métrica va en una línea chica aparte
+        val corte = s.indexOf(" · ")
+        if (s.startsWith("Jarvis listo") && corte > 0) { extra = s.substring(corte + 3).replace(" · ", "  ·  "); s = s.substring(0, corte) }
+        val descarga = if (s.contains("Descargando", true)) Regex("""(\d{1,3}) ?%""").find(s)?.groupValues?.get(1)?.toIntOrNull() else null
+        if (descarga != null) {
+            val ahora = android.os.SystemClock.elapsedRealtime()
+            if (descargaPct0 < 0 || descarga < descargaPct0) { descargaPct0 = descarga; descargaDesde = ahora }
+            val seg = (ahora - descargaDesde) / 1000f
+            val ritmo = if (seg > 5f && descarga > descargaPct0) (descarga - descargaPct0) / seg else 0f
+            extra = if (ritmo > 0f) {
+                val min = ((100 - descarga) / ritmo / 60f)
+                "Primera vez: el modelo se baja una sola vez · " + (if (min < 1f) "menos de 1 min" else "~%.0f min".format(min)) + " restantes"
+            } else "Primera vez: el modelo se baja una sola vez. Jarvis estará listo al terminar."
+            barra.progress = descarga
+            barra.visibility = View.VISIBLE
+        } else {
+            barra.visibility = View.GONE
+            descargaPct0 = -1
+        }
+        detalle.text = extra
+        detalle.visibility = if (extra.isEmpty()) View.GONE else View.VISIBLE
         val color = when {
             s.contains("Escuch", true) -> ReactorView.ROJO
             s.contains("Respond", true) || s.contains("Pensando", true) || s.contains("Buscando", true) ||
-                s.contains("arranc", true) || s.contains("Reinici", true) || s.contains("Cargando", true) -> Tema.AMBAR
+                s.contains("arranc", true) || s.contains("Reinici", true) || s.contains("Cargando", true) ||
+                s.contains("Descargando", true) -> Tema.AMBAR
             s.contains("listo", true) -> Tema.VERDE
             else -> ReactorView.AZUL_CLARO
         }
@@ -345,6 +445,8 @@ class MainActivity : Activity(), Assistant.Ui {
         burbuja = null; burbujaCont = null; burbujaTexto.setLength(0); inicioLinea = true
         val previo = Assistant.transcript.toString().takeLast(8_000)
         vacio.visibility = if (previo.isBlank()) View.VISIBLE else View.GONE
+        llenarAtajos()
+        ajustarReactor()
         alimentar(previo)
         scroll.post { scroll.fullScroll(ScrollView.FOCUS_DOWN) }
         pintarEstado(Assistant.estadoTexto)
@@ -451,9 +553,21 @@ class MainActivity : Activity(), Assistant.Ui {
         input.setSelection(t.length)
     }
 
+    /** Tres estados: apagado (azul), manos libres (rojo) y escucha activa (verde, latiendo). */
     override fun manosLibres(on: Boolean) {
-        handsBtn.text = if (on) MANOS_ON else MANOS_OFF
-        estilo(handsBtn, if (on) ReactorView.ROJO else ReactorView.AZUL)
+        val vigia = on && HandsFree.vigia
+        handsBtn.text = when {
+            vigia -> Tema.textoPestana("👂", "Escucha activa")
+            on -> Tema.textoPestana("🎧", "Manos libres ON")
+            else -> Tema.textoPestana("🎧", "Manos libres")
+        }
+        Tema.pestana(handsBtn, if (vigia) Tema.VERDE else if (on) ReactorView.ROJO else ReactorView.AZUL)
+        pulsoManos?.cancel()
+        handsBtn.alpha = 1f
+        if (on) pulsoManos = android.animation.ObjectAnimator.ofFloat(handsBtn, "alpha", 1f, 0.6f).apply {
+            duration = if (vigia) 1100 else 800; repeatMode = android.animation.ValueAnimator.REVERSE
+            repeatCount = android.animation.ValueAnimator.INFINITE; start()
+        }
     }
 
     override fun habilitar() {
@@ -478,8 +592,6 @@ class MainActivity : Activity(), Assistant.Ui {
         const val MIC = "🎤"
         const val STOP = "⏹"
         const val HINT = "Escribe a Jarvis…"
-        const val MANOS_OFF = "🎧 Manos: OFF"
-        const val MANOS_ON = "🎧 Manos: ON"
         val ETIQUETA = Regex("""\n(Tú|Jarvis|Memoria): ?""")
     }
 }
