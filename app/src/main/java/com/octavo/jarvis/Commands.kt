@@ -57,6 +57,8 @@ object Commands {
     private val rxModeloInfo = Regex("""^(?:que|cual) modelo (?:usas|tienes|estas usando)$|^(?:lista|dime|muestra)(?: los| mis)? modelos$|^que modelos (?:hay|tienes|puedo usar)$""")
     private val rxBoxeo = Regex("""^(?:abre|abrir|inicia|iniciar|pon|juega|jugar|quiero jugar|vamos a jugar)(?: al| el| a| un)?(?: juego de)? (?:boxeo|box|jarvis boxeo|jarvis boxing)$|^(?:boxeo|jarvis boxeo)$""")
     private val rxContexto = Regex("""^(?:usa |pon |ajusta )?(?:el )?contexto(?: a| en| de)? (\d{4,6}|automatico|auto)$|^(?:cuanto|que) contexto (?:usas|tienes)$""")
+    private val rxLote = Regex("""^(?:usa |pon |ajusta )?lote(?: de lectura)?(?: a| en)? (\d{3,4}|auto)$""")
+    private val rxFlash = Regex("""^(?:usa |pon |ajusta )?flash(?: attention)?(?: a| en)? (on|off|auto|si|no|activado|desactivado)$""")
     private val rxHilosPregunta = Regex("""^(?:cuantos hilos usas|que hilos usas|hilos actuales|cuantos hilos)$""")
 
     private val rxVozCambiar = Regex("""^(?:cambia|cambiar|cambiame)(?: de)?(?: la)? voz$""")
@@ -239,6 +241,20 @@ object Commands {
                 (if (n == 0) "Listo: leeré el texto con los mismos hilos." else "Listo: $n hilos para leer el texto.") +
                     " $AVISO_REINICIO"
             )
+        }
+        rxLote.find(f)?.let { m ->
+            val v = m.groupValues[1]
+            val n = if (v == "auto") 0 else v.toInt()
+            if (n != 0 && n !in 128..4096) return Reply("Elige un lote entre 128 y 4096 (por ejemplo 512, 1024 o 2048), o «lote auto».")
+            Ajustes.fijarLote(ctx, n)
+            EngineManager.reiniciarYa(ctx)
+            return Reply((if (n == 0) "Listo: lote automático." else "Listo: lote de lectura $n.") + " $AVISO_REINICIO")
+        }
+        rxFlash.find(f)?.let { m ->
+            val v = when (m.groupValues[1]) { "on", "si", "activado" -> "on"; "off", "no", "desactivado" -> "off"; else -> "auto" }
+            Ajustes.fijarFlash(ctx, v)
+            EngineManager.reiniciarYa(ctx)
+            return Reply("Listo: flash attention en $v. $AVISO_REINICIO")
         }
         val m = rxHilos.find(f) ?: return null
         val n = m.groupValues[1].ifEmpty { m.groupValues[2] }.toInt()

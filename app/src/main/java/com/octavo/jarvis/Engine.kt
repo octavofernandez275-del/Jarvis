@@ -197,6 +197,11 @@ object Engine {
             args.add("--cache-reuse"); args.add("256")
             // RAM libre de sobra: fija el modelo en memoria para que Android no lo expulse (primer token sin esperas)
             if (ramHolgada(ctx)) args.add("--mlock")
+            // Opciones que se prueban con comandos ("lote 1024", "flash on"); por defecto no se tocan
+            val lote = Ajustes.lote(ctx)
+            if (lote > 0) { args.add("-ub"); args.add(lote.toString()); if (lote > 2048) { args.add("-b"); args.add(lote.toString()) } }
+            val fa = Ajustes.flash(ctx)
+            if (fa != "auto") { args.add("-fa"); args.add(fa) }
         }
         val pb = ProcessBuilder(args)
         pb.redirectErrorStream(true)

@@ -127,3 +127,8 @@ No se pudo compilar aquí (sin Kotlin/Android SDK). Ejecuta el workflow *Compila
 - Reactor se achica (112→68 dp) cuando hay conversación. Métrica "primera palabra / tok/s / hilos" en línea chica aparte.
 - Burbujas de Jarvis con Copiar / Repetir en voz / Callar. Atajos: primero según la hora, el resto ordenado por uso (SharedPreferences "atajos"). Mayor contraste en textos secundarios.
 - Sin probar en pantalla real; compilación por CI.
+
+## v1.0 (estable)
+- Precalentamiento: tras arrancar el motor se manda el prompt del sistema con 1 token para dejar ese prefijo en caché (la primera pregunta no lo lee de cero).
+- Comandos nuevos para probar: «lote 512/1024/2048/auto» (-ub) y «flash on/off/auto» (-fa on|off; el servidor se compila con llama.cpp reciente, donde auto ya es el valor por defecto). Por defecto no se tocan.
+- Logo propio (ícono adaptativo con el reactor), tema oscuro desde el primer cuadro (sin destello al abrir). versionCode 3 / versionName 1.0.

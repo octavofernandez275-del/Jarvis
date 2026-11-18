@@ -170,6 +170,7 @@ object Assistant {
                 if (EngineManager.asegurar(app) { estado("Cargando el motor… ya puedes escribir, respondo apenas termine") }) {
                     listo = true
                     estado("Jarvis listo")
+                    calentarMotor()
                 } else {
                     estado("El motor no arrancó:\n" + Engine.lastLog())
                 }
@@ -178,6 +179,20 @@ object Assistant {
             } finally {
                 arrancando = false
                 EngineManager.soltar()
+            }
+        }.start()
+    }
+
+    /**
+     * Precalentamiento: manda el prompt del sistema con 1 solo token de respuesta, así llama-server deja ese prefijo
+     * ya procesado en su caché y la primera pregunta real no lo lee de cero. Si hay una respuesta en curso, no hace nada.
+     */
+    private fun calentarMotor() {
+        Thread {
+            try {
+                if (ocupado) return@Thread
+                Chat.stream(listOf("system" to systemPrompt()), 1, 0.0) { }
+            } catch (_: Exception) {
             }
         }.start()
     }
@@ -191,7 +206,7 @@ object Assistant {
     fun despertar() {
         if (!listo || arrancando) return
         Thread {
-            if (EngineManager.asegurar(app) { estado(it) }) estado("Jarvis listo")
+            if (EngineManager.asegurar(app) { estado(it) }) { estado("Jarvis listo"); calentarMotor() }
             else estado("El motor no arrancó:\n" + Engine.lastLog())
         }.start()
     }

@@ -32,6 +32,14 @@ object Ajustes {
         return if (pr.contains("hilos_lectura")) pr.getInt("hilos_lectura", 0) else Cpu.perfil().lectura
     }
 
+    /** Tamaño de lote al leer el prompt (-ub). 0 = el del servidor. Más grande = lee más rápido, usa más RAM. */
+    fun lote(ctx: Context): Int = p(ctx).getInt("lote", 0)
+    fun fijarLote(ctx: Context, n: Int) { p(ctx).edit().putInt("lote", n).apply() }
+
+    /** Flash attention: "auto" (el servidor decide), "on" u "off". */
+    fun flash(ctx: Context): String = p(ctx).getString("flash", "auto") ?: "auto"
+    fun fijarFlash(ctx: Context, v: String) { p(ctx).edit().putString("flash", v).apply() }
+
     /** Vuelve al reparto automático de hilos (borra lo elegido a mano). */
     fun hilosAutomaticos(ctx: Context) { p(ctx).edit().remove("hilos").remove("hilos_lectura").apply() }
 
