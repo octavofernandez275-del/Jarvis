@@ -107,16 +107,16 @@ object Assistant {
 
         voiceIn = VoiceInput(app)
         voiceIn.onStart = { ui?.escuchando(true) }
-        voiceIn.onEnd = { ui?.escuchando(false) }
-        voiceIn.onSpeechStart = { interrupt() }               // si empiezo a hablar, Jarvis se calla
-        voiceIn.onPartial = { t -> ui?.parcial(t) }
+        voiceIn.onEnd = { ui?.escuchando(false); HandsFree.alTerminarEscucha() }
+        voiceIn.onSpeechStart = { if (!HandsFree.ignoraInicioDeVoz) interrupt() }               // si empiezo a hablar, Jarvis se calla
+        voiceIn.onPartial = { t -> ui?.parcial(t); HandsFree.alParcial(t) }
         voiceIn.onResult = { t -> alResultadoVoz(t) }
         voiceIn.onNoSpeech = {
             if (HandsFree.activo) HandsFree.alSilencio() else toast("No te escuché. Toca el micrófono y habla.")
         }
         voiceIn.onError = { msg ->
-            toast(msg)
-            if (HandsFree.activo) HandsFree.alSilencio()
+            if (!(HandsFree.activo && HandsFree.vigia)) toast(msg)   // en escucha activa no se llena la pantalla de avisos
+            if (HandsFree.activo) HandsFree.alSilencio(true)
         }
     }
 
@@ -220,8 +220,8 @@ object Assistant {
 
     private fun alResultadoVoz(texto: String) {
         ui?.parcial("")
-        if (HandsFree.alResultado(texto)) return   // frase de cierre del manos libres
-        enviarVoz(texto)
+        val t = HandsFree.filtrar(texto) ?: return   // cierre, eco, o no iba dirigido a Jarvis
+        enviarVoz(t)
     }
 
     /** Dictado: si la respuesta anterior aún se está cancelando, queda en espera. */

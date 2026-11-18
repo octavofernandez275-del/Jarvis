@@ -114,3 +114,9 @@ No se pudo compilar aquí (sin Kotlin/Android SDK). Ejecuta el workflow *Compila
 - El system prompt ahora es estable (SISTEMA + fecha); memoria del usuario y contexto web se pegan al ÚLTIMO mensaje de usuario (solo en la petición, no en el historial). Así la caché de prefijo de llama-server se reutiliza entre turnos.
 - `--cache-reuse 256` y `--mlock` (solo si la RAM libre > modelo*1.5 + 1.5 GB) dentro del bloque opcional: si el servidor los rechaza, el fallback existente arranca en modo básico.
 - No medido en el teléfono. Si la velocidad no mejora, revisar el log del servidor (cache-reuse puede no aplicar a Qwen3.5 híbrido).
+
+## Escucha activa (pulsación larga en "Manos libres")
+- Reconocedor en bucle; solo reacciona a "Oye Jarvis"/"Jarvis" o dentro de 25 s de la última charla. Quita el nombre antes de mandar el texto al modelo.
+- Interrumpir hablando: mientras Jarvis habla o piensa, una palabra de corte al inicio ("Jarvis", "para", "basta", "espera", "silencio"...) lo calla. Cualquier otro texto captado en ese momento se descarta (eco).
+- Voz: "desactiva escucha activa" vuelve al manos libres normal; "adiós"/"chau" cierra todo. Tras 6 errores seguidos del reconocedor se apaga solo.
+- Límites: no es un detector local de palabra clave (usa el reconocedor de Android en bucle: más batería, posible pitido y datos si no hay paquete de voz offline en español). El eco del parlante puede colarse; mejor con auriculares. Sin probar en teléfono; no se pudo compilar aquí (CI).

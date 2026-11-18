@@ -170,7 +170,13 @@ class MainActivity : Activity(), Assistant.Ui {
 
         sendBtn.setOnClickListener { send() }
         micBtn.setOnClickListener { onMicClick() }
-        handsBtn.setOnClickListener { onManosLibres() }
+        handsBtn.setOnClickListener { HandsFree.vigiaPedida = false; onManosLibres() }
+        // Pulsación larga = escucha activa ("Oye Jarvis" + poder cortarlo hablando)
+        handsBtn.setOnLongClickListener {
+            if (HandsFree.activo) HandsFree.cambiarVigia(!HandsFree.vigia)
+            else { HandsFree.vigiaPedida = true; onManosLibres() }
+            true
+        }
         batBtn.setOnClickListener { ahorroBateria() }
         tareasBtn.setOnClickListener { startActivity(Intent(this, TareasActivity::class.java)) }
         input.setOnEditorActionListener { _, id, _ -> if (id == EditorInfo.IME_ACTION_SEND) { send(); true } else false }
