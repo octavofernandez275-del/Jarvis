@@ -259,11 +259,16 @@ object Engine {
 
     @Volatile private var niceActual: Int? = null
 
+    /** PID del proceso hijo (Process.pid() solo existe desde Android 13: se lee el campo interno). */
+    private fun pidDe(p: Process): Int? = try {
+        val f = p.javaClass.getDeclaredField("pid"); f.isAccessible = true; f.getInt(p)
+    } catch (_: Exception) { null }
+
     /** Aplica `nice` a TODOS los hilos del servidor (solo ve y toca procesos de la propia app). Lee solo /proc/<pid>/task: no recorre todo /proc. */
     private fun priorizar(p: Process, nice: Int) {
         try {
             niceActual = nice
-            val tareas = File("/proc/" + p.pid() + "/task").listFiles() ?: return
+            val tareas = File("/proc/" + (pidDe(p) ?: return) + "/task").listFiles() ?: return
             for (t in tareas) {
                 val tid = t.name.toIntOrNull() ?: continue
                 try { android.os.Process.setThreadPriority(tid, nice) } catch (_: Exception) {}
